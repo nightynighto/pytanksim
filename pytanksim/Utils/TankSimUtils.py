@@ -8,6 +8,7 @@ Created on Tue Jan 10 12:46:59 2023
 import CoolProp as CP
 import scipy as sp
 import numpy as np
+import FiniteDifferences as fd
 
 
 #Create a function that gives the Cs as a function of T and structural component mass
@@ -45,18 +46,6 @@ def tank_capacity_absolute(nabsolute, vadsorbed, mads, rhoskel, tankvol, pempty,
     rho = fluid.rhomolar()
     nfull = rho * (tankvol - mads/rhoskel - vadsorbed(tfull)*mads) + nabsolute(pfull,tfull) * mads
     return (nfull-nempty) * MW / 1000
-
-def pardev(func, loc, stepsize):
-    term1 = func(loc+stepsize)
-    term2 = func(loc-stepsize)
-    return (term1 - term2) / (2*stepsize)
-
-def partial_derivative(func, var=0, point=[], stepsize=1e-3):
-    args = point[:]
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return pardev(wraps, point[var], stepsize)
 
 def surface_potential_abs(nabs, p, T, vads, fluid):
     #Do an integral at constant temperature
@@ -106,7 +95,8 @@ def ads_energy_abs(nabs, p, T, va, fluid):
     hmolar = fluid.hmolar()
     def phi_over_T(p, T):
         return surface_potential_abs(nabs, p, T, va(T))/T
-    return nabs(p, T) * hmolar - (T**2) * partial_derivative(phi_over_T, 1, [p, T], phi_over_T(p,T) * 1E-5) - p * va(T)
+    return nabs(p, T) * hmolar - (T**2) * fd.partial_derivative(phi_over_T, 1, [p, T],
+                                                                phi_over_T(p,T) * 1E-5) - p * va(T)
 
 def ads_energy_exc(nexcess, p, T, fluid):
     '''
@@ -133,10 +123,7 @@ def ads_energy_exc(nexcess, p, T, fluid):
     hmolar = fluid.hmolar()
     def phi_over_T(p, T):
         return surface_potential_exc(nexcess, p, T)/T
-    return nexcess(p, T) * hmolar - (T**2) * partial_derivative(phi_over_T, 1, [p, T], phi_over_T(p,T) * 1E-5) 
+    return nexcess(p, T) * hmolar - (T**2) * fd.partial_derivative(phi_over_T, 1, [p, T], phi_over_T(p,T) * 1E-5) 
 
-def tank_content(nabs, mads, rhoskel, tankvol, va, p, T, fluid):
-    fluid.update(CP.PT_INPUTS, p, T)
-    gasdensity = fluid.rhomolar()
-    return gasdensity * (tankvol - mads/rhoskel - va(T) * mads) + nabs(p, T) * mads
+
 
