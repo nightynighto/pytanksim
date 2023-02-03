@@ -13,7 +13,7 @@ setup(name = "pyTankSim",
       packages =[
        "pytanksim",
        "pytanksim.utils",
-       "pytanksim.classes"
+       "pytanksim.classes",
        "pytanksim.mpta"
           ],
       author = "Muhammad Irfan Maulana Kusdhany",
@@ -26,6 +26,5 @@ setup(name = "pyTankSim",
           "lmfit",
           "pandas"
           ],
-      package_dir = {"" : "pytanksim"},
       python_requires='>3.7'
       )
