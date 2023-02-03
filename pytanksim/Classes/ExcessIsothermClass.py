@@ -5,6 +5,8 @@ Created on Thu Jan 26 19:44:06 2023
 @author: nextf
 """
 
+__all__ = ["ExcessIsotherm"]
+
 import numpy as np
 from typing import List
 

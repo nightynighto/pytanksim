@@ -5,8 +5,10 @@ Created on Fri Jan 27 20:42:02 2023
 @author: nextf
 """
 
-from FluidSorbentClasses import StoredFluid, SorbentMaterial
-from pytanksim.Utils.TankSimUtils import Cs_gen
+__all__ = ["StorageTank", "SorbentTank"]
+
+from pytanksim.classes.fluidsorbentclasses import StoredFluid, SorbentMaterial
+from pytanksim.utils.tanksimutils import Cs_gen
 
 class StorageTank:
     def __init__(self,

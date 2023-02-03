@@ -4,10 +4,17 @@ Created on Wed Feb  1 16:45:42 2023
 
 @author: nextf
 """
-from SimResultsClass import SimResults
-from StorageTankClasses import StorageTank, SorbentTank
+
+
+__all__ = ["SimulationParams", "BoundaryFlux", "BaseSimulation"]
+
+
+from pytanksim.classes.simresultsclass import SimResults
+from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from dataclasses import dataclass
 from typing import Callable
+
+
 
 @dataclass
 class SimulationParams:

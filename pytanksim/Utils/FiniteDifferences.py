@@ -7,6 +7,12 @@ Created on Fri Jan 13 15:12:26 2023
 
 ##This is a module for doing numerical finite differences
 
+__all__ =[
+    "partial_derivative",
+    "second_derivative",
+    "mixed_second_derivative"
+    ]
+
 def pardev(func, loc, stepsize):
     loc1 = (loc + stepsize)
     loc2 = (loc - stepsize)

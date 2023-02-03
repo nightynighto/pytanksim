@@ -4,8 +4,11 @@ Created on Sat Jan 28 17:44:21 2023
 
 @author: nextf
 """
+__all__ = ["SimResults"]
+
 import numpy as np
 from typing import List
+import pandas as pd
 
 
 class SimResults:
@@ -63,6 +66,7 @@ class SimResults:
             
         self.tank_params = tank_params
         self.sim_type = sim_type
+        self.results_df = pd.DataFrame.from_dict(self.results_dict)
         
     
     def get_final_conditions(self):
@@ -71,4 +75,7 @@ class SimResults:
             final_dict[key] = value[-1]
         
         
+    def to_csv(self, filename):
+       self.results_df.to_csv(filename)
+     
     

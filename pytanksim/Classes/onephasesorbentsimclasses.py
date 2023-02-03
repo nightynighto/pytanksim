@@ -5,15 +5,18 @@ Created on Fri Jan 13 15:11:33 2023
 @author: nextf
 """
 
+__all__ = ["OnePhaseSorbentSim", "OnePhaseSorbentDefault", "OnePhaseSorbentVenting",
+           "OnePhaseSorbentCooled"]
+
 import CoolProp as CP
 import numpy as np
-import pysim.Utils.FiniteDifferences as fd
+import pysim.utils.finitedifferences as fd
 from tqdm.auto import tqdm
 from assimulo.problem import Explicit_Problem
 from assimulo.solvers import CVode
 from assimulo.exception import TerminateSimulation
-from SimResultsClass import SimResults
-from BaseSimClass import BaseSimulation
+from pytanksim.classes.simresultsclass import SimResults
+from pytanksim.classes.basesimclass import BaseSimulation
 
 class OnePhaseSorbentSim(BaseSimulation):
     sim_phase = "One Phase"
@@ -206,7 +209,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
-class OnePhaseSorbentVentingVaryingFillrate(OnePhaseSorbentSim):
+class OnePhaseSorbentVenting(OnePhaseSorbentSim):
     sim_type = "Venting"
     
     def _dT_dt_vent_vary_fillrate(self, T):

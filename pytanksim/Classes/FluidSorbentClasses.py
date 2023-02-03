@@ -5,12 +5,14 @@ Created on Fri Jan 27 15:17:45 2023
 @author: nextf
 """
 
-import pytanksim.MPTA as mpta
+__all__ = ["StoredFluid", "MPTAModel", "SorbentMaterial"]
+
+import pytanksim.mpta as mpta
 import numpy as np
 import CoolProp as CP
 import lmfit
-import pytanksim.utils.TankSimUtils as tsu
-from ExcessIsothermClass import ExcessIsotherm
+import pytanksim.utils.tanksimutils as tsu
+from pytanksim.classes.excessisothermclass import ExcessIsotherm
 from copy import deepcopy
 from typing import List
 

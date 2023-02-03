@@ -5,10 +5,16 @@ Created on Tue Jan 10 12:46:59 2023
 @author: nextf
 """
 
+__all__ =[
+    "Cs_gen",
+    "surface_potential_abs",
+    "surface_potential_exc"
+    ]
+
 import CoolProp as CP
 import scipy as sp
 import numpy as np
-import FiniteDifferences as fd
+import pytanksim.utils.finitedifferences as fd
 
 
 #Create a function that gives the Cs as a function of T and structural component mass

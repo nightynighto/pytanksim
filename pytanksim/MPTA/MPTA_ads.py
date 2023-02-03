@@ -5,6 +5,9 @@ Created on Tue Dec 20 15:39:58 2022
 @author: nextf
 """
 
+__all__ = ["N_ex", "N_abs", "fit_penalty", "mean_error"]
+
+
 ##This is a code with functions to calculate and fit the parameters
 ##of the potential theory of adsorption
 
