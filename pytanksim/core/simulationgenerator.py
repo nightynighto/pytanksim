@@ -12,6 +12,7 @@ from pytanksim.classes.basesimclass import BoundaryFlux, SimulationParams
 from pytanksim.classes.fluidsorbentclasses import StoredFluid, MPTAModel, SorbentMaterial
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.onephasesorbentsimclasses import *
+from typing import Union
 
 
 phase_to_str = {
@@ -25,7 +26,7 @@ sim_class_dict = {
     }
 
 def generate_simulation(
-        storage_tank : StorageTank | SorbentTank,
+        storage_tank : Union[StorageTank, SorbentTank],
         boundary_flux : BoundaryFlux,
         simulation_params : SimulationParams,
         simulation_type = "Default",

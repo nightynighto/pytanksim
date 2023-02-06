@@ -39,7 +39,7 @@ class StoredFluid:
         
         self.fluid_name = fluid_name
         self.EOS = EOS
-        self.backend = CP.AbstractState(fluid_name, EOS)
+        self.backend = CP.AbstractState(EOS, fluid_name)
     
     def fluid_property_dict(self, p, T):
         """
@@ -286,11 +286,14 @@ class MPTAModel:
 
         """
         
-        fluid = self.backend
+        fluid = self.stored_fluid.backend
+        if p == 0:
+            return 0
+
         fluid.update(CP.PT_INPUTS, p, T)
         bulk_density = fluid.rhomolar()
         value = mpta.N_ex(self.eps0, self.beta, self.lam, self.gam, T,
-                          bulk_density, fluid)
+                      bulk_density, fluid)
         return value
     
     def n_absolute(self, p : float, T : float) -> float:
@@ -311,11 +314,19 @@ class MPTAModel:
 
         """
         
-        fluid = self.backend
+        if p == 0:
+            return 0
+        
+        fluid = self.stored_fluid.backend
         fluid.update(CP.PT_INPUTS, p, T)
         bulk_density = fluid.rhomolar()
-        value = mpta.N_abs(self.eps0, self.beta, self.lam, self.gam, T,
-                          bulk_density, fluid)
+        value = mpta.N_abs(eps0 = self.eps0,
+                           beta = self.beta,
+                           lam = self.lam,
+                           gam = self.gam,
+                           T = T,
+                          dB = bulk_density,
+                          fluid = fluid)
         return value
         
     def v_ads(self, p : float, T : float) -> float:
@@ -356,7 +367,8 @@ class MPTAModel:
 
         """
         
-        return tsu.surface_potential_abs(self.n_absolute, p, T, self.v_ads, self.backend)
+        return tsu.surface_potential_abs(nabs = self.n_absolute,
+                                         p = p, T = T, vads = self.v_ads, fluid=self.stored_fluid.backend)
     
     
     def phi_over_T(self, p : float, T : float) -> float:

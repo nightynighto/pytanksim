@@ -117,8 +117,8 @@ class BaseSimulation:
         self.storage_tank = storage_tank
         self.boundary_flux = boundary_flux
         if self.storage_tank.max_pressure:
-            assert self.storage_tank.max_pressure > self.simulation_params.init_pressure 
-        assert self.storage_tank.min_supply_pressure < self.simulation_params.init_pressure
+            assert self.storage_tank.max_pressure >= self.simulation_params.init_pressure 
+        assert self.storage_tank.min_supply_pressure <= self.simulation_params.init_pressure
         if isinstance(self.storage_tank, SorbentTank):
             self.has_sorbent = True
         self.has_sorbent = False

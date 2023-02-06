@@ -42,7 +42,7 @@ def d_ads(z, eps0, beta, lam, gam, T, dB, d0, dvap, dliq, fluid):
     ##The following two if conditions are to ensure stability
     ##This one ensures the optimizer does not try to get values outside of 
     ##Coolprop's range of validity for the equation of state
-    if potential >= chem(T, d_max(T), fluid):
+    if potential >= chem(T, d_max(T, fluid), fluid):
         return d_max(T, fluid)
     ##This one changes the default guess to be above liquid density if the 
     ##chemical potential is above the liquid chemical potential

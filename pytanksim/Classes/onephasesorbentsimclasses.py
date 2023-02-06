@@ -10,7 +10,7 @@ __all__ = ["OnePhaseSorbentSim", "OnePhaseSorbentDefault", "OnePhaseSorbentVenti
 
 import CoolProp as CP
 import numpy as np
-import pysim.utils.finitedifferences as fd
+import pytanksim.utils.finitedifferences as fd
 from tqdm.auto import tqdm
 from assimulo.problem import Explicit_Problem
 from assimulo.solvers import CVode
@@ -95,7 +95,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             hin = fluid.hmolar()
         else:
             hin = 0
-
+            
         k1 = ndotin - ndotout
         k2 = ndotin * hin - ndotout * fluid_props["hf"] + \
             self.boundary_flux.heating_power - self.boundary_flux.cooling_power
@@ -131,8 +131,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             p, T = w
-            dTdt = self._dT_dt(self, p, T)
-            dPdt = self._dP_dt(self, p, T, dTdt)
+            dTdt = self._dT_dt(p, T)
+            dPdt = self._dP_dt(p, T, dTdt)
             return np.array([dPdt, dTdt])
         
         def events(t, w, sw):
@@ -173,7 +173,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         sim.discr = "BDF"
         sim.atol = np.array([1E-2,  1E-6])
         sim.rtol = 1E-6
-        t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.display_points)
+        t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
         except Exception:
@@ -408,7 +408,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         sim.atol = np.array([1E-6,  1E-2])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, 
-                             self.simulation_params.display_points)
+                             self.simulation_params.displayed_points)
         tqdm._instances.clear()
         nads = np.zeros_like(t)
         n_phase = {

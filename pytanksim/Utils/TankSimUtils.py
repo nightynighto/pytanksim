@@ -89,7 +89,7 @@ def ads_energy_abs(nabs, p, T, va, fluid):
     T : FLOAT
         Temperature (K).
     va : FUNCTION
-        Returns the adsorbed phase volume at a given temperature (K).
+        Returns the adsorbed phase volume in m^3/kg at a given temperature (K).
 
     Returns
     -------
@@ -117,7 +117,7 @@ def ads_energy_exc(nexcess, p, T, fluid):
     T : FLOAT
         Temperature (K).
     va : FUNCTION
-        Returns the adsorbed phase volume at a given temperature (K).
+        Returns the adsorbed phase volume in m^3/kg at a given temperature (K).
 
     Returns
     -------

@@ -54,20 +54,24 @@ class StorageTank:
         assert aluminum_mass >= 0
         
         
+        
         self.volume = volume
         self.aluminum_mass = aluminum_mass
         self.carbon_fiber_mass = carbon_fiber_mass
-        self.heat_capacity =  Cs_gen(self.sorbent_mass, 
-                                     self.carbon_fiber_mass, self.aluminum_mass)
+        self.heat_capacity =  Cs_gen(mads = 0, 
+                                     mcarbon = self.carbon_fiber_mass,
+                                     malum = self.aluminum_mass)
         
         self.stored_fluid = stored_fluid
+        self.min_supply_pressure = min_supply_pressure
         
         if max_pressure == None:
             backend = self.stored_fluid.backend
             self.max_pressure = backend.pmax()
-
+        else: self.max_pressure = max_pressure
         if vent_pressure == None:
             self.vent_pressure = self.max_pressure
+        else: self.vent_pressure = vent_pressure
             
 
     
@@ -116,7 +120,7 @@ class SorbentTank(StorageTank):
             The default is False.
 
         """
-        stored_fluid = sorbent_material.stored_fluid
+        stored_fluid = sorbent_material.model_isotherm.stored_fluid
         super().__init__(volume = volume,
                          aluminum_mass = aluminum_mass,
                          stored_fluid = stored_fluid,
@@ -125,6 +129,9 @@ class SorbentTank(StorageTank):
                          max_pressure = max_pressure,
                          vent_pressure = vent_pressure)
         self.sorbent_material = sorbent_material
+        self.heat_capacity =  Cs_gen(mads = self.sorbent_material.mass, 
+                                     mcarbon = self.carbon_fiber_mass, 
+                                     malum = self.aluminum_mass)
         
     
     def bulk_fluid_volume(self,
