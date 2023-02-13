@@ -8,17 +8,19 @@ Created on Tue Jan 10 12:46:59 2023
 __all__ =[
     "Cs_gen",
     "surface_potential_abs",
-    "surface_potential_exc"
+    "surface_potential_exc",
+    "ads_energy_abs"
     ]
 
 import CoolProp as CP
 import scipy as sp
 import numpy as np
 import pytanksim.utils.finitedifferences as fd
+from copy import deepcopy
 
 
 #Create a function that gives the Cs as a function of T and structural component mass
-def Cs_gen(mads, mcarbon, malum):
+def Cs_gen(mads, mcarbon, malum, msteel):
     R = sp.constants.R
     def Cdebye(T,theta):
         N=50
@@ -30,7 +32,9 @@ def Cs_gen(mads, mcarbon, malum):
             y[i] = integrand(grid[i])
         return 9 * R * ((T/theta)**3) * sp.integrate.simps(y, grid)
     def Cs(T):
-        return ((mads+mcarbon)*1000/12)*Cdebye(T,1500) + (malum*1000/26.9) * Cdebye(T, 389.4)
+        return ((mads+mcarbon)*1000/12)*Cdebye(T,1500) +\
+            (malum*1000/26.9) * Cdebye(T, 389.4) +\
+                (msteel * 1000 / 55.485) * Cdebye(T, 373)
     return Cs
 
 def tank_capacity_excess(nexcess, mads, rhoskel, tankvol, pempty, tempty, pfull, tfull, fluid):
@@ -56,15 +60,17 @@ def tank_capacity_absolute(nabsolute, vadsorbed, mads, rhoskel, tankvol, pempty,
 def surface_potential_abs(nabs, p, T, vads, fluid):
     #Do an integral at constant temperature
     n= 100
-    x = np.linspace(0, p, n)
-    f = np.zeros_like(x)
-    for i in range(1,len(x)):
-        fluid.update(CP.PT_INPUTS, x[i], T)
-        f[i] = nabs(x[i],T)/fluid.fugacity(0)
-    I_trap = sp.integrate.simps(f, x)
+    pres = np.linspace(0, p, n)
+    func = np.zeros_like(pres)
+    fug = np.zeros_like(func)
+    for i in range(1,len(pres)):
+        p = deepcopy(pres[i])
+        fluid.update(CP.PT_INPUTS, p, T)
+        fug[i] = fluid.fugacity(0)
+        func[i] = nabs(p,T)/fug[i]
+    I_trap = sp.integrate.simps(func, fug)
     return -sp.constants.R * T * I_trap + vads(p, T) * p
-
-
+    
 def surface_potential_exc(nexc, p, T, fluid):
     #Do an integral at constant temperature
     n = 100
@@ -100,9 +106,9 @@ def ads_energy_abs(nabs, p, T, va, fluid):
     fluid.update(CP.PT_INPUTS, p, T)
     hmolar = fluid.hmolar()
     def phi_over_T(p, T):
-        return surface_potential_abs(nabs, p, T, va(T))/T
-    return nabs(p, T) * hmolar - (T**2) * fd.partial_derivative(phi_over_T, 1, [p, T],
-                                                                phi_over_T(p,T) * 1E-5) - p * va(T)
+        return surface_potential_abs(nabs, p, T, va, fluid)/T
+    return  nabs(p,T) * hmolar - (T**2) * fd.partial_derivative(phi_over_T, 1, [p, T],
+                                                                T * 1E-5) 
 
 def ads_energy_exc(nexcess, p, T, fluid):
     '''

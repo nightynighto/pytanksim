@@ -22,7 +22,8 @@ phase_to_str = {
 sim_class_dict = {
     "One Phase Sorbent Default" : OnePhaseSorbentDefault,
     "One Phase Sorbent Venting" : OnePhaseSorbentVenting,
-    "One Phase Sorbent Cooled" : OnePhaseSorbentCooled
+    "One Phase Sorbent Cooled" : OnePhaseSorbentCooled,
+    "One Phase Sorbent Controlled Inlet": OnePhaseSorbentControlledInlet
     }
 
 def generate_simulation(

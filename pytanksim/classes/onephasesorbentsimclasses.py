@@ -6,7 +6,7 @@ Created on Fri Jan 13 15:11:33 2023
 """
 
 __all__ = ["OnePhaseSorbentSim", "OnePhaseSorbentDefault", "OnePhaseSorbentVenting",
-           "OnePhaseSorbentCooled"]
+           "OnePhaseSorbentCooled", "OnePhaseSorbentControlledInlet"]
 
 import CoolProp as CP
 import numpy as np
@@ -77,13 +77,13 @@ class OnePhaseSorbentSim(BaseSimulation):
 class OnePhaseSorbentDefault(OnePhaseSorbentSim):
     sim_type = "Default"
     
-    def _dT_dt(self, p, T):
+    def _dT_dt(self, p, T, time):
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass() 
         ##Convert kg/s to mol/s
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in  / MW
-        ndotout = flux.mass_flow_out / MW
+        ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
@@ -94,11 +94,12 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             fluid.update(CP.PT_INPUTS, Pinput, Tinput)
             hin = fluid.hmolar()
         else:
-            hin = 0
-            
+            hin = 0    
+        
         k1 = ndotin - ndotout
         k2 = ndotin * hin - ndotout * fluid_props["hf"] + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power
+            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+                + self.heat_leak_in(T)
         #print(hin, hgas)
         a = self._dn_dp(p, T, fluid_props)
         b = self._dn_dT(p, T, fluid_props)
@@ -107,11 +108,11 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         #Put in the right hand side of the mass and energy balance equations
         return (k2 * a - c * k1)/(d*a - b*c)
     
-    def _dP_dt(self, p, T, dTdt):
+    def _dP_dt(self, p, T, dTdt, time):
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
-        ndotin = self.boundary_flux.mass_flow_in / MW
-        ndotout = self.boundary_flux.mass_flow_out / MW 
+        ndotin = self.boundary_flux.mass_flow_in(time) / MW
+        ndotout = self.boundary_flux.mass_flow_out(time) / MW 
         k1 = ndotin - ndotout
         a = self._dn_dp(p, T, fluid_props)
         b = self._dn_dT(p, T, fluid_props)
@@ -131,8 +132,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             p, T = w
-            dTdt = self._dT_dt(p, T)
-            dPdt = self._dP_dt(p, T, dTdt)
+            dTdt = self._dT_dt(p, T, t)
+            dPdt = self._dP_dt(p, T, dTdt, t)
             return np.array([dPdt, dTdt])
         
         def events(t, w, sw):
@@ -212,12 +213,12 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
 class OnePhaseSorbentVenting(OnePhaseSorbentSim):
     sim_type = "Venting"
     
-    def _dT_dt_vent_vary_fillrate(self, T):
+    def _dT_dt_vent_vary_fillrate(self, T, time):
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass()
-        ndotin = self.boundary_flux.mass_flow_in / MW
+        ndotin = self.boundary_flux.mass_flow_in(time) / MW
         p = self.simulation_params.init_pressure
-        if self.boundary_flux.mass_flow_in:
+        if self.boundary_flux.mass_flow_in != 0:
             Pinput = self.boundary_flux.pressure_in(p, T)
             Tinput = self.boundary_flux.temperature_in(p, T)
             ##Get the molar enthalpy of the inlet fluid
@@ -230,13 +231,14 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         b = self._dn_dT(p, T, fluid_props)
         d = self._dU_dT(p, T, fluid_props)
         hf = fluid_props["hf"]
-        return(ndotin*(hin-hf)+self.boundary_flux.heating_power - self.boundary_flux.cooling_power) \
+        return(ndotin*(hin-hf)+self.boundary_flux.heating_power -\
+               self.boundary_flux.cooling_power + self.heat_leak_in(T)) \
             /(d-(hf*b))  
         
-    def _ndotout_vent_vary_fillrate(self, T, dTdt):
+    def _ndotout_vent_vary_fillrate(self, T, dTdt, time):
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass()
-        ndotin = self.boundary_flux.mass_flow_in / MW
+        ndotin = self.boundary_flux.mass_flow_in(time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         p = self.simulation_params.init_pressure
         fluid.update(CP.PT_INPUTS, p, T)
@@ -262,8 +264,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
             T, nvented, cooling = w
             fluid.update(CP.PT_INPUTS, p0, T)
             hf = fluid.hmolar()
-            dTdt =  self._dT_dt_vent_vary_fillrate(T)
-            ndotout = self._ndotout_vent_vary_fillrate(T, dTdt)
+            dTdt =  self._dT_dt_vent_vary_fillrate(T, t)
+            ndotout = self._ndotout_vent_vary_fillrate(T, dTdt, t)
             return np.array([dTdt, ndotout, ndotout * hf])
     
         def events(t, w, sw):
@@ -338,26 +340,27 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
     
 class OnePhaseSorbentCooled(OnePhaseSorbentSim):
     sim_type = "Cooled"
-    def _dT_dt_cooled_const_pres(self, T):
+    def _dT_dt_cooled_const_pres(self, T, time):
         p = self.simulation_params.init_pressure
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        ndotin = self.boundary_flux.mass_flow_in / MW
+        ndotin = self.boundary_flux.mass_flow_in(time) / MW
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         b = self._dn_dT(p, T, fluid_props)
         return ndotin/b
 
-    def _cooling_power_const_pres(self, T, dTdt):
+    def _cooling_power_const_pres(self, T, dTdt, time):
         p = self.simulation_params.init_pressure
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass()
-        ndotin = self.boundary_flux.mass_flow_in / MW
+        ndotin = self.boundary_flux.mass_flow_in(time) / MW
         Pinput = self.boundary_flux.pressure_in(p, T)
         Tinput =self.boundary_flux.temperature_in(p, T)
         fluid.update(CP.PT_INPUTS, Pinput, Tinput)
         hin = fluid.hmolar()
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         d = self._dU_dT(p, T, fluid_props)
-        return - d * dTdt + ndotin * hin + self.boundary_flux.heating_power
+        return - d * dTdt + ndotin * hin + self.heat_leak_in(T)\
+            +self.boundary_flux.heating_power
 
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -373,8 +376,8 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             T, Q = w
-            dTdt =  self._dT_dt_cooled_const_pres(T)
-            cooling = self._cooling_power_const_pres(T, dTdt)
+            dTdt =  self._dT_dt_cooled_const_pres(T, t)
+            cooling = self._cooling_power_const_pres(T, dTdt, t)
             return np.array([dTdt, cooling])
     
         def events(t, w, sw):
@@ -396,7 +399,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             if event_info[1] !=0:
                 print("\n Final refueling temperature achieved, exiting simulation.")
                 raise TerminateSimulation
-    
+        
         w0 = np.array([self.simulation_params.init_temperature, 0])
         switches0 = [True, True]
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
@@ -438,4 +441,43 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
 
+class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
+    def _dT_dt(self, p, T, time):
+        fluid = self.storage_tank.stored_fluid.backend
+        MW = fluid.molar_mass() 
+        ##Convert kg/s to mol/s
+        flux = self.boundary_flux
+        ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
+        ##Get the thermodynamic properties of the bulk fluid for later calculations
+        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
+        ##Get the input pressure at a condition
+        if flux.mass_flow_in:
+            hin = self.boundary_flux.enthalpy_in(time)
+        else:
+            hin = 0    
+        
+        k1 = ndotin - ndotout
+        k2 = ndotin * hin - ndotout * fluid_props["hf"] + \
+            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+                + self.heat_leak_in(T)
+        #print(hin, hgas)
+        a = self._dn_dp(p, T, fluid_props)
+        b = self._dn_dT(p, T, fluid_props)
+        c = self._dU_dp(p, T, fluid_props)
+        d = self._dU_dT(p, T, fluid_props)
+        #Put in the right hand side of the mass and energy balance equations
+        return (k2 * a - c * k1)/(d*a - b*c)
+    
+    def _dP_dt(self, p, T, dTdt, time):
+        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+        ndotin = self.boundary_flux.mass_flow_in(time) / MW
+        ndotout = self.boundary_flux.mass_flow_out(time) / MW 
+        k1 = ndotin - ndotout
+        a = self._dn_dp(p, T, fluid_props)
+        b = self._dn_dT(p, T, fluid_props)
+        return (k1 - b * dTdt)/a
+    
+    
     

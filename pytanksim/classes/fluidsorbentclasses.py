@@ -5,7 +5,7 @@ Created on Fri Jan 27 15:17:45 2023
 @author: nextf
 """
 
-__all__ = ["StoredFluid", "MPTAModel", "SorbentMaterial"]
+__all__ = ["StoredFluid", "MPTAModel", "SorbentMaterial", "MDAModel"]
 
 import pytanksim.mpta as mpta
 import numpy as np
@@ -15,6 +15,7 @@ import pytanksim.utils.tanksimutils as tsu
 from pytanksim.classes.excessisothermclass import ExcessIsotherm
 from copy import deepcopy
 from typing import List
+import scipy as sp
 
 
 class StoredFluid:
@@ -136,6 +137,9 @@ class StoredFluid:
                 return "Liquid"
             elif np.abs(p-psat) < psat * 1E-6:
                 return "Saturated"
+            
+            
+        
 
 class MPTAModel:
     def __init__(self,
@@ -270,7 +274,8 @@ class MPTAModel:
                    lam = paramsdict["lam"],
                    gam = paramsdict["gam"])
     
-    def n_excess(self, p : float, T : float) -> float:
+    def n_excess(self, p : float, T : float,
+                 quality: int = 1) -> float:
         """
         Parameters
         ----------
@@ -278,6 +283,8 @@ class MPTAModel:
             Pressure (Pa).
         T : float
             Temperature (K).
+        quality : int
+            Quality of the fluid to be used at saturation point
 
         Returns
         -------
@@ -287,16 +294,26 @@ class MPTAModel:
         """
         
         fluid = self.stored_fluid.backend
+        pmax = fluid.pmax()
+        phase = self.stored_fluid.determine_phase(p, T)
         if p == 0:
             return 0
-
-        fluid.update(CP.PT_INPUTS, p, T)
+        if p >= pmax:
+            pres = pmax/10
+        else:
+            pres = p
+        
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, quality, T)
+        else:
+            fluid.update(CP.PT_INPUTS, pres, T)
         bulk_density = fluid.rhomolar()
         value = mpta.N_ex(self.eps0, self.beta, self.lam, self.gam, T,
                       bulk_density, fluid)
         return value
     
-    def n_absolute(self, p : float, T : float) -> float:
+    def n_absolute(self, p : float, T : float,
+                   quality: int = 1) -> float:
         """
         
 
@@ -306,6 +323,8 @@ class MPTAModel:
             Pressure (Pa).
         T : float
             Temperature (K).
+        quality : int
+            Quality of the fluid to be used at saturation point
 
         Returns
         -------
@@ -314,11 +333,20 @@ class MPTAModel:
 
         """
         
+        fluid = self.stored_fluid.backend
+        pmax = fluid.pmax()
+        phase = self.stored_fluid.determine_phase(p, T)
         if p == 0:
             return 0
+        if p >= pmax:
+            pres = pmax/10
+        else:
+            pres = p
         
-        fluid = self.stored_fluid.backend
-        fluid.update(CP.PT_INPUTS, p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, quality, T)
+        else:
+            fluid.update(CP.PT_INPUTS, pres, T)
         bulk_density = fluid.rhomolar()
         value = mpta.N_abs(eps0 = self.eps0,
                            beta = self.beta,
@@ -390,9 +418,34 @@ class MPTAModel:
         """
         
         return (1/T) * self.surface_potential(p, T)
+    
+    def enthalpy_adsorbed_phase(self, p, T):
+        return tsu.ads_energy_abs(self.n_absolute, p, T, self.v_ads, self.stored_fluid.backend)
  
     
- 
+class MDAModel(MPTAModel):
+    def __init__(self,
+                  sorbent : str,
+                  stored_fluid : StoredFluid,
+                  nmax : float,
+                  p0 : float,
+                  alpha : float,
+                  beta : float,
+                  va : float):
+         self.sorbent = sorbent
+         self.stored_fluid = stored_fluid
+         self.p0 = p0
+         self.alpha = alpha
+         self.beta = beta
+         self.va = va
+         self.nmax = nmax
+     
+    def n_absolute(self, p, T):
+         return self.nmax * np.exp(-((sp.constants.R * T / (self.alpha + self.beta * T))**2)\
+                                   * ((np.log(self.p0/p))**2))
+    def v_ads(self, p, T):
+        return self.va
+    
 
 class SorbentMaterial:
     def __init__(self,

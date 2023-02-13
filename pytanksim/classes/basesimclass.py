@@ -47,13 +47,15 @@ class SimulationParams:
     
 class BoundaryFlux:
     def __init__(self,
-                 mass_flow_in: float = 0,
-                 mass_flow_out: float  = 0,                 
-                 heating_power: float  = 0,
-                 cooling_power: float  = 0, 
+                 mass_flow_in: float = 0.0,
+                 mass_flow_out: float  = 0.0,                 
+                 heating_power: float  = 0.0,
+                 cooling_power: float  = 0.0, 
                  pressure_in: Callable[[float, float], float] = None,
                  temperature_in: Callable[[float, float], float] = None,
-                 fill_rate: float = None):
+                 fill_rate: float = None,
+                 environment_temp: float = 0,
+                 enthalpy_in: Callable[[float], float] = 0.0):
         """
         
 
@@ -83,11 +85,26 @@ class BoundaryFlux:
                 return floatingvalue
             return float_function
         
+        def float_function_generator_time(floatingvalue):
+            def float_function(time):
+                return floatingvalue
+            return float_function
+        
+        
         if isinstance(pressure_in, float):
             pressure_in = float_function_generator(pressure_in)
         
         if isinstance(temperature_in, float):
             temperature_in = float_function_generator(temperature_in)
+            
+        if isinstance(mass_flow_in, float):
+            mass_flow_in = float_function_generator_time(mass_flow_in)
+        
+        if isinstance(mass_flow_out, float):
+            mass_flow_out = float_function_generator_time(mass_flow_out)
+        if isinstance(enthalpy_in, float):
+            enthalpy_in = float_function_generator_time(enthalpy_in)
+        
         
         self.mass_flow_in = mass_flow_in
         self.mass_flow_out = mass_flow_out
@@ -96,10 +113,11 @@ class BoundaryFlux:
         self.pressure_in = pressure_in
         self.temperature_in = temperature_in
         self.fill_rate = fill_rate
+        self.environment_temp =environment_temp
+        self.enthalpy_in = enthalpy_in
         
         
-        
-        if mass_flow_in and (pressure_in == None and temperature_in == None):
+        if mass_flow_in != 0 and (pressure_in == None and temperature_in == None and enthalpy_in == None):
             raise ValueError("Please specify the pressure and temperature of the flow going in")
         if fill_rate and mass_flow_in and mass_flow_out and \
                 fill_rate != mass_flow_in - mass_flow_out:
@@ -122,6 +140,12 @@ class BaseSimulation:
         if isinstance(self.storage_tank, SorbentTank):
             self.has_sorbent = True
         self.has_sorbent = False
+        
+    def heat_leak_in(self, T):
+        if self.boundary_flux.environment_temp == 0:
+            return 0
+        else:
+            return (self.boundary_flux.environment_temp - T)/self.storage_tank.thermal_resistance
     
     def run(self):
         raise NotImplementedError

@@ -18,7 +18,6 @@ def pardev(func, loc, stepsize):
     loc2 = (loc - stepsize)
     term1 = func(loc1)
     term2 = func(loc2)
-    stepsize = (loc1-loc2)/2
     return (term1 - term2) / (2 * stepsize)
 
 def partial_derivative(func, var=0, point=[], stepsize=1e-3):
