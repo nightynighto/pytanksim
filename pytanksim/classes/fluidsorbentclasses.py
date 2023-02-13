@@ -138,8 +138,6 @@ class StoredFluid:
             elif np.abs(p-psat) < psat * 1E-6:
                 return "Saturated"
             
-            
-        
 
 class MPTAModel:
     def __init__(self,
@@ -445,6 +443,13 @@ class MDAModel(MPTAModel):
                                    * ((np.log(self.p0/p))**2))
     def v_ads(self, p, T):
         return self.va
+    
+    def n_excess(self, p : float, T : float,
+                 quality: int = 1) -> float:
+        fluid = self.stored_fluid.backend
+        fluid.update(CP.PT_INPUTS, p, T)
+        rhomolar = fluid.rhomolar()
+        return self.n_absolute(p,T) - rhomolar * self.v_ads(p, T)
     
 
 class SorbentMaterial:
