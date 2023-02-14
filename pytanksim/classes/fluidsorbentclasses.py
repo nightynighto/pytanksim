@@ -14,6 +14,7 @@ import lmfit
 import pytanksim.utils.tanksimutils as tsu
 from pytanksim.classes.excessisothermclass import ExcessIsotherm
 from copy import deepcopy
+import pytanksim.utils.finitedifferences as fd
 from typing import List
 import scipy as sp
 
@@ -138,8 +139,82 @@ class StoredFluid:
             elif np.abs(p-psat) < psat * 1E-6:
                 return "Saturated"
             
+            
+        
 
-class MPTAModel:
+class ModelIsotherm:
+    def surface_potential(self, p : float, T : float) -> float:
+        """
+        
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+        T : float
+            Temperature (K).
+
+        Returns
+        -------
+        float
+            Adsorption surface potential (J/kg).
+
+        """
+        
+        return tsu.surface_potential_abs(nabs = self.n_absolute,
+                                         p = p, T = T, vads = self.v_ads, fluid=self.stored_fluid.backend)
+    
+    
+    def phi_over_T(self, p : float, T : float) -> float:
+        """
+        
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+        T : float
+            Temperature (K).
+
+        Returns
+        -------
+        float
+            Surface potential divided by temperature (J/ (kg K)).
+
+        """
+        
+        return (1/T) * self.surface_potential(p, T)
+    
+    def enthalpy_adsorbed_phase(self, p, T):
+        return tsu.ads_energy_abs(self.n_absolute, p, T, self.v_ads, self.stored_fluid.backend)
+ 
+    def pressure_from_absolute_adsorption(self, n_abs, T, p_max_guess = 10E6):
+        def optimum_pressure(p):
+            return self.n_absolute(p, T) - n_abs
+        root = sp.optimize.root_scalar( 
+                                f = optimum_pressure, 
+                                bracket=[1E-10,p_max_guess],
+                                # x0 = p_guess,
+                                method="toms748")
+        return root.root
+ 
+    
+    def differential_heat(self, p, T):
+        n_abs = self.n_absolute(p, T)
+        fluid = self.stored_fluid.backend
+        def derivfunction(nabs, T):
+            pres = self.pressure_from_absolute_adsorption(nabs, T, p_max_guess = p * 20)
+            fluid.update(CP.PT_INPUTS, pres, T)
+            return np.log(fluid.fugacity(0))
+        term1 =  sp.constants.R * (T**2) * \
+                fd.partial_derivative(derivfunction, 1, [n_abs, T], T * 1E-5)
+        fluid.update(CP.PT_INPUTS, p, T)
+        term2 = fluid.hmolar_residual()
+        term3 = fluid.hmolar()
+        term4 = fluid.umolar()
+        return term1 + term4 - (term3 - term2)
+
+class MPTAModel(ModelIsotherm):
     def __init__(self,
                  sorbent : str,
                  stored_fluid : StoredFluid,
@@ -375,53 +450,10 @@ class MPTAModel:
         
         return self.lam + self.gam * T
     
-    def surface_potential(self, p : float, T : float) -> float:
-        """
-        
-
-        Parameters
-        ----------
-        p : float
-            Pressure (Pa).
-        T : float
-            Temperature (K).
-
-        Returns
-        -------
-        float
-            Adsorption surface potential (J/kg).
-
-        """
-        
-        return tsu.surface_potential_abs(nabs = self.n_absolute,
-                                         p = p, T = T, vads = self.v_ads, fluid=self.stored_fluid.backend)
     
+                
     
-    def phi_over_T(self, p : float, T : float) -> float:
-        """
-        
-
-        Parameters
-        ----------
-        p : float
-            Pressure (Pa).
-        T : float
-            Temperature (K).
-
-        Returns
-        -------
-        float
-            Surface potential divided by temperature (J/ (kg K)).
-
-        """
-        
-        return (1/T) * self.surface_potential(p, T)
-    
-    def enthalpy_adsorbed_phase(self, p, T):
-        return tsu.ads_energy_abs(self.n_absolute, p, T, self.v_ads, self.stored_fluid.backend)
- 
-    
-class MDAModel(MPTAModel):
+class MDAModel(ModelIsotherm):
     def __init__(self,
                   sorbent : str,
                   stored_fluid : StoredFluid,
@@ -444,12 +476,13 @@ class MDAModel(MPTAModel):
     def v_ads(self, p, T):
         return self.va
     
-    def n_excess(self, p : float, T : float,
-                 quality: int = 1) -> float:
+    def n_excess(self, p, T) :
         fluid = self.stored_fluid.backend
         fluid.update(CP.PT_INPUTS, p, T)
         rhomolar = fluid.rhomolar()
-        return self.n_absolute(p,T) - rhomolar * self.v_ads(p, T)
+        return self.n_absolute(p, T) - rhomolar * self.v_ads(p,T)
+    
+    
     
 
 class SorbentMaterial:
@@ -457,7 +490,7 @@ class SorbentMaterial:
                  mass : float,
                  skeletal_density : float,
                  bulk_density : float,
-                 model_isotherm : MPTAModel = None):
+                 model_isotherm : ModelIsotherm = None):
         """
         
 
@@ -479,5 +512,14 @@ class SorbentMaterial:
         self.skeletal_density = skeletal_density
         self.bulk_density = bulk_density
         self.model_isotherm = model_isotherm
-    
+        
+    def isosteric_heat(self, p, T):
+        dn_dP = fd.partial_derivative(self.model_isotherm.n_absolute, 0,
+                                      [p,T], p*1E-5)
+        Vs = 1/self.skeletal_density
+        fluid = self.model_isotherm.stored_fluid.backend
+        fluid.update(CP.PT_INPUTS, p, T)
+        umolar = fluid.umolar()
+        hmolar = fluid.hmolar()
+        return hmolar + self.model_isotherm.differential_heat(p, T) - umolar - (Vs/dn_dP)
     
