@@ -77,7 +77,8 @@ class StoredFluid:
             }
     
     def saturation_property_dict(self,
-                                 T:float):
+                                 T:float,
+                                 Q: int = 0):
         """
         
 
@@ -95,10 +96,19 @@ class StoredFluid:
         """
         
         backend = self.TankParameters.backend
-        backend.update(CP.QT_INPUTS, 0, T)
+        backend.update(CP.QT_INPUTS, Q, T)
         return {
             "psat" : backend.p(),
-            "dP_dT" : backend.first_saturation_deriv(CP.iP, CP.iT)
+            "dps_dT" : backend.first_saturation_deriv(CP.iP, CP.iT),
+            "hf" : backend.hmolar(),
+            "drho_dp" : backend.first_partial_deriv(CP.iDmolar , CP.iP , CP.iT ),
+            "drho_dT" :  backend.first_partial_deriv(CP.iDmolar , CP.iT , CP.iP ),
+            "rhof" : backend.rhomolar(),
+            "dh_dp" : backend.first_partial_deriv(CP.iHmolar, CP.iP, CP.iT),
+            "dh_dT" : backend.first_partial_deriv(CP.iHmolar, CP.iT, CP.iP),
+            "uf" : backend.umolar(),
+            "du_dp" : backend.first_partial_deriv(CP.iUmolar, CP.iP , CP.iT),
+            "du_dT" : backend.first_partial_deriv(CP.iUmolar, CP.iT , CP.iP)
             }
     
     def determine_phase(self,
