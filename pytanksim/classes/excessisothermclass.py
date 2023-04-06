@@ -50,8 +50,7 @@ class ExcessIsotherm:
         self.loading = loading
         self.pressure = pressure
         
-        if loading and pressure:
-            assert len(loading) == len(pressure)
+        assert len(loading) == len(pressure)
         
     
     @classmethod

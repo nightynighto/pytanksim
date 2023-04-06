@@ -70,7 +70,10 @@ class StoredFluid:
             "drho_dT" :  backend.first_partial_deriv(CP.iDmolar , CP.iT , CP.iP ),
             "rhof" : backend.rhomolar(),
             "dh_dp" : backend.first_partial_deriv(CP.iHmolar, CP.iP, CP.iT),
-            "dh_dT" : backend.first_partial_deriv(CP.iHmolar, CP.iT, CP.iP)
+            "dh_dT" : backend.first_partial_deriv(CP.iHmolar, CP.iT, CP.iP),
+            "uf" : backend.umolar(),
+            "du_dp" : backend.first_partial_deriv(CP.iUmolar, CP.iP , CP.iT),
+            "du_dT" : backend.first_partial_deriv(CP.iUmolar, CP.iT , CP.iP)
             }
     
     def saturation_property_dict(self,
@@ -189,6 +192,8 @@ class ModelIsotherm:
         return tsu.ads_energy_abs(self.n_absolute, p, T, self.v_ads, self.stored_fluid.backend)
  
     def pressure_from_absolute_adsorption(self, n_abs, T, p_max_guess = 10E6):
+        if n_abs == 0:
+            return 0
         def optimum_pressure(p):
             return self.n_absolute(p, T) - n_abs
         root = sp.optimize.root_scalar( 
@@ -197,22 +202,41 @@ class ModelIsotherm:
                                 # x0 = p_guess,
                                 method="toms748")
         return root.root
- 
     
-    def differential_heat(self, p, T):
+    def differential_energy(self, p, T):
+        if p == 0:
+            return 0
         n_abs = self.n_absolute(p, T)
         fluid = self.stored_fluid.backend
         def derivfunction(nabs, T):
             pres = self.pressure_from_absolute_adsorption(nabs, T, p_max_guess = p * 20)
             fluid.update(CP.PT_INPUTS, pres, T)
             return np.log(fluid.fugacity(0))
-        term1 =  sp.constants.R * (T**2) * \
+        term1 = - sp.constants.R * (T**2) * \
                 fd.partial_derivative(derivfunction, 1, [n_abs, T], T * 1E-5)
         fluid.update(CP.PT_INPUTS, p, T)
         term2 = fluid.hmolar_residual()
         term3 = fluid.hmolar()
-        term4 = fluid.umolar()
-        return term1 + term4 - (term3 - term2)
+        return term1 + (term3 - term2)
+ 
+    
+    def differential_heat(self, p, T):
+        if p == 0:
+            return 0
+        fluid = self.stored_fluid.backend
+        fluid.update(CP.PT_INPUTS, p, T)
+        u_molar = fluid.umolar()
+        return u_molar - self.differential_energy(p,T)
+    
+    
+    def internal_energy_adsorbed(self, p, T):
+        n_abs = self.n_absolute(p, T)
+        n_grid = np.linspace(0, n_abs, 30)
+        p_grid = np.array([self.pressure_from_absolute_adsorption(n, T) for n in n_grid ])
+        heat_grid = np.array([self.differential_energy(pres, T) for pres in p_grid])
+        return sp.integrate.simps(heat_grid, n_grid) / n_abs
+
+    
 
 class MPTAModel(ModelIsotherm):
     def __init__(self,
@@ -516,10 +540,10 @@ class SorbentMaterial:
     def isosteric_heat(self, p, T):
         dn_dP = fd.partial_derivative(self.model_isotherm.n_absolute, 0,
                                       [p,T], p*1E-5)
-        Vs = 1/self.skeletal_density
+        Vs = 1/self.skeletal_density + self.model_isotherm.v_ads(p,T)
         fluid = self.model_isotherm.stored_fluid.backend
         fluid.update(CP.PT_INPUTS, p, T)
         umolar = fluid.umolar()
         hmolar = fluid.hmolar()
-        return hmolar + self.model_isotherm.differential_heat(p, T) - umolar - (Vs/dn_dP)
-    
+        return hmolar +  self.model_isotherm.differential_heat(p, T) - umolar - (Vs/dn_dP)
+        

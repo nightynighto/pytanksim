@@ -41,36 +41,34 @@ class OnePhaseSorbentSim(BaseSimulation):
     def _dU_dp(self, p, T, fluid_properties):
         tank = self.storage_tank
         sorbent = self.storage_tank.sorbent_material
-        drho_dp, dh_dp, rhof, hf = map(fluid_properties.get, ("drho_dp", "dh_dp", "rhof", "hf") )
-        term = np.zeros(6)
-        term[0] = -tank.volume + (sorbent.mass/sorbent.skeletal_density)
-        term[1]= drho_dp * hf * tank.bulk_fluid_volume(p, T)
-        term[2] = rhof * dh_dp * tank.bulk_fluid_volume(p, T)
+        drho_dp, du_dp, rhof, uf = map(fluid_properties.get, ("drho_dp", "du_dp", "rhof", "uf") )
+        term = np.zeros(4)
+        
+        term[0] = drho_dp * tank.bulk_fluid_volume(p, T) * uf 
+        term[1] = rhof * tank.bulk_fluid_volume(p, T) * du_dp
+        term[2] = rhof * fd.partial_derivative(tank.bulk_fluid_volume, 0, [p, T], p*1E-5) * uf
         term[3] = sorbent.mass * fd.partial_derivative(sorbent.model_isotherm.n_absolute,
-                                                          0, [p, T], p * 1E-5) * hf
-        term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p,T) * dh_dp
-        term[5] = -sorbent.mass * (T**2) *\
-            fd.mixed_second_derivative(sorbent.model_isotherm.phi_over_T, [0,1],
-                                       [p, T], [p * 1E-5, T * 1E-5])
+                                                          0, [p, T], p * 1E-5) *\
+                sorbent.model_isotherm.differential_energy(p, T) 
         return sum(term)
 
     def _dU_dT(self, p, T, fluid_properties):
-        dh_dT, drho_dT, rhof, hf = map(fluid_properties.get, ("dh_dT", "drho_dT", "rhof", "hf"))
+        du_dT, drho_dT, rhof, uf = map(fluid_properties.get, ("du_dT", "drho_dT", "rhof", "uf"))
         tank = self.storage_tank
         sorbent = self.storage_tank.sorbent_material
-        term = np.zeros(8)
-        term[0] = sorbent.mass * fd.partial_derivative(sorbent.model_isotherm.n_absolute,
-                                                       1, [p, T], T*1E-5) * hf
-        term[1] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * dh_dT
-        term[2] = - sorbent.mass * 2 * T * fd.partial_derivative(sorbent.model_isotherm.phi_over_T,
-                                                                 1, [p, T], T*1E-5)
-        term[3] = - sorbent.mass * (T**2) * fd.second_derivative(sorbent.model_isotherm.phi_over_T,
-                                                                 1, [p,T], T*1E-5)
-        term[4] = drho_dT * hf * tank.bulk_fluid_volume(p, T)
-        term[5] = rhof * dh_dT * tank.bulk_fluid_volume(p, T)
-        term[6] = -rhof * hf * fd.partial_derivative(sorbent.model_isotherm.v_ads, 1,
-                                                     [p,T], T * 1E-5) * sorbent.mass
-        term[7] = tank.heat_capacity(T)
+        term = np.zeros(6)
+        
+        
+        term[0] = drho_dT * tank.bulk_fluid_volume(p, T) * uf 
+        term[1] = rhof * tank.bulk_fluid_volume(p, T) * du_dT
+        term[2] = rhof * fd.partial_derivative(tank.bulk_fluid_volume, 1, [p, T], T*1E-5) * uf
+        term[3] = sorbent.mass * fd.partial_derivative(sorbent.model_isotherm.n_absolute,
+                                                          1, [p, T], T * 1E-5) *\
+             sorbent.model_isotherm.differential_energy(p, T)
+
+        term[4] = fd.partial_derivative(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T], T*1E-5) *\
+            sorbent.mass * sorbent.model_isotherm.n_absolute(p, T)
+        term[5] = tank.heat_capacity(T)
         return sum(term)
 
 
