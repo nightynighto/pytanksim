@@ -76,7 +76,7 @@ class TwoPhaseSorbentSim(BaseSimulation):
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
         return sum(term)
     
-class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
+class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
     sim_type = "Default"
     
     def solve_differentials(self, ng, nl, T, time):
@@ -104,7 +104,6 @@ class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
         ndotout = flux.mass_flow_out(time) / MW
         p = satur_prop_gas["psat"]
         ##Get the thermodynamic properties of the bulk fluid for later calculations
-        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
         if flux.mass_flow_in:
             Pinput = flux.pressure_in(p, T)
@@ -116,7 +115,7 @@ class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
             hin = 0
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * fluid_props["hf"] + \
+        b3 = ndotin * hin - ndotout * satur_prop_gas["hf"] + \
             self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
                 + self.heat_leak_in(T) 
         b = np.array([b1,b2,b3])
@@ -127,8 +126,7 @@ class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
-        fluid.update(CP.QT_INPUTS, 0, Tcrit)
-        pcrit = fluid.p()
+
         
         def rhs(t, w, sw):
             last_t, dt = state
@@ -136,7 +134,9 @@ class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             ng, nl, T = w
-            return self.solve_differentials(ng, nl, T, t)
+            diffresults = self.solve_differentials(ng, nl, T, t)
+            ndotin = self.boundary_flux.mass_flow_in(t) / fluid.molar_mass()
+            return np.append(diffresults, ndotin)
         
         def events(t, w, sw):
             ##Check for boundary events
@@ -167,22 +167,55 @@ class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
                 if solver.sw[1]:
                     print("\n The simulation has hit the minimum supply pressure. \n Switch to heated discharge.")
                     raise TerminateSimulation
+                solver.sw[1] = not solver.sw[1]
                 
-            if state_info[1] != 0 and solver.y[1] <= Tcrit:
-                print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
-                raise TerminateSimulation     
             if state_info[2] != 0:
-                print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
-                raise TerminateSimulation
+                if solver.sw[2]:
+                    print("\n The simulation has hit maximum pressure! Switch to cooling or venting simulation")
+                    raise TerminateSimulation
+                solver.sw[2] = not solver.sw[2]
+                
+            if state_info[3] != 0 or state_info[4] != 0:
+                if solver.sw[3]:
+                    print("Phase change has ended. Switch to one phase simulation.")
+                    raise TerminateSimulation
+                solver.sw[3] = not solver.sw[3]
+                
             
      
-        w0 = np.array([self.simulation_params.init_pressure,
-                       self.simulation_params.init_temperature])
-        switches0 = [True, True, True]
+        w0 = np.array([self.simulation_params.init_ng,
+                       self.simulation_params.init_nl,
+                       self.simulation_params.init_temperature,
+                       self.simulation_params.inserted_amount])
+        
+        if self.simulation_params.init_temperature == Tcrit:
+            sw0 = False
+        else:
+            sw0 = True
+        
+        fluid.update(CP.QT_INPUTS, 0, 1)
+        psat_init = fluid.p()
+        
+        if self.storage_tank.min_supply_pressure == psat_init:
+            sw1 = False
+        else:
+            sw1 = True
+        
+        if self.storage_tank.vent_pressure == psat_init:
+            sw2 = False
+        else:
+            sw2 = True
+        
+        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
+            sw3 = False
+        else:
+            sw3 = True
+            
+        switches0 = [sw0, sw1, sw2, sw3]
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
-        model.name = "1 Phase Dynamics"
+        model.name = "2 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
         sim.atol = np.array([1E-2,  1E-6])
@@ -194,32 +227,66 @@ class TwoPhaseSorbentSimDefault(TwoPhaseSorbentSim):
             pass
         
         print("Saving results...")
+        pres = np.zeros_like(t)
         nads = np.zeros_like(t)
-        n_phase = {"Gas" : np.zeros_like(t),
-                   "Supercritical"  :np.zeros_like(t),
-                   "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
-            nfluid = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(y[i,0], y[i,1])   
-            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
-            iterable = i
-            while phase == "Saturated":
-                    iterable = iterable - 1
-                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
-                    
-            n_phase[phase][i] = nfluid
-            
-            nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(y[i,0], y[i,1]) *\
+            fluid.update(CP.QT_INPUTS, 0, y[i, 2])
+            pres[i] = fluid.p()
+            nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(pres[i], y[i, 2]) *\
                 self.storage_tank.sorbent_material.mass
             
         return SimResults(time = t, 
                           pressure = y[:,0],
-                          temperature = y[:,1],
+                          temperature = y[:,2],
                           moles_adsorbed = nads,
-                          moles_gas = n_phase["Gas"], 
-                          moles_liquid = n_phase["Liquid"],
-                          moles_supercritical= n_phase["Supercritical"],
+                          moles_gas = y[:, 0], 
+                          moles_liquid = y[:, 1],
+                          moles_supercritical= 0,
+                          inserted_amount = y[:, 3],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
-        
+    
+class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
+    sim_type = "Cooled"
+    
+    def _dn_dt(self, time):
+        T = self.simulation_params.init_temperature
+        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)    
+        m11 = 1
+        m12 = 1
+        m21 = self._dv_dn(satur_prop_gas)
+        m22 = self._dv_dn(satur_prop_liquid)
+        fluid = self.storage_tank.stored_fluid.backend
+        MW = fluid.molar_mass() 
+        ##Convert kg/s to mol/s
+        flux = self.boundary_flux
+        ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
+        b1 = ndotin - ndotout
+        b2 = 0
+        A = np.array([[m11, m12],
+                     [m21, m22]])
+        b = np.array([b1, b2])
+        return np.linalg.solve(A, b)
+    
+    def _cooling_power(self, time, dng_dt, dnl_dt):
+        T = self.simulation_params.init_temperature
+        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
+        m31 = self._du_dn(satur_prop_gas)
+        m32 = self._du_dn(satur_prop_liquid)
+        fluid = self.storage_tank.stored_fluid.backend
+        MW = fluid.molar_mass()
+        ndotin = self.boundary_flux.mass_flow_in(time)  / MW
+        ndotout = self.boundary_flux.mass_flow_out(time) / MW
+        Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
+        Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
+        ##Get the molar enthalpy of the inlet fluid
+        fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+        hin = fluid.hmolar()
+        return - dng_dt * m31 - dnl_dt * m32 + ndotin * hin - ndotout * satur_prop_gas["hf"] + \
+            self.boundary_flux.heating_power  + self.heat_leak_in(T) 
+    
+    

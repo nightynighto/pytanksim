@@ -22,10 +22,10 @@ class SimResults:
                  moles_supercritical,
                  tank_params,
                  sim_type,
+                 inserted_amount,
                  cooling_required = 0,
                  heating_required = 0,
-                 vented_amount = 0,
-                 inserted_amount = 0, 
+                 vented_amount = 0, 
                  vented_energy = 0,):
         
        
@@ -55,6 +55,7 @@ class SimResults:
             "moles_gas" : moles_gas,
             "moles_supercritical" : moles_supercritical,
             "cooling_required" : cooling_required,
+            "heating_required" : heating_required,
             "vented_amount" : vented_amount,
             "vented_energy" : vented_energy,
             "inserted_amount" : inserted_amount
@@ -69,10 +70,10 @@ class SimResults:
         self.results_df = pd.DataFrame.from_dict(self.results_dict)
         
     
-    def get_final_conditions(self):
+    def get_final_conditions(self, idx = -1):
         final_dict = {}
         for key, value in self.results_dict.items():
-            final_dict[key] = value[-1]
+            final_dict[key] = value[idx]
         
         
     def to_csv(self, filename):

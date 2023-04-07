@@ -20,12 +20,15 @@ from typing import Callable
 class SimulationParams:
     """Class for storing parameters for the tank simulation"""
     
-    init_pressure : float  # in Pa
     init_temperature : float # in K
     final_time: float # in seconds
     init_time : float = 0 # in seconds
     displayed_points : float = 200
     target_temp: float = 0
+    init_pressure : float = 1E5  # in Pa
+    init_ng : float = 0
+    init_nl : float = 0
+    inserted_amount : float = 0
     
     @classmethod
     def from_SimResults(cls,
@@ -34,10 +37,22 @@ class SimulationParams:
                         displayed_points : float = 200,
                         target_temp :  float = None):
         final_conditions = sim_results.get_final_conditions()
+        
+        if final_conditions["moles_gas"] == final_conditions["moles_liquid"] == 0:
+            fluid = sim_results.tank_params.stored_fluid.backend
+            Tcrit = fluid.T_critical()
+            final_minus_one = sim_results.get_final_conditions(-2)
+            if final_minus_one["temperature"] > Tcrit:
+                final_conditions["moles_gas"] = final_conditions["moles_supercritical"]
+            else:
+                final_conditions["moles_liquid"] = final_conditions["moles_supercritical"]
         return cls(
                 init_pressure = final_conditions["pressure"],
                    init_temperature = final_conditions["temperature"],
                    init_time = final_conditions["time"],
+                   init_ng = final_conditions["moles_gas"],
+                   init_nl = final_conditions["moles_liquid"],
+                   inserted_amount = final_conditions["inserted_amount"],
                    final_time = final_time,
                    target_temp = target_temp,
                    displayed_points = displayed_points
@@ -102,6 +117,7 @@ class BoundaryFlux:
         
         if isinstance(mass_flow_out, float):
             mass_flow_out = float_function_generator_time(mass_flow_out)
+        
         if isinstance(enthalpy_in, float):
             enthalpy_in = float_function_generator_time(enthalpy_in)
         
