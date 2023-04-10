@@ -73,7 +73,11 @@ class SimResults:
     def get_final_conditions(self, idx = -1):
         final_dict = {}
         for key, value in self.results_dict.items():
-            final_dict[key] = value[idx]
+            if isinstance(value, (str, list, tuple, np.ndarray)):
+                final_dict[key] = value[idx]
+            else:
+                final_dict[key] = value
+        return final_dict
         
         
     def to_csv(self, filename):
