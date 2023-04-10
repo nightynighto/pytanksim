@@ -83,7 +83,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
-        if flux.mass_flow_in:
+        if flux.mass_flow_in(time) != 0:
             Pinput = flux.pressure_in(p, T)
             Tinput = flux.temperature_in(p,T)
             ##Get the molar enthalpy of the inlet fluid
@@ -516,7 +516,7 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
-        if flux.mass_flow_in:
+        if flux.mass_flow_in(time) != 0:
             hin = self.boundary_flux.enthalpy_in(time)
         else:
             hin = 0    
