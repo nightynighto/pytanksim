@@ -28,7 +28,11 @@ class SimulationParams:
     init_pressure : float = 1E5  # in Pa
     init_ng : float = 0
     init_nl : float = 0
-    inserted_amount : float = 0
+    inserted_amount : float = 0,
+    vented_amount : float = 0,
+    cooling_required : float = 0,
+    heating_required : float = 0
+    vented_energy : float = 0
     
     @classmethod
     def from_SimResults(cls,
@@ -53,6 +57,10 @@ class SimulationParams:
                    init_ng = final_conditions["moles_gas"],
                    init_nl = final_conditions["moles_liquid"],
                    inserted_amount = final_conditions["inserted_amount"],
+                   vented_amount = final_conditions["vented_amount"],
+                   cooling_required = final_conditions["cooling_required"],
+                   heating_required = final_conditions["heating_required"],
+                   vented_energy = final_conditions["vented_energy"],
                    final_time = final_time,
                    target_temp = target_temp,
                    displayed_points = displayed_points

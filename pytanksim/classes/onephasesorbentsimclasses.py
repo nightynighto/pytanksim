@@ -6,7 +6,7 @@ Created on Fri Jan 13 15:11:33 2023
 """
 
 __all__ = ["OnePhaseSorbentSim", "OnePhaseSorbentDefault", "OnePhaseSorbentVenting",
-           "OnePhaseSorbentCooled", "OnePhaseSorbentControlledInlet"]
+           "OnePhaseSorbentCooled", "OnePhaseSorbentControlledInlet", "OnePhaseSorbentHeatedDischarge"]
 
 import CoolProp as CP
 import numpy as np
@@ -165,6 +165,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                     raise TerminateSimulation
                 solver.sw[2] = not solver.sw[2]
             
+            
      
         w0 = np.array([self.simulation_params.init_pressure,
                        self.simulation_params.init_temperature,
@@ -235,6 +236,10 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical = n_phase["Supercritical"],
                           inserted_amount = y[:, 2],
+                          cooling_required = self.simulation_params.cooling_required,
+                          heating_required = self.simulation_params.heating_required,
+                          vented_amount = self.simulation_params.vented_amount,
+                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -319,7 +324,10 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                 print("\n Final refueling condition achieved, exiting simulation.")
                 raise TerminateSimulation
     
-        w0 = np.array([self.simulation_params.init_temperature, 0, 0, self.simulation_params.inserted_amount])
+        w0 = np.array([self.simulation_params.init_temperature,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.inserted_amount])
         
         if self.simulation_params.init_temperature <= Tcrit:
             fluid.update(CP.QT_INPUTS, 0, self.simulation_params.init_temperature)
@@ -369,7 +377,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
             
         
         return SimResults(time = t, 
-                          pressure = np.repeat(p0, len(t)),
+                          pressure = p0,
                           temperature = y[:,0],
                           moles_adsorbed = nads,
                           moles_gas = n_phase["Gas"], 
@@ -378,6 +386,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                           vented_amount = y[:, 1],
                           vented_energy = y[:, 2],
                           inserted_amount = y[:, 3],
+                          cooling_required = self.simulation_params.cooling_required,
+                          heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -500,8 +510,11 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                           moles_gas = n_phase["Gas"], 
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical= n_phase["Supercritical"],
-                          cooling_energy = y[:,1],
+                          cooling_required  = y[:,1],
                           inserted_amount = y[:,2],
+                          heating_required = self.simulation_params.heating_required,
+                          vented_amount = self.simulation_params.vented_amount,
+                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
 
@@ -663,6 +676,9 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
                           moles_supercritical= n_phase["Supercritical"],
                           heating_required = y[:,1],
                           inserted_amount = y[:,2],
+                          cooling_required = self.simulation_params.cooling_required,
+                          vented_amount = self.simulation_params.vented_amount,
+                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     

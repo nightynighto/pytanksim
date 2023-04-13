@@ -5,6 +5,9 @@ Created on Thu Apr  6 15:00:50 2023
 @author: nextf
 """
 
+__all__ = ["TwoPhaseSorbentSim", "TwoPhaseSorbentDefault", "TwoPhaseSorbentVenting",
+           "TwoPhaseSorbentCooled", "TwoPhaseSorbentControlledInlet", "TwoPhaseSorbentHeatedDischarge"]
+
 import CoolProp as CP
 import numpy as np
 import pytanksim.utils.finitedifferences as fd
@@ -150,8 +153,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             max_pres_event = self.storage_tank.vent_pressure - p
             
             ##Finally check that either phase has not fully saturated
-            sat_liquid_event = w[0] / (w[0] + w[1])  
-            sat_gas_event = w[0] / (w[0] + w[1])
+            sat_liquid_event = w[0] 
+            sat_gas_event = w[1]
             return np.array([crit, min_pres_event, max_pres_event,
                              sat_gas_event, sat_liquid_event])
                         
@@ -244,6 +247,10 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                           moles_liquid = y[:, 1],
                           moles_supercritical= 0,
                           inserted_amount = y[:, 3],
+                          cooling_required = self.simulation_params.cooling_required,
+                          heating_required = self.simulation_params.heating_required,
+                          vented_amount = self.simulation_params.vented_amount,
+                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -307,8 +314,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         
         def events(t, w, sw):
             #check that either phase has not fully saturated
-            sat_liquid_event = w[0] / (w[0] + w[1])  
-            sat_gas_event = w[0] / (w[0] + w[1])
+            sat_liquid_event = w[0]  
+            sat_gas_event = w[1]
             return np.array([sat_gas_event, sat_liquid_event])
                         
         def handle_event(solver, event_info):
@@ -323,7 +330,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
 
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
-                       0,
+                       self.simulation_params.cooling_required,
                        self.simulation_params.inserted_amount]) 
         
         if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
@@ -361,6 +368,9 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
                           moles_supercritical= 0,
                           cooling_required = y[:, 2],
                           inserted_amount = y[:, 3],
+                          heating_required = self.simulation_params.heating_required,
+                          vented_amount = self.simulation_params.vented_amount,
+                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -412,7 +422,9 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         b = np.array([b1,b2,b3])
         
         soln = np.linalg.solve(A, b)
-        return np.append(soln, ndotin)
+        
+        soln_w_ndotin = np.append(soln, ndotin)
+        return np.append(soln_w_ndotin, soln[-1] * satur_prop_gas["hf"])
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -429,8 +441,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         
         def events(t, w, sw):
             #check that either phase has not fully saturated
-            sat_liquid_event = w[0] / (w[0] + w[1])  
-            sat_gas_event = w[0] / (w[0] + w[1])
+            sat_liquid_event = w[0] 
+            sat_gas_event = w[1]
             return np.array([sat_gas_event, sat_liquid_event])
                         
         def handle_event(solver, event_info):
@@ -445,8 +457,9 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
      
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
-                       0,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.vented_energy])
         
         
         if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
@@ -485,11 +498,14 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                           moles_supercritical = 0,
                           vented_amount = y[:,2],
                           inserted_amount = y[:, 3],
+                          cooling_required = self.simulation_params.cooling_required,
+                          heating_required = self.simulation_params.heating_required,
+                          vented_energy = y[:, 4],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
 class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
-    sim_type = "Cooled"
+    sim_type = "Heated"
     
     def _dn_dt(self, time):
         T = self.simulation_params.init_temperature
@@ -548,8 +564,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         
         def events(t, w, sw):
             #check that either phase has not fully saturated
-            sat_liquid_event = w[0] / (w[0] + w[1])  
-            sat_gas_event = w[0] / (w[0] + w[1])
+            sat_liquid_event = w[0] 
+            sat_gas_event = w[1]
             return np.array([sat_gas_event, sat_liquid_event])
                         
         def handle_event(solver, event_info):
@@ -564,7 +580,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
 
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
-                       0,
+                       self.simulation_params.heating_required,
                        self.simulation_params.inserted_amount]) 
         
         if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
@@ -602,6 +618,9 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
                           moles_supercritical= 0,
                           heating_required = y[:, 2],
                           inserted_amount = y[:, 3],
+                          cooling_required = self.simulation_params.cooling_required,
+                          vented_amount = self.simulation_params.vented_amount,
+                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
 
@@ -641,6 +660,7 @@ class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
                 + self.heat_leak_in(T) 
         b = np.array([b1,b2,b3])
         return np.linalg.solve(A, b)
+    
     
     
     
