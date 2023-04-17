@@ -12,6 +12,10 @@ from pytanksim.classes.basesimclass import BoundaryFlux, SimulationParams
 from pytanksim.classes.fluidsorbentclasses import StoredFluid, MPTAModel, SorbentMaterial
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.onephasesorbentsimclasses import *
+from pytanksim.classes.twophasesorbentsimclasses import *
+from pytanksim.classes.onephasefluidsimclasses import *
+from pytanksim.classes.twophasefluidsimclasses import *
+
 from typing import Union
 
 
@@ -23,7 +27,23 @@ sim_class_dict = {
     "One Phase Sorbent Default" : OnePhaseSorbentDefault,
     "One Phase Sorbent Venting" : OnePhaseSorbentVenting,
     "One Phase Sorbent Cooled" : OnePhaseSorbentCooled,
-    "One Phase Sorbent Controlled Inlet": OnePhaseSorbentControlledInlet
+    "One Phase Sorbent Controlled Inlet": OnePhaseSorbentControlledInlet,
+    "One Phase Sorbent Heated Discharge": OnePhaseSorbentHeatedDischarge,
+    "Two Phase Sorbent Default" : TwoPhaseSorbentDefault,
+    "Two Phase Sorbent Venting" : TwoPhaseSorbentVenting,
+    "Two Phase Sorbent Cooled" : TwoPhaseSorbentCooled,
+    "Two Phase Sorbent Controlled Inlet": TwoPhaseSorbentControlledInlet,
+    "Two Phase Sorbent Heated Discharge": TwoPhaseSorbentHeatedDischarge,
+    "One Phase Fluid Default" : OnePhaseFluidDefault,
+    "One Phase Fluid Venting" : OnePhaseFluidVenting,
+    "One Phase Fluid Cooled" : OnePhaseFluidCooled,
+    "One Phase Fluid Controlled Inlet": OnePhaseFluidControlledInlet,
+    "One Phase Fluid Heated Discharge": OnePhaseFluidHeatedDischarge,
+    "Two Phase Fluid Default" : TwoPhaseFluidDefault,
+    "Two Phase Fluid Venting" : TwoPhaseFluidVenting,
+    "Two Phase Fluid Cooled" : TwoPhaseFluidCooled,
+    "Two Phase Fluid Controlled Inlet": TwoPhaseFluidControlledInlet,
+    "Two Phase Fluid Heated Discharge": TwoPhaseFluidHeatedDischarge
     }
 
 def generate_simulation(

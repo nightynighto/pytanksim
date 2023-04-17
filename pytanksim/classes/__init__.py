@@ -12,6 +12,9 @@ from .storagetankclasses import *
 from .simresultsclass import *
 from .basesimclass import *
 from .onephasesorbentsimclasses import *
+from .twophasesorbentsimclasses import *
+from .onephasefluidsimclasses import *
+from .twophasefluidsimclasses import *
 
 
 
