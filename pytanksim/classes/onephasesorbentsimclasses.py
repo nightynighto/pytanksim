@@ -94,7 +94,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         
         k1 = ndotin - ndotout
         k2 = ndotin * hin - ndotout * fluid_props["hf"] + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
         #print(hin, hgas)
         a = self._dn_dp(p, T, fluid_props)
@@ -127,11 +127,30 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            p, T, inserted = w
+            p, T, inserted, ene_in, cooling, heating, leak_in, vented, vent_ene = w
             dTdt = self._dT_dt(p, T, t)
             dPdt = self._dP_dt(p, T, dTdt, t)
-            MW = self.storage_tank.stored_fluid.backend.molar_mass()
-            return np.array([dPdt, dTdt, self.boundary_flux.mass_flow_in(t) / MW])
+            fluid = self.storage_tank.stored_fluid.backend
+            MW = fluid.molar_mass() 
+            ##Convert kg/s to mol/s
+            flux = self.boundary_flux
+            ndotin = flux.mass_flow_in(t)  / MW
+            ndotout = flux.mass_flow_out(t) / MW
+            ##Get the thermodynamic properties of the bulk fluid for later calculations
+            fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
+            ##Get the input pressure at a condition
+            if flux.mass_flow_in(t) != 0:
+                Pinput = flux.pressure_in(p, T)
+                Tinput = flux.temperature_in(p,T)
+                ##Get the molar enthalpy of the inlet fluid
+                fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+                hin = fluid.hmolar()
+            else:
+                hin = 0
+            return np.array([dPdt, dTdt, ndotin, ndotin * hin,
+                             self.boundary_flux.cooling_power(t),
+                             self.boundary_flux.heating_power(t), self.heat_leak_in(T),
+                             ndotout, ndotout * fluid_props["hf"]])
         
         def events(t, w, sw):
             ##Check saturation status
@@ -144,8 +163,13 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                     satstatus = w[0] - satpres
                 else:
                     satstatus = 0
-            return np.array([self.storage_tank.vent_pressure - w[0], satstatus,
-                             w[0] - self.storage_tank.min_supply_pressure])
+            
+            
+            return np.array([self.storage_tank.vent_pressure - w[0], 
+                             satstatus,
+                             w[0] - self.storage_tank.min_supply_pressure,
+                             w[1] - self.simulation_params.target_temp,
+                             w[0] - self.simulation_params.target_pres])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -154,22 +178,36 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                     print("\n The simulation has hit maximum pressure! Switch to venting or cooling simulation")
                     raise TerminateSimulation
                 solver.sw[0] = not solver.sw[0]
+                
             if state_info[1] != 0 and solver.y[1] <= Tcrit:
                 if solver.sw[1]:
                     print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
                     raise TerminateSimulation
                 solver.sw[1] = not solver.sw[1]
+                
             if state_info[2] != 0:
                 if solver.sw[2]:
                     print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
                     raise TerminateSimulation
                 solver.sw[2] = not solver.sw[2]
             
+            if state_info[3] != 0 and state_info[4] != 0:
+                print("\n The simulation target condition has been reached.")
+                raise TerminateSimulation
+        
+            
             
      
         w0 = np.array([self.simulation_params.init_pressure,
                        self.simulation_params.init_temperature,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy
+                       ])
         
         
         ##Initialize switches for event handling
@@ -177,6 +215,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             sw0 = False
         else:
             sw0 = True
+    
         if self.simulation_params.init_temperature <= Tcrit:
             fluid.update(CP.QT_INPUTS, 0, self.init_temperature)
             psat_init =  fluid.p()
@@ -200,8 +239,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6, 1E-6])
-        sim.rtol = 1E-6
+        sim.rtol = 1E-5
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -236,10 +274,14 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical = n_phase["Supercritical"],
                           inserted_amount = y[:, 2],
+                          flow_energy_in = y[:,3],
                           cooling_required = self.simulation_params.cooling_required,
+                          cooling_additional = y[:, 4],
                           heating_required = self.simulation_params.heating_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
+                          heating_additional = y[:, 5],
+                          heat_leak_in = y[:, 6],
+                          vented_amount = y[:, 7],
+                          vented_energy = y[:, 8],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -264,8 +306,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         b = self._dn_dT(p, T, fluid_props)
         d = self._dU_dT(p, T, fluid_props)
         hf = fluid_props["hf"]
-        return(ndotin*(hin-hf)+self.boundary_flux.heating_power -\
-               self.boundary_flux.cooling_power + self.heat_leak_in(T)) \
+        return(ndotin*(hin-hf)+self.boundary_flux.heating_power(time) -\
+               self.boundary_flux.cooling_power(time) + self.heat_leak_in(T)) \
             /(d-(hf*b))  
         
     def _ndotout_vent_vary_fillrate(self, T, dTdt, time):
@@ -294,13 +336,27 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T, nvented, cooling, inserted = w
+            T, vented, vented_ene, inserted, inserted_ene, cooling, heating, heat_leak = w
             fluid.update(CP.PT_INPUTS, p0, T)
             hf = fluid.hmolar()
             dTdt =  self._dT_dt_vent_vary_fillrate(T, t)
             ndotout = self._ndotout_vent_vary_fillrate(T, dTdt, t)
             MW = self.storage_tank.stored_fluid.backend.molar_mass()
-            return np.array([dTdt, ndotout, ndotout * hf, self.boundary_flux.mass_flow_in(t)/MW])
+            ndotin = self.boundary_flux.mass_flow_in(t) / MW
+            p = self.simulation_params.init_pressure
+            if self.boundary_flux.mass_flow_in != 0:
+                Pinput = self.boundary_flux.pressure_in(p, T)
+                Tinput = self.boundary_flux.temperature_in(p, T)
+                ##Get the molar enthalpy of the inlet fluid
+                fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+                hin = fluid.hmolar()
+            else:
+                hin = 0
+            return np.array([dTdt, ndotout, ndotout * hf,
+                             ndotin, ndotin * hin, 
+                             self.boundary_flux.cooling_power(t),
+                             self.boundary_flux.heating_power(t),
+                             self.boundary_flux.heat_leak_in(T)])
     
         def events(t, w, sw):
             if w[0] >= Tcrit:
@@ -320,14 +376,18 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                     print("\n Saturation condition reached, switch to two-phase solver!")
                     raise TerminateSimulation
                 solver.sw[0] = not solver.sw[0]
-            if event_info[1] !=0:
+            if event_info[1] !=0 and p0 == self.simulation_params.target_pres:
                 print("\n Final refueling condition achieved, exiting simulation.")
                 raise TerminateSimulation
     
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.vented_amount,
                        self.simulation_params.vented_energy,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         if self.simulation_params.init_temperature <= Tcrit:
             fluid.update(CP.QT_INPUTS, 0, self.simulation_params.init_temperature)
@@ -347,7 +407,6 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         model.name = "1 Phase Venting Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-6,  1E-6, 1E-2, 1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
@@ -386,6 +445,10 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                           vented_amount = y[:, 1],
                           vented_energy = y[:, 2],
                           inserted_amount = y[:, 3],
+                          flow_energy_in = y[:,4],
+                          cooling_additional = y[:, 5],
+                          heating_additional = y[:, 6],
+                          heat_leak_in = y[:,7],
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
@@ -416,7 +479,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         hout = fluid_props["hf"]
         d = self._dU_dT(p, T, fluid_props)
         return - d * dTdt + ndotin * hin - ndotout * hout + self.heat_leak_in(T)\
-            +self.boundary_flux.heating_power
+            +self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)
 
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -431,11 +494,25 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T, Q, inserted = w
+            T = w[0]
             dTdt =  self._dT_dt_cooled_const_pres(T, t)
             cooling = self._cooling_power_const_pres(T, dTdt, t)
             MW = self.storage_tank.stored_fluid.backend.molar_mass()
-            return np.array([dTdt, cooling, self.boundary_flux.mass_flow_in(t)/MW])
+            Pinput = self.boundary_flux.pressure_in(p, T)
+            Tinput =self.boundary_flux.temperature_in(p, T)
+            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+            hin = fluid.hmolar()
+            fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+            ndotin =  self.boundary_flux.mass_flow_in(t)/MW
+            ndotout = self.boundary_flux.mass_flow_out(t)/MW
+            return np.array([dTdt, cooling, 
+                             ndotin, ndotin * hin,
+                             ndotout,
+                             ndotout * fluid_props["hf"],
+                             self.boundary_flux.cooling_power(t),
+                             self.boundary_flux.heating_power(t),
+                             self.heat_leak_in(T),
+                            ])
     
         def events(t, w, sw):
             if w[0] >= Tcrit:
@@ -455,11 +532,19 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                     print("\n Saturation condition reached, switch to two-phase solver!")
                     raise TerminateSimulation
                 solver.sw[0] = not solver.sw[0]
-            if event_info[1] !=0:
+            if event_info[1] !=0 and p == self.simulation_params.target_pres:
                 print("\n Final refueling temperature achieved, exiting simulation.")
                 raise TerminateSimulation
         
-        w0 = np.array([self.simulation_params.init_temperature, 0, self.simulation_params.inserted_amount])
+        w0 = np.array([self.simulation_params.init_temperature,
+                       self.simulation_params.cooling_required,
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         if self.simulation_params.init_temperature <= Tcrit:
             fluid.update(CP.QT_INPUTS, 0, self.simulation_params.init_temperature)
@@ -478,7 +563,6 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         model.name = "1 Phase dynamics of constant P refuel w/ Cooling"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-6,  1E-2, 1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
@@ -512,13 +596,18 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                           moles_supercritical= n_phase["Supercritical"],
                           cooling_required  = y[:,1],
                           inserted_amount = y[:,2],
+                          flow_energy_in = y[:,3],
+                          vented_amount = y[:,4],
+                          vented_energy = y[:,5],
+                          cooling_additional = y[:,6],
+                          heating_additional = y[:,7],
+                          heat_leak_in = y[:,8],
                           heating_required = self.simulation_params.heating_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
 
-class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
+class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
+    sim_type = "Controlled Inlet"
     def _dT_dt(self, p, T, time):
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass() 
@@ -532,11 +621,16 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
         if flux.mass_flow_in(time) != 0:
             hin = self.boundary_flux.enthalpy_in(time)
         else:
-            hin = 0    
+            hin = 0
+        
+        if flux.mass_flow_out(time) != 0:
+            hout = self.boundary_flux.enthalpy_out(time)
+        else:
+            hout = 0
         
         k1 = ndotin - ndotout
-        k2 = ndotin * hin - ndotout * fluid_props["hf"] + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+        k2 = ndotin * hin - ndotout * hout + \
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
         #print(hin, hgas)
         a = self._dn_dp(p, T, fluid_props)
@@ -555,6 +649,176 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
         a = self._dn_dp(p, T, fluid_props)
         b = self._dn_dT(p, T, fluid_props)
         return (k1 - b * dTdt)/a
+    
+    def run(self):
+        pbar = tqdm(total=1000, unit = "‰")
+        state = [0, self.simulation_params.final_time/1000]
+        fluid = self.storage_tank.stored_fluid.backend
+        Tcrit = fluid.T_critical()
+        fluid.update(CP.QT_INPUTS, 0, Tcrit)
+        pcrit = fluid.p()
+        
+        def rhs(t, w, sw):
+            last_t, dt = state
+            n = int((t - last_t)/dt)
+            pbar.update(n)
+            state[0] = last_t + dt * n
+            p, T, inserted, ene_in, cooling, heating, leak_in, vented, vent_ene = w
+            dTdt = self._dT_dt(p, T, t)
+            dPdt = self._dP_dt(p, T, dTdt, t)
+            fluid = self.storage_tank.stored_fluid.backend
+            MW = fluid.molar_mass() 
+            ##Convert kg/s to mol/s
+            flux = self.boundary_flux
+            ndotin = flux.mass_flow_in(t)  / MW
+            ndotout = flux.mass_flow_out(t) / MW
+            ##Get the input pressure at a condition
+            if flux.mass_flow_in(t) != 0:
+                hin = self.boundary_flux.enthalpy_in(t)
+            else:
+                hin = 0
+           
+            if flux.mass_flow_out(t) != 0:
+                hout = self.boundary_flux.enthalpy_out(t)
+            else:
+                hout = 0
+            return np.array([dPdt, dTdt, ndotin, ndotin * hin,
+                             self.boundary_flux.cooling_power(t),
+                             self.boundary_flux.heating_power(t), self.heat_leak_in(T),
+                             ndotout, ndotout * hout])
+        
+        def events(t, w, sw):
+            ##Check saturation status
+            if w[1] >= Tcrit:
+                satstatus = w[0] - pcrit
+            else:
+                fluid.update(CP.QT_INPUTS, 0, w[1])
+                satpres = fluid.p()
+                if np.abs(w[0]-satpres) > (1E-6 * satpres):
+                    satstatus = w[0] - satpres
+                else:
+                    satstatus = 0
+            
+            
+            return np.array([self.storage_tank.vent_pressure - w[0], 
+                             satstatus,
+                             w[0] - self.storage_tank.min_supply_pressure,
+                             w[1] - self.simulation_params.target_temp,
+                             w[0] - self.simulation_params.target_pres])
+                        
+        def handle_event(solver, event_info):
+            state_info = event_info[0]
+            if state_info[0] != 0:
+                if solver.sw[0]:
+                    print("\n The simulation has hit maximum pressure! Switch to venting or cooling simulation")
+                    raise TerminateSimulation
+                solver.sw[0] = not solver.sw[0]
+                
+            if state_info[1] != 0 and solver.y[1] <= Tcrit:
+                if solver.sw[1]:
+                    print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
+                    raise TerminateSimulation
+                solver.sw[1] = not solver.sw[1]
+                
+            if state_info[2] != 0:
+                if solver.sw[2]:
+                    print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
+                    raise TerminateSimulation
+                solver.sw[2] = not solver.sw[2]
+            
+            if state_info[3] != 0 and state_info[4] != 0:
+                print("\n The simulation target condition has been reached.")
+                raise TerminateSimulation
+        
+            
+            
+     
+        w0 = np.array([self.simulation_params.init_pressure,
+                       self.simulation_params.init_temperature,
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy
+                       ])
+        
+        
+        ##Initialize switches for event handling
+        if self.simulation_params.init_pressure == self.storage_tank.vent_pressure:
+            sw0 = False
+        else:
+            sw0 = True
+    
+        if self.simulation_params.init_temperature <= Tcrit:
+            fluid.update(CP.QT_INPUTS, 0, self.init_temperature)
+            psat_init =  fluid.p()
+            if self.simulation_params.init_pressure == psat_init:
+                sw1 = False
+            else:
+                sw1 = True
+        else:
+            sw1 = True
+            
+        if self.simulation_params.init_pressure == self.storage_tank.min_supply_pressure:
+            sw2 = False
+        else:
+            sw2 = True
+        
+        
+        switches0 = [sw0, sw1, sw2]
+        model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
+        model.state_events = events
+        model.handle_event = handle_event
+        model.name = "1 Phase Dynamics"
+        sim = CVode(model)
+        sim.discr = "BDF"
+        sim.rtol = 1E-5
+        t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
+        print("Saving results...")
+        nads = np.zeros_like(t)
+        n_phase = {"Gas" : np.zeros_like(t),
+                   "Supercritical"  :np.zeros_like(t),
+                   "Liquid" : np.zeros_like(t)}
+        
+        for i in range(0, len(t)):
+            fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
+            nfluid = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(y[i,0], y[i,1])   
+            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
+            iterable = i
+            while phase == "Saturated":
+                    iterable = iterable - 1
+                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
+                    
+            n_phase[phase][i] = nfluid
+            
+            nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(y[i,0], y[i,1]) *\
+                self.storage_tank.sorbent_material.mass
+            
+        return SimResults(time = t, 
+                          pressure = y[:,0],
+                          temperature = y[:,1],
+                          moles_adsorbed = nads,
+                          moles_gas = n_phase["Gas"], 
+                          moles_liquid = n_phase["Liquid"],
+                          moles_supercritical = n_phase["Supercritical"],
+                          inserted_amount = y[:, 2],
+                          flow_energy_in = y[:,3],
+                          cooling_required = self.simulation_params.cooling_required,
+                          cooling_additional = y[:, 4],
+                          heating_required = self.simulation_params.heating_required,
+                          heating_additional = y[:, 5],
+                          heat_leak_in = y[:, 6],
+                          vented_amount = y[:, 7],
+                          vented_energy = y[:, 8],
+                          sim_type= self.sim_type,
+                          tank_params = self.storage_tank)
     
 class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
     sim_type = "Heated"
@@ -581,7 +845,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         hout = fluid_props["hf"]
         d = self._dU_dT(p, T, fluid_props)
         return d * dTdt + ndotout * hout - ndotin * hin - self.heat_leak_in(T)\
-             + self.boundary_flux.cooling_power
+             + self.boundary_flux.cooling_power(time) - self.boundary_flux.heating_power(time)
 
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -595,11 +859,24 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T, Q, inserted = w
+            T = w[0]
             dTdt =  self._dT_dt_heated_const_pres(T, t)
             heating = self._heating_power_const_pres(T, dTdt, t)
-            MW = self.storage_tank.stored_fluid.backend.molar_mass()
-            return np.array([dTdt, heating, self.boundary_flux.mass_flow_in(t)/MW])
+            MW = fluid.molar_mass()
+            ndotout= self.boundary_flux.mass_flow_out(t) / MW
+            ndotin = self.boundary_flux.mass_flow_in(t) / MW
+            Pinput = self.boundary_flux.pressure_in(p, T)
+            Tinput =self.boundary_flux.temperature_in(p, T)
+            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+            hin = fluid.hmolar()
+            fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+            hout = fluid_props["hf"]
+            return np.array([dTdt, heating, 
+                             ndotin, ndotin * hin,
+                             ndotout, ndotout * hout,
+                             self.boundary_flux.cooling_power(t),
+                             self.boundary_flux.heating_power(t),
+                             self.heat_leak_in(T)])
     
         def events(t, w, sw):
             if w[0] >= Tcrit:
@@ -619,11 +896,19 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
                     print("\n Saturation condition reached, switch to two-phase solver!")
                     raise TerminateSimulation
                 solver.sw[0] = not solver.sw[0]
-            if event_info[1] !=0:
+            if event_info[1] !=0 and p == self.simulation_params.target_pres:
                 print("\n Final refueling temperature achieved, exiting simulation.")
                 raise TerminateSimulation
         
-        w0 = np.array([self.simulation_params.init_temperature, 0])
+        w0 = np.array([self.simulation_params.init_temperature, 
+                       self.simulation_params.heating_required,
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         if self.simulation_params.init_temperature <= Tcrit:
             fluid.update(CP.QT_INPUTS, 0, self.simulation_params.init_temperature)
@@ -642,7 +927,6 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         model.name = "1 Phase dynamics of constant P discharge w/ heating"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-6,  1E-2])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
@@ -676,9 +960,13 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
                           moles_supercritical= n_phase["Supercritical"],
                           heating_required = y[:,1],
                           inserted_amount = y[:,2],
+                          flow_energy_in = y[:,3],
+                          vented_amount = y[:,4],
+                          vented_energy = y[:,5],
+                          cooling_additional = y[:,6],
+                          heating_additional = y[:,7],
+                          heat_leak_in = y[:,7],
                           cooling_required = self.simulation_params.cooling_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     

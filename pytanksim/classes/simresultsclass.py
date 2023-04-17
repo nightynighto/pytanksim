@@ -22,11 +22,16 @@ class SimResults:
                  moles_supercritical,
                  tank_params,
                  sim_type,
-                 inserted_amount,
+                 inserted_amount = 0,
+                 flow_energy_in = 0,
                  cooling_required = 0,
                  heating_required = 0,
+                 cooling_additional = 0,
+                 heating_additional = 0,
+                 heat_leak_in = 0,
                  vented_amount = 0, 
-                 vented_energy = 0,):
+                 vented_energy = 0,
+                 ):
         
        
                 
@@ -58,7 +63,11 @@ class SimResults:
             "heating_required" : heating_required,
             "vented_amount" : vented_amount,
             "vented_energy" : vented_energy,
-            "inserted_amount" : inserted_amount
+            "inserted_amount" : inserted_amount,
+            "flow_energy_in" : flow_energy_in,
+            "cooling_additional" : cooling_additional,
+            "heating_additional" : heating_additional,
+            "heat_leak_in" : heat_leak_in
             }
         
         # length = len(pressure)

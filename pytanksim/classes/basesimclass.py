@@ -25,14 +25,20 @@ class SimulationParams:
     init_time : float = 0 # in seconds
     displayed_points : float = 200
     target_temp: float = 0
+    target_pres: float = 0
     init_pressure : float = 1E5  # in Pa
     init_ng : float = 0
     init_nl : float = 0
-    inserted_amount : float = 0,
-    vented_amount : float = 0,
-    cooling_required : float = 0,
+    inserted_amount : float = 0
+    vented_amount : float = 0
+    cooling_required : float = 0
     heating_required : float = 0
     vented_energy : float = 0
+    flow_energy_in : float = 0
+    cooling_additional : float = 0
+    heating_additional : float = 0
+    heat_leak_in : float = 0
+    
     
     @classmethod
     def from_SimResults(cls,
@@ -61,6 +67,10 @@ class SimulationParams:
                    cooling_required = final_conditions["cooling_required"],
                    heating_required = final_conditions["heating_required"],
                    vented_energy = final_conditions["vented_energy"],
+                   flow_energy_in = final_conditions["flow_energy_in"],
+                   heat_leak_in = final_conditions["heat_leak_in"],
+                   cooling_additional = final_conditions["cooling_additional"],
+                   heating_additional = final_conditions["heating_additional"],
                    final_time = final_time,
                    target_temp = target_temp,
                    displayed_points = displayed_points
@@ -78,7 +88,8 @@ class BoundaryFlux:
                  temperature_in: Callable[[float, float], float] = None,
                  fill_rate: float = None,
                  environment_temp: float = 0,
-                 enthalpy_in: Callable[[float], float] = 0.0):
+                 enthalpy_in: Callable[[float], float] = 0.0,
+                 enthalpy_out: Callable[[float], float] = 0.0):
         """
         
 
@@ -129,6 +140,14 @@ class BoundaryFlux:
         if isinstance(enthalpy_in, float):
             enthalpy_in = float_function_generator_time(enthalpy_in)
         
+        if isinstance(enthalpy_out, float):
+            enthalpy_out = float_function_generator_time(enthalpy_out)
+            
+        if isinstance(heating_power, float):
+            heating_power = float_function_generator_time(heating_power)
+        
+        if isinstance(cooling_power, float):
+            cooling_power = float_function_generator_time(cooling_power)
         
         self.mass_flow_in = mass_flow_in
         self.mass_flow_out = mass_flow_out

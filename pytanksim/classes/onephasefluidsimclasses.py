@@ -46,7 +46,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         m11 = self._dn_dp(prop_dict)
         m12 = self._dn_dT(prop_dict)
         m21 = self._du_dp(prop_dict)
-        m22 = self._du_dp(prop_dict)
+        m22 = self._du_dT(prop_dict)
         
         A = np.array([[m11 , m12],
                       [m21, m22]])
@@ -70,14 +70,21 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * fluid_props["hf"] + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
         
         soln = np.linalg.solve(A, b)
         
-        return np.append(soln, ndotin)
+        return np.append(soln, 
+                         [ndotin,
+                         ndotin * hin,
+                         ndotout,
+                         ndotout * fluid_props["hf"],
+                         self.boundary_flux.cooling_power(time),
+                         self.boundary_flux.heating_power(time),
+                         self.heat_leak_in(T) ])
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -92,7 +99,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            p, T, inserted = w
+            p, T = w[:2]
             return self.solve_differentials(t, p, T)
         
         def events(t, w, sw):
@@ -107,7 +114,9 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                 else:
                     satstatus = 0
             return np.array([self.storage_tank.vent_pressure - w[0], satstatus,
-                             w[0] - self.storage_tank.min_supply_pressure])
+                             w[0] - self.storage_tank.min_supply_pressure,
+                             w[0] - self.simulation_params.target_pres,
+                             w[1] - self.simulation_params.target_temp])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -126,11 +135,21 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                     print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
                     raise TerminateSimulation
                 solver.sw[2] = not solver.sw[2]
+            if state_info[3] != 0 and state_info[4] !=0:
+                print("\n Target conditions reached.")
+                raise TerminateSimulation
+            
             
      
         w0 = np.array([self.simulation_params.init_pressure,
                        self.simulation_params.init_temperature,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         
         ##Initialize switches for event handling
@@ -161,7 +180,6 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6, 1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -193,10 +211,14 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical = n_phase["Supercritical"],
                           inserted_amount = y[:, 2],
+                          flow_energy_in = y[:,3],
+                          vented_amount = y[:,4],
+                          vented_energy = y[:,5],
+                          cooling_additional = y[:,6],
+                          heating_additional = y[:,7],
+                          heat_leak_in = y[:,8],
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -230,16 +252,20 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         
         b1 = ndotin 
         b2 = ndotin * hin + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
                 
         soln = np.linalg.solve(A, b)
         
-        soln_w_ndotin = np.append(soln, ndotin)
-        
-        return np.append(soln_w_ndotin, soln[1] * m22)
+        return np.append(soln,
+                         [ soln[-1] * prop_dict["hf"],
+                         ndotin,
+                         ndotin * hin,
+                         self.boundary_flux.cooling_power(time),
+                         self.boundary_flux.heating_power(time),
+                         self.heat_leak_in(T)])
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -255,7 +281,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T, vented, inserted = w
+            T = w[0]
             return self.solve_differentials(t, T)
         
         def events(t, w, sw):
@@ -285,8 +311,12 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
      
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
                        self.simulation_params.inserted_amount,
-                       self.simulation_params.vented_energy])
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         
 
@@ -309,7 +339,6 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6, 1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -340,11 +369,15 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                           moles_gas = n_phase["Gas"], 
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical = n_phase["Supercritical"],
-                          inserted_amount = y[:, 2],
+                          inserted_amount = y[:, 3],
+                          flow_energy_in = y[:,4],
+                          cooling_additional = y[:,5],
+                          heating_additional = y[:,6],
+                          heat_leak_in = y[:,7],
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           vented_amount = y[:,1],
-                          vented_energy = y[:,3],
+                          vented_energy = y[:,2],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -380,14 +413,22 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * fluid_props["hf"] + \
-            self.boundary_flux.heating_power\
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
         
         diffresults = np.linalg.solve(A, b)
         
-        return np.append(diffresults, ndotin)
+        return np.append(diffresults, [
+            ndotin,
+            ndotin * hin,
+            ndotout,
+            ndotout * fluid_props["hf"],
+            self.boundary_flux.cooling_power(time),
+            self.boundary_flux.heating_power(time),
+            self.heat_leak_in(T)
+            ])
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -403,7 +444,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T, cooling, inserted = w
+            T = w[0]
             return self.solve_differentials(t, T)
         
         def events(t, w, sw):
@@ -426,14 +467,20 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                     print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
                     raise TerminateSimulation
                 solver.sw[0] = not solver.sw[0]
-            if state_info[1] != 0:
-                print("\n The simulation has hit the target temperature.")
+            if state_info[1] != 0 and self.simulation_params.init_pressure == self.simulation_params.target_pres:
+                print("\n The simulation has hit the target conditions.")
                 raise TerminateSimulation
             
      
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.cooling_required,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         
 
@@ -456,7 +503,6 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics Cooled at Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6, 1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -488,10 +534,14 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical = n_phase["Supercritical"],
                           inserted_amount = y[:, 2],
+                          flow_energy_in = y[:,3],
+                          vented_amount = y[:,4],
+                          vented_energy = y[:,5],
+                          cooling_additional = y[:,6],
+                          heating_additional = y[:,7],
+                          heat_leak_in = y[:,8],
                           cooling_required = y[:,1],
                           heating_required = self.simulation_params.heating_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
         
@@ -527,14 +577,21 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * fluid_props["hf"] + \
-             - self.boundary_flux.cooling_power\
+             - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
         
         diffresults = np.linalg.solve(A, b)
         
-        return np.append(diffresults, ndotin)
+        return np.append(diffresults, [
+            ndotin,
+            ndotin * hin,
+            ndotout,
+            ndotout * fluid_props["hf"],
+            self.boundary_flux.cooling_power(time),
+            self.boundary_flux.heating_power(time),
+            self.heat_leak_in(T)])
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -573,14 +630,20 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                     print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
                     raise TerminateSimulation
                 solver.sw[0] = not solver.sw[0]
-            if state_info[1] != 0:
+            if state_info[1] != 0 and p0 == self.simulation_params.target_pres:
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
             
      
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.heating_required,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         
 
@@ -603,7 +666,6 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics Cooled at Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6, 1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -635,10 +697,14 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                           moles_liquid = n_phase["Liquid"],
                           moles_supercritical = n_phase["Supercritical"],
                           inserted_amount = y[:, 2],
+                          flow_energy_in = y[:,3],
+                          vented_amount = y[:,4],
+                          vented_energy = y[:,5],
+                          cooling_additional = y[:,6],
+                          heating_additional = y[:,7],
+                          heat_leak_in = y[:,8],
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = y[:,1],
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -657,23 +723,36 @@ class OnePhaseFluidControlledInlet(OnePhaseFluidDefault):
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
 
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
             hin = self.boundary_flux.enthalpy_in(time)
         else:
-            hin = 0    
+            hin = 0 
+            
+        if flux.mass_flow_out(time) != 0:
+            hout = self.boundary_flux.enthalpy_out(time)
+        else:
+            hout = 0    
         
-        b1 = ndotin 
-        b2 = ndotin * hin + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+        b1 = ndotin - ndotout
+        b2 = ndotin * hin - ndotout * hout + \
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
         
         soln = np.linalg.solve(A, b)
         
-        return np.append(soln, ndotin)
+        return np.append(soln,
+                         [ndotin,
+                         ndotin * hin,
+                         ndotout,
+                         ndotout * hout,
+                         self.boundary_flux.cooling_power(time),
+                         self.boundary_flux.heating_power(time),
+                         self.heat_leak_in(T) ])
         
         
         

@@ -119,10 +119,20 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         b1 = ndotin - ndotout
         b2 = 0
         b3 = ndotin * hin - ndotout * satur_prop_gas["hf"] + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T) 
         b = np.array([b1,b2,b3])
-        return np.linalg.solve(A, b)
+        diffresults = np.linalg.solve(A, b)
+        return np.append(diffresults,
+                         [ndotin,
+                         ndotin * hin,
+                         ndotout,
+                         ndotout * satur_prop_gas["hf"],
+                         self.boundary_flux.cooling_power(time),
+                         self.boundary_flux.heating_power(time),
+                         self.heat_leak_in(T) ]
+                         )
+        
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -136,10 +146,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            ng, nl, T, inserted = w
-            diffresults = self.solve_differentials(ng, nl, T, t)
-            ndotin = self.boundary_flux.mass_flow_in(t) / fluid.molar_mass()
-            return np.append(diffresults, ndotin)
+            ng, nl, T = w[:3]
+            return self.solve_differentials(ng, nl, T, t)
         
         def events(t, w, sw):
             ##Check for boundary events
@@ -152,11 +160,16 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             min_pres_event = p - self.storage_tank.min_supply_pressure
             max_pres_event = self.storage_tank.vent_pressure - p
             
-            ##Finally check that either phase has not fully saturated
+            ##Check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
+            
+            ##Check that the target conditions has not been reached
+            target_pres_reach = p - self.simulation_params.target_pres
+            target_temp_reach = T - self.simulation_params.target_temp
             return np.array([crit, min_pres_event, max_pres_event,
-                             sat_gas_event, sat_liquid_event])
+                             sat_gas_event, sat_liquid_event,
+                             target_pres_reach, target_temp_reach])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -183,13 +196,23 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                     print("\n Phase change has ended. Switch to one phase simulation.")
                     raise TerminateSimulation
                 solver.sw[3] = not solver.sw[3]
+            
+            if state_info[5] != 0 and state_info[6] != 0:
+                print("\n Target conditions has been reached.")
+                raise TerminateSimulation
                 
             
      
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
                        self.simulation_params.init_temperature,
-                       self.simulation_params.inserted_amount])
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in])
         
         if self.simulation_params.init_temperature == Tcrit:
             sw0 = False
@@ -221,7 +244,6 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         model.name = "2 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -247,10 +269,14 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                           moles_liquid = y[:, 1],
                           moles_supercritical= 0,
                           inserted_amount = y[:, 3],
+                          flow_energy_in = y[:,4],
+                          vented_amount = y[:,5],
+                          vented_energy = y[:,6],
+                          cooling_additional = y[:,7],
+                          heating_additional = y[:,8],
+                          heat_leak_in = y[:,9],
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -294,7 +320,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         fluid.update(CP.PT_INPUTS, Pinput, Tinput)
         hin = fluid.hmolar()
         return - dng_dt * m31 - dnl_dt * m32 + ndotin * hin - ndotout * satur_prop_gas["hf"] + \
-            self.boundary_flux.heating_power  + self.heat_leak_in(T) 
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
+                + self.heat_leak_in(T) 
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -307,10 +334,27 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             diffresults = self._dn_dt(t)
-            cooling_power = self._cooling_power(t, diffresults[0], diffresults[1])
-            diffresults2 = np.append(diffresults, cooling_power)
-            ndotin = self.boundary_flux.mass_flow_in(t) / fluid.molar_mass()
-            return np.append(diffresults2, ndotin)
+            cool_power = self._cooling_power(t, diffresults[0], diffresults[1])
+            flux = self.boundary_flux
+            MW = fluid.molar_mass()
+            ndotin = flux.mass_flow_in(t)  / MW
+            ndotout = flux.mass_flow_out(t) / MW
+            Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
+            Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
+            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+            hin = fluid.hmolar()
+            fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
+            hout = fluid.hmolar()
+            return np.append(diffresults,
+                             [cool_power,
+                              ndotin,
+                              ndotin * hin,
+                              ndotout,
+                              ndotout * hout,
+                              self.boundary_flux.cooling_power(t),
+                              self.boundary_flux.heating_power(t),
+                              self.heat_leak_in(self.simulation_params.init_temperature)]
+                             )
         
         def events(t, w, sw):
             #check that either phase has not fully saturated
@@ -331,7 +375,13 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
                        self.simulation_params.cooling_required,
-                       self.simulation_params.inserted_amount]) 
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in]) 
         
         if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
             sw0 = False
@@ -345,7 +395,6 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         model.name = "2 Phase Dynamics Cooled with Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -368,9 +417,13 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
                           moles_supercritical= 0,
                           cooling_required = y[:, 2],
                           inserted_amount = y[:, 3],
+                          flow_energy_in = y[:,4],
+                          vented_amount = y[:,5],
+                          vented_energy = y[:,6],
+                          cooling_additional = y[:,7],
+                          heating_additional = y[:,8],
+                          heat_leak_in = y[:,9],
                           heating_required = self.simulation_params.heating_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -416,15 +469,21 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         b1 = ndotin
         b2 = 0
         b3 = ndotin * hin + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T) 
         
         b = np.array([b1,b2,b3])
         
         soln = np.linalg.solve(A, b)
         
-        soln_w_ndotin = np.append(soln, ndotin)
-        return np.append(soln_w_ndotin, soln[-1] * satur_prop_gas["hf"])
+        return np.append(soln, [
+            soln[-1] * satur_prop_gas["hf"],
+            ndotin,
+            ndotin * hin,
+            self.boundary_flux.cooling_power(time),
+            self.boundary_flux.heating_power(time),
+            self.heat_leak_in(self.simulation_params.init_temperature)
+            ])
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -458,8 +517,13 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
                        self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
                        self.simulation_params.inserted_amount,
-                       self.simulation_params.vented_energy])
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in
+                       ])
         
         
         if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
@@ -471,10 +535,9 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
-        model.name = "2 Phase Dynamics"
+        model.name = "2 Phase Dynamics w/ venting"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -497,10 +560,14 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                           moles_liquid = y[:, 1],
                           moles_supercritical = 0,
                           vented_amount = y[:,2],
-                          inserted_amount = y[:, 3],
+                          vented_energy = y[:, 3],
+                          inserted_amount = y[:, 4],
+                          flow_energy_in = y[:,5],
+                          cooling_additional = y[:,6],
+                          heating_additional = y[:,7],
+                          heat_leak_in = y[:,8],
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
-                          vented_energy = y[:, 4],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
     
@@ -544,7 +611,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         fluid.update(CP.PT_INPUTS, Pinput, Tinput)
         hin = fluid.hmolar()
         return dng_dt * m31 + dnl_dt * m32 - ndotin * hin + ndotout * satur_prop_gas["hf"] + \
-            self.boundary_flux.cooling_power - self.heat_leak_in(T) 
+           - self.boundary_flux.heating_power(time) + self.boundary_flux.cooling_power(time) - self.heat_leak_in(T) 
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -558,9 +625,26 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             state[0] = last_t + dt * n
             diffresults = self._dn_dt(t)
             heating_power = self._heating_power(t, diffresults[0], diffresults[1])
-            diffresults2 = np.append(diffresults, heating_power)
-            ndotin = self.boundary_flux.mass_flow_in(t) / fluid.molar_mass()
-            return np.append(diffresults2, ndotin)
+            flux = self.boundary_flux
+            MW = fluid.molar_mass()
+            ndotin = flux.mass_flow_in(t)  / MW
+            ndotout = flux.mass_flow_out(t) / MW
+            Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
+            Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
+            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+            hin = fluid.hmolar()
+            fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
+            hout = fluid.hmolar()
+            return np.append(diffresults, [
+                heating_power,
+                ndotin,
+                ndotin * hin,
+                ndotout,
+                ndotout * hout,
+                self.boundary_flux.cooling_power(t),
+                self.boundary_flux.heating_power(t),
+                self.heat_leak_in(self.simulation_params.init_temperature)
+                ])
         
         def events(t, w, sw):
             #check that either phase has not fully saturated
@@ -581,7 +665,13 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
                        self.simulation_params.heating_required,
-                       self.simulation_params.inserted_amount]) 
+                       self.simulation_params.inserted_amount,
+                       self.simulation_params.flow_energy_in,
+                       self.simulation_params.vented_amount,
+                       self.simulation_params.vented_energy,
+                       self.simulation_params.cooling_additional,
+                       self.simulation_params.heating_additional,
+                       self.simulation_params.heat_leak_in]) 
         
         if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
             sw0 = False
@@ -595,7 +685,6 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         model.name = "2 Phase Dynamics Heated with Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = np.array([1E-2,  1E-6])
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
@@ -618,9 +707,13 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
                           moles_supercritical= 0,
                           heating_required = y[:, 2],
                           inserted_amount = y[:, 3],
+                          flow_energy_in = y[:,4],
+                          vented_amount = y[:,5],
+                          vented_energy = y[:,6],
+                          cooling_additional = y[:,7],
+                          heating_additional = y[:,8],
+                          heat_leak_in = y[:,9],
                           cooling_required = self.simulation_params.cooling_required,
-                          vented_amount = self.simulation_params.vented_amount,
-                          vented_energy = self.simulation_params.vented_energy,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank)
 
@@ -647,19 +740,35 @@ class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
         ##Convert kg/s to mol/s
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
+        if ndotin != 0:
             hin = self.boundary_flux.enthalpy_in(time)
         else:
             hin = 0
-        b1 = ndotin
+            
+        if ndotout != 0:
+            hout = self.boundary_flux.enthalpy_out(time)
+        else:
+            hout = 0
+        b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin + \
-            self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
+        b3 = ndotin * hin - ndotout * hout\
+             + self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
                 + self.heat_leak_in(T) 
         b = np.array([b1,b2,b3])
-        return np.linalg.solve(A, b)
+        diffresults = np.linalg.solve(A, b)
+        
+        return np.append(diffresults,
+                         [ndotin,
+                         ndotin * hin,
+                         ndotout,
+                         ndotout * hout,
+                         self.boundary_flux.cooling_power(time),
+                         self.boundary_flux.heating_power(time),
+                         self.heat_leak_in(T) ]
+                         )
     
     
     
