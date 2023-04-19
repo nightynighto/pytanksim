@@ -174,28 +174,28 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0:
-                if solver.sw[0]:
-                    print("\n The simulation has reached critical temperature, \n please switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
+                print("\n The simulation has reached critical temperature, \n please switch to one phase simulation.")
+                raise TerminateSimulation
             
             if state_info[1] != 0:
-                if solver.sw[1]:
-                    print("\n The simulation has hit the minimum supply pressure. \n Switch to heated discharge.")
-                    raise TerminateSimulation
-                solver.sw[1] = not solver.sw[1]
+                print("\n The simulation has hit the minimum supply pressure. \n Switch to heated discharge.")
+                raise TerminateSimulation
                 
             if state_info[2] != 0:
-                if solver.sw[2]:
-                    print("\n The simulation has hit maximum pressure! Switch to cooling or venting simulation")
-                    raise TerminateSimulation
-                solver.sw[2] = not solver.sw[2]
+                print("\n The simulation has hit maximum pressure! Switch to cooling or venting simulation")
+                raise TerminateSimulation
                 
             if state_info[3] != 0 or state_info[4] != 0:
-                if solver.sw[3]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[3] = not solver.sw[3]
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
+            
+            if state_info[5] != 0 and solver.sw[0]:
+                print("\n Target pressure reached")
+                raise TerminateSimulation
+            
+            if state_info[6] != 0 and solver.sw[1]:
+                print("\n Target temperature reached")
+                raise TerminateSimulation
             
             if state_info[5] != 0 and state_info[6] != 0:
                 print("\n Target conditions has been reached.")
@@ -214,30 +214,10 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in])
         
-        if self.simulation_params.init_temperature == Tcrit:
-            sw0 = False
-        else:
-            sw0 = True
-        
-        fluid.update(CP.QT_INPUTS, 0, 1)
-        psat_init = fluid.p()
-        
-        if self.storage_tank.min_supply_pressure == psat_init:
-            sw1 = False
-        else:
-            sw1 = True
-        
-        if self.storage_tank.vent_pressure == psat_init:
-            sw2 = False
-        else:
-            sw2 = True
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw3 = False
-        else:
-            sw3 = True
+        sw0 = self.simulation_params.stop_at_target_pressure
+        sw1 = self.simulation_params.stop_at_target_temp
             
-        switches0 = [sw0, sw1, sw2, sw3]
+        switches0 = [sw0, sw1]
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -366,11 +346,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             state_info = event_info[0]
         
             if state_info[0] != 0 or state_info[1] != 0:
-                if solver.sw[0]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
-                
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation                
 
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
@@ -383,12 +360,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in]) 
         
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw0 = False
-        else:
-            sw0 = True
-            
-        switches0 = [sw0]
+
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -507,10 +480,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
-                if solver.sw[0]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
                 
             
      
@@ -524,14 +495,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in
                        ])
-        
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw0 = False
-        else:
-            sw0 = True
-            
-        switches0 = [sw0]
+
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -656,10 +621,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             state_info = event_info[0]
         
             if state_info[0] != 0 or state_info[1] != 0:
-                if solver.sw[0]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
                 
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -672,13 +635,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
                        self.simulation_params.cooling_additional,
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in]) 
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw0 = False
-        else:
-            sw0 = True
-            
-        switches0 = [sw0]
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event

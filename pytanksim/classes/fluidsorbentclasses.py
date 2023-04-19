@@ -95,7 +95,7 @@ class StoredFluid:
 
         """
         
-        backend = self.TankParameters.backend
+        backend = self.backend
         backend.update(CP.QT_INPUTS, Q, T)
         return {
             "psat" : backend.p(),

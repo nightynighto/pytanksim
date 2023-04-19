@@ -58,6 +58,7 @@ class SimResults:
             "time" : time,
             "moles_adsorbed" : moles_adsorbed,
             "moles_gas" : moles_gas,
+            "moles_liquid" : moles_liquid,
             "moles_supercritical" : moles_supercritical,
             "cooling_required" : cooling_required,
             "heating_required" : heating_required,

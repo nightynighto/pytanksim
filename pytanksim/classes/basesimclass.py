@@ -13,6 +13,8 @@ from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from dataclasses import dataclass
 from typing import Callable
+import CoolProp as CP
+import numpy as np
 
 
 
@@ -38,6 +40,8 @@ class SimulationParams:
     cooling_additional : float = 0
     heating_additional : float = 0
     heat_leak_in : float = 0
+    stop_at_target_pressure : bool = False
+    stop_at_target_temp : bool = False
     
     
     @classmethod
@@ -92,7 +96,6 @@ class BoundaryFlux:
                  enthalpy_out: Callable[[float], float] = 0.0):
         """
         
-
         Parameters
         ----------
         mass_flow_in : float, optional
@@ -112,6 +115,7 @@ class BoundaryFlux:
         fill_rate : float, optional
             The net mass change inside of the simulation boundary
             per second (kg/s). The default is None.
+        
         """
         
         def float_function_generator(floatingvalue):
@@ -165,6 +169,7 @@ class BoundaryFlux:
         if fill_rate and mass_flow_in and mass_flow_out and \
                 fill_rate != mass_flow_in - mass_flow_out:
             raise ValueError("Filling rate is not consistent with the mass flow in and out.")
+        
 
     
 class BaseSimulation:
@@ -192,3 +197,21 @@ class BaseSimulation:
     
     def run(self):
         raise NotImplementedError
+    
+    def enthalpy_in_calc(self, p, T):
+        pin = self.boundary_flux.pressure_in(p, T)
+        Tin = self.boundary_flux.temperature_in(p, T)
+        fluid = self.storage_tank.stored_fluid.backend
+        Tcrit = fluid.T_critical()
+        if Tin <= Tcrit:
+            fluid.update(CP.QT_INPUTS, 0, Tin)
+            psat = fluid.p()
+            if np.abs(pin-psat) <= 1E-6 * psat:
+                fluid.update(CP.QT_INPUTS, 0, Tin)
+                return fluid.hmolar()
+            else:
+                fluid.update(CP.PT_INPUTS, pin, Tin)
+                return fluid.hmolar()
+        else:
+            fluid.update(CP.PT_INPUTS, pin, Tin)
+            return fluid.hmolar()

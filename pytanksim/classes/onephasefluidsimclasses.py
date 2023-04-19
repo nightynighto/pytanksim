@@ -121,20 +121,23 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0:
-                if solver.sw[0]:
-                    print("\n The simulation has hit maximum pressure! Switch to venting or cooling simulation")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
+                print("\n The simulation has hit maximum pressure! Switch to venting or cooling simulation")
+                raise TerminateSimulation
             if state_info[1] != 0 and solver.y[1] <= Tcrit:
-                if solver.sw[1]:
-                    print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
-                    raise TerminateSimulation
-                solver.sw[1] = not solver.sw[1]
+                print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
+                raise TerminateSimulation
             if state_info[2] != 0:
-                if solver.sw[2]:
-                    print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
-                    raise TerminateSimulation
-                solver.sw[2] = not solver.sw[2]
+                print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
+                raise TerminateSimulation
+                
+            if state_info[3] != 0 and solver.sw[0]:
+                print("Target pressure reached")
+                raise TerminateSimulation
+            
+            if state_info[4] != 0 and solver.sw[1]:
+                print("Target temperature reached")
+                raise TerminateSimulation
+            
             if state_info[3] != 0 and state_info[4] !=0:
                 print("\n Target conditions reached.")
                 raise TerminateSimulation
@@ -152,28 +155,12 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                        self.simulation_params.heat_leak_in])
         
         
-        ##Initialize switches for event handling
-        if self.simulation_params.init_pressure == self.storage_tank.vent_pressure:
-            sw0 = False
-        else:
-            sw0 = True
-        if self.simulation_params.init_temperature <= Tcrit:
-            fluid.update(CP.QT_INPUTS, 0, self.init_temperature)
-            psat_init =  fluid.p()
-            if self.simulation_params.init_pressure == psat_init:
-                sw1 = False
-            else:
-                sw1 = True
-        else:
-            sw1 = True
-            
-        if self.simulation_params.init_pressure == self.storage_tank.min_supply_pressure:
-            sw2 = False
-        else:
-            sw2 = True
+
+        sw0 = self.simulation_params.stop_at_target_pressure
         
+        sw1 = self.simulation_params.stop_at_target_temp
         
-        switches0 = [sw0, sw1, sw2]
+        switches0 = [sw0, sw1]
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -193,13 +180,17 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                    "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
-            nfluid = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(y[i,0], y[i,1])   
-            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
             iterable = i
-            while phase == "Saturated":
+            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
+            if phase == "Saturated":
+                while phase == "Saturated":
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
+                q = 0 if phase == "Liquid" else 1
+                fluid.update(CP.QT_INPUTS, q, y[i,1])
+            else:
+                fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
+            nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
             
         
@@ -227,19 +218,12 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
     sim_type = "Venting"
     def solve_differentials(self, time, T):
         p = self.simulation_params.init_pressure
-        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
-        m11 = self._dn_dT(prop_dict)
-        m12 = 1
-        m21 = self._du_dT(prop_dict)
-        m22 = prop_dict["hf"]
-        
-        A = np.array([[m11, m12],
-                      [m21, m22]])
-        
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
         fluid = self.storage_tank.stored_fluid.backend
+        MW = fluid.nolar_mass()
         flux = self.boundary_flux
+        
         ndotin = flux.mass_flow_in(time)  / MW
+        
         if flux.mass_flow_in(time) != 0:
             Pinput = flux.pressure_in(p, T)
             Tinput = flux.temperature_in(p,T)
@@ -249,6 +233,23 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         else:
             hin = 0    
         
+        phase = self.storage_tank.stored_fluid.determine_phase(p, T)
+        
+        if phase == "Saturated":
+            return [0,0, 0, ndotin,
+            ndotin * hin,
+            self.boundary_flux.cooling_power(time),
+            self.boundary_flux.heating_power(time),
+            self.heat_leak_in(T) ]
+        
+        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+        m11 = self._dn_dT(prop_dict)
+        m12 = 1
+        m21 = self._du_dT(prop_dict)
+        m22 = prop_dict["hf"]
+        
+        A = np.array([[m11, m12],
+                      [m21, m22]])
         
         b1 = ndotin 
         b2 = ndotin * hin + \
@@ -281,8 +282,8 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T = w[0]
-            return self.solve_differentials(t, T)
+            T = w[0]            
+            return  self.solve_differentials(t, T)
         
         def events(t, w, sw):
             ##Check saturation status
@@ -300,10 +301,8 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
-                if solver.sw[0]:
-                    print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
+                print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
+                raise TerminateSimulation
             if state_info[1] != 0:
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
@@ -318,21 +317,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in])
         
-        
-
-        if self.simulation_params.init_temperature <= Tcrit:
-            fluid.update(CP.QT_INPUTS, 0, self.init_temperature)
-            psat_init =  fluid.p()
-            if self.simulation_params.init_pressure == psat_init:
-                sw0 = False
-            else:
-                sw0 = True
-        else:
-            sw0 = True
-            
-        
-        
-        switches0 = [sw0]
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -352,15 +337,18 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                    "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
-            nfluid = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(y[i,0], y[i,1])   
-            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
             iterable = i
-            while phase == "Saturated":
+            phase = self.storage_tank.stored_fluid.determine_phase(p0, y[i, 0])
+            if phase == "Saturated":
+                while phase == "Saturated":
                     iterable = iterable - 1
-                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
+                    phase = self.storage_tank.stored_fluid.determine_phase(p0, y[iterable,0])
+                q = 0 if phase == "Liquid" else 1
+                fluid.update(CP.QT_INPUTS, q, y[i,0])
+            else:
+                fluid.update(CP.PT_INPUTS, p0, y[i,0])
+            nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
-            
         
         return SimResults(time = t, 
                           pressure = p0,
@@ -385,22 +373,10 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
     sim_type = "Cooled"
     def solve_differentials(self, time, T):
         p = self.simulation_params.init_pressure
-        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
-        m11 = self._dn_dT(prop_dict)
-        m12 = 0
-        m21 = self._du_dT(prop_dict)
-        m22 = 1
-        
-        A = np.array([[m11, m12],
-                      [m21, m22]])
-        
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
         fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
-        ##Get the thermodynamic properties of the bulk fluid for later calculations
-        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
             Pinput = flux.pressure_in(p, T)
@@ -410,6 +386,27 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             hin = fluid.hmolar()
         else:
             hin = 0    
+        phase = self.storage_tank.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            return [0, 0, ndotin,
+            ndotin * hin, 0, 0, self.boundary_flux.cooling_power(time),
+            self.boundary_flux.heating_power(time),
+            self.heat_leak_in(T)]
+        
+        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+        m11 = self._dn_dT(prop_dict)
+        m12 = 0
+        m21 = self._du_dT(prop_dict)
+        m22 = 1
+        
+        A = np.array([[m11, m12],
+                      [m21, m22]])
+        
+        
+        ndotout = flux.mass_flow_out(time) / MW
+        ##Get the thermodynamic properties of the bulk fluid for later calculations
+        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
+        
         
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * fluid_props["hf"] + \
@@ -463,12 +460,10 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
-                if solver.sw[0]:
-                    print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
-            if state_info[1] != 0 and self.simulation_params.init_pressure == self.simulation_params.target_pres:
-                print("\n The simulation has hit the target conditions.")
+                print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
+                raise TerminateSimulation
+            if state_info[1] != 0:
+                print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
             
      
@@ -481,22 +476,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                        self.simulation_params.cooling_additional,
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in])
-        
-        
 
-        if self.simulation_params.init_temperature <= Tcrit:
-            fluid.update(CP.QT_INPUTS, 0, self.init_temperature)
-            psat_init =  fluid.p()
-            if self.simulation_params.init_pressure == psat_init:
-                sw0 = False
-            else:
-                sw0 = True
-        else:
-            sw0 = True
-            
-        
-        
-        switches0 = [sw0]
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -516,13 +497,17 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                    "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
-            nfluid = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(y[i,0], y[i,1])   
-            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
             iterable = i
-            while phase == "Saturated":
+            phase = self.storage_tank.stored_fluid.determine_phase(p0, y[i, 0])
+            if phase == "Saturated":
+                while phase == "Saturated":
                     iterable = iterable - 1
-                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
+                    phase = self.storage_tank.stored_fluid.determine_phase(p0, y[iterable,0])
+                q = 0 if phase == "Liquid" else 1
+                fluid.update(CP.QT_INPUTS, q, y[i,0])
+            else:
+                fluid.update(CP.PT_INPUTS, p0, y[i,0])
+            nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
             
         
@@ -549,6 +534,30 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
     sim_type = "Heated"
     def solve_differentials(self, time, T):
         p = self.simulation_params.init_pressure
+        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        fluid = self.storage_tank.stored_fluid.backend
+        flux = self.boundary_flux
+        ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
+        ##Get the input pressure at a condition
+        if flux.mass_flow_in(time) != 0:
+            Pinput = flux.pressure_in(p, T)
+            Tinput = flux.temperature_in(p,T)
+            ##Get the molar enthalpy of the inlet fluid
+            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+            hin = fluid.hmolar()
+        else:
+            hin = 0    
+        
+        phase = self.storage_tank.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            return [0, 0, ndotin,
+            ndotin * hin,
+            ndotout, 0,
+            self.boundary_flux.cooling_power(time),
+            self.boundary_flux.heating_power(time),
+            self.heat_leak_in(T)]
+        
         prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         m11 = self._dn_dT(prop_dict)
         m12 = 0
@@ -558,13 +567,6 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         A = np.array([[m11, m12],
                       [m21, m22]])
         
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
-        flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
-        ##Get the thermodynamic properties of the bulk fluid for later calculations
-        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
             Pinput = flux.pressure_in(p, T)
@@ -576,7 +578,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             hin = 0    
         
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * fluid_props["hf"] + \
+        b2 = ndotin * hin - ndotout * prop_dict["hf"] + \
              - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
@@ -588,7 +590,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * fluid_props["hf"],
+            ndotout * prop_dict["hf"],
             self.boundary_flux.cooling_power(time),
             self.boundary_flux.heating_power(time),
             self.heat_leak_in(T)])
@@ -607,7 +609,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            T, heating, inserted = w
+            T = w[0]
             return self.solve_differentials(t, T)
         
         def events(t, w, sw):
@@ -626,11 +628,9 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
-                if solver.sw[0]:
-                    print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
-            if state_info[1] != 0 and p0 == self.simulation_params.target_pres:
+                print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
+                raise TerminateSimulation
+            if state_info[1] != 0:
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
             
@@ -644,22 +644,8 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                        self.simulation_params.cooling_additional,
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in])
-        
-        
 
-        if self.simulation_params.init_temperature <= Tcrit:
-            fluid.update(CP.QT_INPUTS, 0, self.init_temperature)
-            psat_init =  fluid.p()
-            if self.simulation_params.init_pressure == psat_init:
-                sw0 = False
-            else:
-                sw0 = True
-        else:
-            sw0 = True
-            
-        
-        
-        switches0 = [sw0]
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -679,13 +665,17 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                    "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
-            nfluid = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(y[i,0], y[i,1])   
-            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
             iterable = i
-            while phase == "Saturated":
+            phase = self.storage_tank.stored_fluid.determine_phase(p0, y[i, 0])
+            if phase == "Saturated":
+                while phase == "Saturated":
                     iterable = iterable - 1
-                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
+                    phase = self.storage_tank.stored_fluid.determine_phase(p0, y[iterable,0])
+                q = 0 if phase == "Liquid" else 1
+                fluid.update(CP.QT_INPUTS, q, y[i,0])
+            else:
+                fluid.update(CP.PT_INPUTS, p0, y[i,0])
+            nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
             
         
@@ -710,6 +700,31 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
     
 class OnePhaseFluidControlledInlet(OnePhaseFluidDefault):
     def solve_differentials(self, time, p, T):
+        
+        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        flux = self.boundary_flux
+        ndotin = flux.mass_flow_in(time)  / MW
+        ndotout = flux.mass_flow_out(time) / MW
+
+        ##Get the input pressure at a condition
+        if flux.mass_flow_in(time) != 0:
+            hin = self.boundary_flux.enthalpy_in(time)
+        else:
+            hin = 0 
+            
+        if flux.mass_flow_out(time) != 0:
+            hout = self.boundary_flux.enthalpy_out(time)
+        else:
+            hout = 0    
+        
+        phase = self.storage_tank.stored_fluid.determine_phase(p, T)
+        
+        if phase == "Saturated":
+            return [0, 0, ndotin, ndotin * hin,
+                    ndotout, ndotout * hout, self.boundary_flux.cooling_power(time),
+                    self.boundary_flux.heating_power(time),
+                    self.heat_leak_in(T)]
+        
         prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         
         m11 = self._dn_dp(prop_dict)

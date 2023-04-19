@@ -101,7 +101,7 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            ng, nl, T = w[:,3]
+            ng, nl, T = w[:3]
             diffresults = self.solve_differentials(t, ng , nl, T)
             return diffresults
         
@@ -117,34 +117,42 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
+            #Check that the critical temperature hasn't been reached
+            crit_temp_event = w[2] - fluid.T_critical()
             return np.array([min_pres_event, max_pres_event,
                              sat_gas_event, sat_liquid_event, 
-                             target_temp_event, target_pres_event])
+                             target_temp_event, target_pres_event,
+                             crit_temp_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
             
             if state_info[0] != 0:
-                if solver.sw[0]:
-                    print("\n Minimum pressure has been reached. \n Switch to heated discharge simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
+                print("\n Minimum pressure has been reached. \n Switch to heated discharge simulation.")
+                raise TerminateSimulation
                 
             if state_info[1] != 0:
-                if solver.sw[1]:
-                    print("\n Maximum pressure has been reached. \n Either begin venting or cooling.")
-                    raise TerminateSimulation
-                solver.sw[1] = not solver.sw[1]
-            
-            
+                print("\n Maximum pressure has been reached. \n Either begin venting or cooling.")
+                raise TerminateSimulation
+                        
             if state_info[2] != 0 or state_info[3] != 0:
-                if solver.sw[2]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[2] = not solver.sw[2]
-            
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
+
+            if state_info[4] != 0 and solver.sw[0]:
+                print("\n Target temperature reached.")
+                raise TerminateSimulation
+
+            if state_info[5] != 0 and solver.sw[1]:
+                print("\n Target pressure reached.")
+                raise TerminateSimulation
+
             if state_info[4] != 0 and state_info[5] != 0:
                 print("\n Target conditions reached.")
+                raise TerminateSimulation
+                
+            if state_info[6] != 0:
+                print("\n Reached critical temperature. Switch to one phase simulation.")
                 raise TerminateSimulation
             
                 
@@ -162,25 +170,11 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
                        self.simulation_params.heat_leak_in])
         
         
-        fluid.update(CP.QT_INPUTS, 0, self.simulation_params.init_temperature)
-        p0 = fluid.p()
+        sw0 = self.simulation_params.stop_at_target_temp
         
-        if self.storage_tank.min_supply_pressure == p0:
-            sw0 = False
-        else:
-            sw0 = True
-        
-        if self.storage_tank.vent_pressure == p0:
-            sw1 = False
-        else:
-            sw1 = True
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw2 = False
-        else:
-            sw2 = True
+        sw1 = self.simulation_params.stop_at_target_pressure
             
-        switches0 = [sw0, sw1, sw2]
+        switches0 = [sw0, sw1]
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -296,12 +290,8 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
-                if solver.sw[0]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
-            
-                
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation            
             
      
         w0 = np.array([self.simulation_params.init_ng,
@@ -315,14 +305,7 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
                        self.simulation_params.heat_leak_in
                        ])
         
-        
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw0 = False
-        else:
-            sw0 = True
-            
-        switches0 = [sw0]
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -436,14 +419,9 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
-                if solver.sw[0]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
-            
-                
-            
-     
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
+                            
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
                        self.simulation_params.cooling_required,
@@ -456,14 +434,8 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
                        self.simulation_params.heat_leak_in
                        ])
         
-        
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw0 = False
-        else:
-            sw0 = True
-            
-        switches0 = [sw0]
+
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -576,14 +548,9 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
-                if solver.sw[0]:
-                    print("\n Phase change has ended. Switch to one phase simulation.")
-                    raise TerminateSimulation
-                solver.sw[0] = not solver.sw[0]
-            
-                
-            
-     
+                print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
+                             
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
                        self.simulation_params.heating_required,
@@ -595,15 +562,7 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
                        self.simulation_params.heating_additional,
                        self.simulation_params.heat_leak_in
                        ])
-        
-        
-        
-        if self.simulation_params.init_nl == 0 or self.simulation_params.init_ng == 0:
-            sw0 = False
-        else:
-            sw0 = True
-            
-        switches0 = [sw0]
+        switches0 = []
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
@@ -619,9 +578,6 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         
         print("Saving results...")
         
-            
-
-            
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
