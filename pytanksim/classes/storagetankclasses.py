@@ -9,6 +9,8 @@ __all__ = ["StorageTank", "SorbentTank"]
 
 from pytanksim.classes.fluidsorbentclasses import StoredFluid, SorbentMaterial
 from pytanksim.utils.tanksimutils import Cs_gen
+import CoolProp as CP
+import numpy as np
 
 class StorageTank:
     def __init__(self,
@@ -80,6 +82,17 @@ class StorageTank:
             
         self.surface_area = surface_area
         self.thermal_resistance = thermal_resistance
+    
+    def tank_capacity(self, p, T, q = 0):
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        
+        return fluid.rhomolar() * self.volume
+                
     
 
         
@@ -171,5 +184,18 @@ class SorbentTank(StorageTank):
         rhoskel = self.sorbent_material.skeletal_density
         vads = self.sorbent_material.model_isotherm.v_ads
         return tankvol - mads/rhoskel - vads(p,T) * mads
+    
+    def tank_capacity(self, p, T, q = 0):
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        
+        bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
+        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
+            self.sorbent_material.mass
+        return bulk_fluid_moles + adsorbed_moles
     
     
