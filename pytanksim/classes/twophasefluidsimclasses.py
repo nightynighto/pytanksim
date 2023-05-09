@@ -27,15 +27,15 @@ class TwoPhaseFluidSim(BaseSimulation):
         term[1] = - (nl / (saturation_prop_liquid["rhof"]**2)) *\
             (saturation_prop_liquid["drho_dp"] * saturation_prop_liquid["dps_dT"] + \
              saturation_prop_liquid["drho_dT"])
-        
         return sum(term)
     
-    def _dU_dT(self, ng, nl, saturation_prop_gas, saturation_prop_liquid):
-        term = np.zeros(2)
+    def _dU_dT(self, ng, nl, T, saturation_prop_gas, saturation_prop_liquid):
+        term = np.zeros(3)
         term[0] = ng * (saturation_prop_gas["du_dp"] * saturation_prop_gas["dps_dT"] \
                         + saturation_prop_gas["du_dT"])
         term[1] = nl * (saturation_prop_liquid["du_dp"] * saturation_prop_liquid["dps_dT"] \
                         + saturation_prop_liquid["du_dT"])
+        term[2] = self.storage_tank.heat_capacity(T)
         return sum(term)
     
 class TwoPhaseFluidDefault(TwoPhaseFluidSim):
@@ -51,12 +51,11 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         m23 = self._dv_dT(ng, nl, satur_prop_gas, satur_prop_liquid)
         m31 = satur_prop_gas["uf"]
         m32 = satur_prop_liquid["uf"]
-        m33 = self._dU_dT(ng, nl, satur_prop_gas, satur_prop_liquid)
+        m33 = self._dU_dT(ng, nl, T, satur_prop_gas, satur_prop_liquid)
         
         A = np.array([[m11 , m12, m13],
                       [m21, m22, m23],
                       [m31, m32, m33]])
-         
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
         fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
@@ -79,7 +78,6 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
                 + self.heat_leak_in(T)
                 
         b = np.array([b1,b2,b3])
-        
         diffresults = np.linalg.solve(A, b)
         
         return np.append(diffresults, [ndotin,

@@ -236,14 +236,12 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         
         phase = self.storage_tank.stored_fluid.determine_phase(p, T)
 
-        if phase == "Saturated":
-            return [0, 0, 0, ndotin,
-            ndotin * hin,
-            self.boundary_flux.cooling_power(time),
-            self.boundary_flux.heating_power(time),
-            self.heat_leak_in(T) ]
         
-        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+        qinit = 0 if self.simulation_params.init_ng < self.simulation_params.init_nl else 1
+        if phase != "Saturated":
+            prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)  
+        else: 
+            prop_dict = self.storage_tank.stored_fluid.saturation_property_dict(T, qinit)        
         m11 = self._dn_dT(prop_dict)
         m12 = 1
         m21 = self._du_dT(prop_dict)
