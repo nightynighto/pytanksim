@@ -73,7 +73,8 @@ class StoredFluid:
             "dh_dT" : backend.first_partial_deriv(CP.iHmolar, CP.iT, CP.iP),
             "uf" : backend.umolar(),
             "du_dp" : backend.first_partial_deriv(CP.iUmolar, CP.iP , CP.iT),
-            "du_dT" : backend.first_partial_deriv(CP.iUmolar, CP.iT , CP.iP)
+            "du_dT" : backend.first_partial_deriv(CP.iUmolar, CP.iT , CP.iP),
+            "MW" : backend.molar_mass()
             }
     
     def saturation_property_dict(self,
@@ -108,7 +109,8 @@ class StoredFluid:
             "dh_dT" : backend.first_partial_deriv(CP.iHmolar, CP.iT, CP.iP),
             "uf" : backend.umolar(),
             "du_dp" : backend.first_partial_deriv(CP.iUmolar, CP.iP , CP.iT),
-            "du_dT" : backend.first_partial_deriv(CP.iUmolar, CP.iT , CP.iP)
+            "du_dT" : backend.first_partial_deriv(CP.iUmolar, CP.iT , CP.iP),
+            "MW" : backend.molar_mass()
             }
     
     def determine_phase(self,
@@ -203,6 +205,7 @@ class ModelIsotherm:
         return tsu.ads_energy_abs(self.n_absolute, p, T, self.v_ads, self.stored_fluid.backend)
  
     def pressure_from_absolute_adsorption(self, n_abs, T, p_max_guess = 10E6):
+        p_max_guess = min(p_max_guess, self.stored_fluid.backend.pmax())
         if n_abs == 0:
             return 0
         def optimum_pressure(p):
@@ -213,6 +216,50 @@ class ModelIsotherm:
                                 # x0 = p_guess,
                                 method="toms748")
         return root.root
+    
+    def isosteric_enthalpy(self, p, T):
+        nabs = self.n_absolute(p, T)
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase != "Saturated":
+            fluid.update(CP.PT_INPUTS, p, T)
+        else:
+            fluid.update(CP.QT_INPUTS, 1, T)
+        hfluid = fluid.hmolar()
+        def diff_function(x):
+            pres = self.pressure_from_absolute_adsorption(nabs, 1/x)
+            phase = self.stored_fluid.determine_phase(pres, 1/x)
+            if phase != "Saturated":
+                fluid.update(CP.PT_INPUTS, pres, 1/x)
+            else:
+                fluid.update(CP.QT_INPUTS, 1, 1/x)
+            return fluid.chemical_potential(0) * x
+        x_loc = 1/T
+        hadsorbed = fd.pardev(diff_function, x_loc, x_loc * 1E-2)
+        return hfluid - hadsorbed 
+    
+    def isosteric_internal_energy(self, p, T):
+        nabs = self.n_absolute(p, T)
+        vads = self.v_ads(p,T)
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase != "Saturated":
+            fluid.update(CP.PT_INPUTS, p, T)
+        else:
+            fluid.update(CP.QT_INPUTS, 1, T)
+        ufluid = fluid.umolar()
+        def diff_function(x):
+            pres = self.pressure_from_absolute_adsorption(nabs, 1/x)
+            phase = self.stored_fluid.determine_phase(pres, 1/x)
+            if phase != "Saturated":
+                fluid.update(CP.PT_INPUTS, pres, 1/x)
+            else:
+                fluid.update(CP.QT_INPUTS, 1, 1/x)
+            return fluid.chemical_potential(0) * x
+        x_loc = 1/T
+        hadsorbed = fd.pardev(diff_function, x_loc, x_loc * 1E-2)
+        return ufluid - (hadsorbed - p * vads/nabs)
+        
     
     def differential_energy(self, p, T):
         if p == 0:
@@ -225,7 +272,11 @@ class ModelIsotherm:
             return np.log(fluid.fugacity(0))
         term1 = - sp.constants.R * (T**2) * \
                 fd.partial_derivative(derivfunction, 1, [n_abs, T], T * 1E-5)
-        fluid.update(CP.PT_INPUTS, p, T)
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, 1, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
         term2 = fluid.hmolar_residual()
         term3 = fluid.hmolar()
         return term1 + (term3 - term2)
@@ -235,7 +286,11 @@ class ModelIsotherm:
         if p == 0:
             return 0
         fluid = self.stored_fluid.backend
-        fluid.update(CP.PT_INPUTS, p, T)
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, 1, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
         u_molar = fluid.umolar()
         return u_molar - self.differential_energy(p,T)
     
@@ -246,6 +301,16 @@ class ModelIsotherm:
         p_grid = np.array([self.pressure_from_absolute_adsorption(n, T) for n in n_grid ])
         heat_grid = np.array([self.differential_energy(pres, T) for pres in p_grid])
         return sp.integrate.simps(heat_grid, n_grid) / n_abs
+    
+    def areal_immersion_energy(self, T):
+        fluid = self.stored_fluid.backend
+        def sur_tension(T):
+            fluid.update(CP.QT_INPUTS, 0, T)
+            sur_ten = self.stored_fluid.backend.surface_tension()
+            return sur_ten
+        diff = fd.partial_derivative(sur_tension, 0, [T], 0.001) if T < fluid.T_critical() - 0.001 else \
+            fd.backward_partial_derivative(sur_tension, 0, [T], 0.001)
+        return T * diff - sur_tension(T)
 
     
 
@@ -506,8 +571,14 @@ class MDAModel(ModelIsotherm):
          self.nmax = nmax
      
     def n_absolute(self, p, T):
-         return self.nmax * np.exp(-((sp.constants.R * T / (self.alpha + self.beta * T))**2)\
-                                   * ((np.log(self.p0/p))**2))
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase != "Saturated":
+            self.stored_fluid.backend.update(CP.PT_INPUTS, p, T)
+        else:
+            self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+        fug = self.stored_fluid.backend.fugacity(0)
+        return self.nmax * np.exp(-((sp.constants.R * T / (self.alpha + self.beta * T))**2)\
+                                   * ((np.log(self.p0/fug))**2))
     def v_ads(self, p, T):
         return self.va
     
@@ -517,6 +588,118 @@ class MDAModel(ModelIsotherm):
         rhomolar = fluid.rhomolar()
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p,T)
     
+
+    
+    @classmethod
+    def from_ExcessIsotherms(cls, 
+                             ExcessIsotherms : List[ExcessIsotherm],
+                             stored_fluid : StoredFluid = None,
+                             sorbent: str = None,
+                             nmaxguess: float = 71.6,
+                             p0guess: float = 1470E6,
+                             alphaguess: float = 3080, 
+                             betaguess: float = 18.9,
+                             vaguess : float = 0.00143):
+        """
+        This function takes a list of excessisotherms object,
+        fits an MPTA model, and uses the fitted parameters to
+        instantiate an MPTAModel object.
+
+        Parameters
+        ----------
+        ExcessIsotherms : list[ExcessIsotherm]
+            A list of excess isotherms object describing experimental
+            adsorption measurement of the same material at different 
+            temperatures.
+        stored_fluid : StoredFluid, optional
+            Object containing stored fluid properties and CoolProp backend.
+            The default is None.
+        sorbent : str, optional
+            Name of the sorbent material. The default is None.
+        eps0guess : float, optional
+            Initial guess for characteristic adsorption energy (J/mol).
+            The default is 2000.
+        betaguess : float, optional
+            Initial guess for the pore size heterogeneity parameter.
+            The default is 2, but this value should only be between 0-10.
+        lamguess : float, optional
+            Initial guess for micropore volume (m^3/kg).
+            The default is 0.001.
+        gamguess : float, optional
+            Initial guess for change in micropore volume w.r.t. temperature.
+            (m^3/(kg K))
+            The default is -3E-6.
+
+        Returns
+        -------
+        MPTAModel
+            Class that contains MPTA model parameters as well as 
+            methods to get the adsorbed amount at a given pressure
+            and temperature.
+
+        """
+        
+        excess_isotherms = deepcopy(ExcessIsotherms)
+        
+        #Take values from excess isotherm if not supplied in argument
+        if sorbent == None:
+            sorbent = excess_isotherms[0].sorbent
+        if stored_fluid == None:
+            stored_fluid = StoredFluid(
+                fluid_name=excess_isotherms[0].adsorbate, EOS="HEOS")
+        
+        loading_combined = []
+        temperature_combined = []
+        pressure_combined = []
+        
+        
+        for i, isotherm in enumerate(excess_isotherms):
+            pressure_data = isotherm.pressure
+            loading_data = isotherm.loading
+            temperature = isotherm.temperature
+            loading_combined = np.append(loading_combined, loading_data)
+            temperature_combined = np.append(temperature_combined, np.repeat(temperature,len(pressure_data)))
+            pressure_combined = np.append(pressure_combined, pressure_data)
+                    
+        params = lmfit.Parameters()
+        params.add("nmax", nmaxguess, True, 0, 300)
+        params.add("p0", p0guess, True, 1E5)
+        params.add("alpha", alphaguess, True, 0, 10000)
+        params.add("beta", betaguess, True, 0, 100)
+        params.add("va", vaguess)
+        
+        def n_excess(p, T, params, stored_fluid):
+            phase = stored_fluid.determine_phase(p, T)
+            if phase != "Saturated":
+                stored_fluid.backend.update(CP.PT_INPUTS, p, T)
+            else:
+                stored_fluid.backend.update(CP.QT_INPUTS, 1, T)
+            fug = stored_fluid.backend.fugacity(0)
+            rhof = stored_fluid.backend.rhomolar()
+            return params["nmax"] * np.exp(-((sp.constants.R * T / (params["alpha"] + params["beta"] * T))**2)\
+                                       * ((np.log(params["p0"]/fug))**2)) - rhof * params["va"]
+        
+        def fit_penalty(params, dataP, dataAd, dataT, stored_fluid):
+            value = params.valuesdict()
+            difference = []
+            for i in range(0, len(dataP)):
+                difference.append(n_excess(dataP[i],dataT[i],value,stored_fluid) - dataAd[i])
+            return difference
+        
+        fitting = lmfit.minimize(fit_penalty, params, args=(pressure_combined,
+                                                                loading_combined, 
+                                                                temperature_combined,
+                                                                stored_fluid))
+        print(lmfit.fit_report(fitting))
+        paramsdict = fitting.params.valuesdict()
+        return cls(sorbent = sorbent,
+                   stored_fluid = stored_fluid,
+                   nmax = paramsdict["nmax"],
+                   p0 = paramsdict["p0"],
+                   alpha = paramsdict["alpha"],
+                   beta = paramsdict["beta"],
+                   va = paramsdict["va"])
+    
     
     
 
@@ -525,6 +708,7 @@ class SorbentMaterial:
                  mass : float,
                  skeletal_density : float,
                  bulk_density : float,
+                 specific_surface_area : float,
                  model_isotherm : ModelIsotherm = None):
         """
         
@@ -547,10 +731,11 @@ class SorbentMaterial:
         self.skeletal_density = skeletal_density
         self.bulk_density = bulk_density
         self.model_isotherm = model_isotherm
+        self.specific_surface_area = specific_surface_area
         
     def isosteric_heat(self, p, T):
         dn_dP = fd.partial_derivative(self.model_isotherm.n_absolute, 0,
-                                      [p,T], p*1E-5)
+                                      [p,T], 100)
         Vs = 1/self.skeletal_density + self.model_isotherm.v_ads(p,T)
         fluid = self.model_isotherm.stored_fluid.backend
         fluid.update(CP.PT_INPUTS, p, T)

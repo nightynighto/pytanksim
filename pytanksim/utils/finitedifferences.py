@@ -10,7 +10,8 @@ Created on Fri Jan 13 15:12:26 2023
 __all__ =[
     "partial_derivative",
     "second_derivative",
-    "mixed_second_derivative"
+    "mixed_second_derivative",
+    "backward_partial_derivative"
     ]
 
 def pardev(func, loc, stepsize):
@@ -20,12 +21,27 @@ def pardev(func, loc, stepsize):
     term2 = func(loc2)
     return (term1 - term2) / (2 * stepsize)
 
+
 def partial_derivative(func, var=0, point=[], stepsize=1e-3):
     args = point[:]
     def wraps(x):
         args[var] = x
         return func(*args)
     return pardev(wraps, point[var], stepsize)
+
+def backdev(func, loc, stepsize):
+    loc1 = (loc)
+    loc2 = (loc - stepsize)
+    term1 = func(loc1)
+    term2 = func(loc2)
+    return (term1 - term2) / (stepsize)
+
+def backward_partial_derivative(func, var=0, point=[], stepsize=1e-3):
+    args = point[:]
+    def wraps(x):
+        args[var] = x
+        return func(*args)
+    return backdev(wraps, point[var], stepsize)
 
 def secder(function, location, stepsize=1e-6):
     loc1 = (location - stepsize)
@@ -42,7 +58,7 @@ def second_derivative(func, var=0, point=[], stepsize=1e-6):
     def wraps(x):
         args[var] = x
         return func(*args)
-    return secder(wraps, point[var], stepsize)
+    return secder(wraps, point, stepsize)
 
 def mixsecder(function, location, stepsize = [1E3, 1E-4]):
     fpospos = function(location[0]+stepsize[0], location[1]+stepsize[1])
@@ -54,8 +70,8 @@ def mixsecder(function, location, stepsize = [1E3, 1E-4]):
 
 def mixed_second_derivative(func, var=[0,1], point=[], stepsize = [1E3, 1E-4]):
     args = point[:]
-    def wraps(x,y):
-        args[var[0]] = x
-        args[var[1]] = y
+    def wraps(x):
+        args[var[0]] = x[0]
+        args[var[1]] = x[1]
         return func(*args)
     return mixsecder(wraps, [point[var[0]],point[var[1]]], stepsize)

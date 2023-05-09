@@ -29,9 +29,9 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dps_dT = saturation_properties["dps_dT"]
         sorbent = self.storage_tank.sorbent_material
         isotherm = self.storage_tank.sorbent_material.model_isotherm
-        term1 = fd.partial_derivative(isotherm.n_absolute, 0, [p, T], p*1E-5) *\
+        term1 = fd.partial_derivative(isotherm.n_absolute, 0, [p, T], 1E2) *\
             dps_dT
-        term2 = fd.partial_derivative(isotherm.n_absolute, 1, [p, T], T*1E-5)
+        term2 = fd.partial_derivative(isotherm.n_absolute, 1, [p, T], 0.1)
         return sorbent.mass * (term1 + term2)
 
     ##Then, from the volume change
@@ -48,18 +48,27 @@ class TwoPhaseSorbentSim(BaseSimulation):
         drhol_dT, rhol, drhol_dp = map(saturation_properties_liquid.get, ("drho_dT", "rhof", "drho_dp"))
         term[0] = sorbent.mass * \
             fd.partial_derivative(self.storage_tank.sorbent_material.model_isotherm.v_ads, 
-                                        0, [p, T], p * 1E-5) * dps_dT
+                                        0, [p, T], 1E2) * dps_dT
         term[1] = sorbent.mass * \
             fd.partial_derivative(self.storage_tank.sorbent_material.model_isotherm.v_ads, 
-                                        1, [p, T], T * 1E-5)
+                                        1, [p, T], 0.01)
         term[3] = (-ng/(rhog**2)) * (drhog_dp * dps_dT + drhog_dT)
         term[4] = (-nl/(rhol**2)) * (drhol_dp * dps_dT + drhol_dT)
         return sum(term)
     
     ##Finally, from the energy balance
     
-    def _du_dn(self, saturation_properties):
-        return saturation_properties["uf"]
+    def _du_dng(self, ng, nl, T, saturation_properties_gas):
+        sorbent = self.storage_tank.sorbent_material
+        total_surface_area = sorbent.specific_surface_area * sorbent.mass
+        du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
+        return saturation_properties_gas["uf"] - (nl / ((ng+nl)**2)) * total_surface_area * du_dA
+    
+    def _du_dnl(self, ng, nl, T, saturation_properties_liquid):
+        sorbent = self.storage_tank.sorbent_material
+        total_surface_area = sorbent.specific_surface_area * sorbent.mass
+        du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
+        return saturation_properties_liquid["uf"] + (ng / ((ng+nl)**2)) * total_surface_area * du_dA
     
     def _du_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         dps_dT = saturation_properties_gas["dps_dT"]
@@ -70,11 +79,11 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
         term = np.zeros(4)
-        term[0] = sorbent.mass * isotherm.differential_energy(p, T) * \
-            (fd.partial_derivative(isotherm.n_absolute, 0, [p, T], p*1E-5) * dps_dT + \
-             fd.partial_derivative(isotherm.n_absolute, 1, [p, T], T*1E-5))
+        term[0] = sorbent.mass * isotherm.isosteric_internal_energy(p, T) * \
+            (fd.partial_derivative(isotherm.n_absolute, 0, [p, T], 1E2) * dps_dT + \
+             fd.partial_derivative(isotherm.n_absolute, 1, [p, T], 0.01))
         term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
-            fd.partial_derivative(isotherm.internal_energy_adsorbed, 1, [p, T], T*1E-5)
+            (dug_dp * dps_dT + dug_dT)
         term[2] = ng * (dug_dT + dug_dp * dps_dT) 
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
         return sum(term)
@@ -92,8 +101,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         m21 = self._dv_dn(satur_prop_gas)
         m22 = self._dv_dn(satur_prop_liquid)
         m23 = self._dv_dT(ng, nl, T, satur_prop_gas, satur_prop_liquid)
-        m31 = self._du_dn(satur_prop_gas)
-        m32 = self._du_dn(satur_prop_liquid)
+        m31 = self._du_dng(ng, nl, T, satur_prop_gas)
+        m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
         m33 = self._du_dT(ng, nl, T, satur_prop_gas, satur_prop_liquid)
         A = np.matrix([[m11, m12, m13],
                        [m21, m22, m23],
@@ -284,12 +293,12 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         b = np.array([b1, b2])
         return np.linalg.solve(A, b)
     
-    def _cooling_power(self, time, dng_dt, dnl_dt):
+    def _cooling_power(self, time, ng, nl, dng_dt, dnl_dt):
         T = self.simulation_params.init_temperature
         satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
         satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
-        m31 = self._du_dn(satur_prop_gas)
-        m32 = self._du_dn(satur_prop_liquid)
+        m31 = self._du_dng(ng, nl, T, satur_prop_gas)
+        m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass()
         ndotin = self.boundary_flux.mass_flow_in(time)  / MW
@@ -314,7 +323,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             diffresults = self._dn_dt(t)
-            cool_power = self._cooling_power(t, diffresults[0], diffresults[1])
+            cool_power = self._cooling_power(t, w[0], w[1], diffresults[0], diffresults[1])
             flux = self.boundary_flux
             MW = fluid.molar_mass()
             ndotin = flux.mass_flow_in(t)  / MW
@@ -403,7 +412,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
 class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
     sim_type = "Venting"
     
-    def solve_differentials(self, time):
+    def solve_differentials(self, ng, nl, time):
         T = self.simulation_params.init_temperature
         fluid = self.storage_tank.stored_fluid.backend
         fluid.update(CP.QT_INPUTS, 0, T)
@@ -416,8 +425,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         m21 = self._dv_dn(satur_prop_gas)
         m22 = self._dv_dn(satur_prop_liquid)
         m23 = 0
-        m31 = self._du_dn(satur_prop_gas)
-        m32 = self._du_dn(satur_prop_liquid)
+        m31 = self._du_dng(ng, nl, T, satur_prop_gas)
+        m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
         m33 = satur_prop_gas["hf"]
         
         A = np.array([[m11, m12, m13],
@@ -468,7 +477,7 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            diffresults = self.solve_differentials(t)
+            diffresults = self.solve_differentials(w[0], w[1], t)
             return diffresults
         
         def events(t, w, sw):
@@ -560,21 +569,24 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         b = np.array([b1, b2])
         return np.linalg.solve(A, b)
     
-    def _heating_power(self, time, dng_dt, dnl_dt):
+    def _heating_power(self, time, ng, nl, dng_dt, dnl_dt):
         T = self.simulation_params.init_temperature
         satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
         satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
-        m31 = self._du_dn(satur_prop_gas)
-        m32 = self._du_dn(satur_prop_liquid)
+        m31 = self._du_dng(ng, nl, T, satur_prop_gas)
+        m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass()
         ndotin = self.boundary_flux.mass_flow_in(time)  / MW
         ndotout = self.boundary_flux.mass_flow_out(time) / MW
-        Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
-        Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
+        if ndotin != 0:
+            Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
+            Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
         ##Get the molar enthalpy of the inlet fluid
-        fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-        hin = fluid.hmolar()
+            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+            hin = fluid.hmolar()
+        else:
+            hin = 0
         return dng_dt * m31 + dnl_dt * m32 - ndotin * hin + ndotout * satur_prop_gas["hf"] + \
            - self.boundary_flux.heating_power(time) + self.boundary_flux.cooling_power(time) - self.heat_leak_in(T) 
     
@@ -589,15 +601,18 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             diffresults = self._dn_dt(t)
-            heating_power = self._heating_power(t, diffresults[0], diffresults[1])
+            heating_power = self._heating_power(t, w[0], w[1], diffresults[0], diffresults[1])
             flux = self.boundary_flux
             MW = fluid.molar_mass()
             ndotin = flux.mass_flow_in(t)  / MW
             ndotout = flux.mass_flow_out(t) / MW
-            Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
-            Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            if ndotin != 0:
+                Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
+                Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
+                fluid.update(CP.PT_INPUTS, Pinput, Tinput)
+                hin = fluid.hmolar()
+            else:
+                hin = 0
             fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
             hout = fluid.hmolar()
             return np.append(diffresults, [
@@ -685,8 +700,8 @@ class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
         m21 = self._dv_dn(satur_prop_gas)
         m22 = self._dv_dn(satur_prop_liquid)
         m23 = self._dv_dT(ng, nl, T, satur_prop_gas, satur_prop_liquid)
-        m31 = self._du_dn(satur_prop_gas)
-        m32 = self._du_dn(satur_prop_liquid)
+        m31 = self._du_dng(ng, nl, T, satur_prop_gas)
+        m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
         m33 = self._du_dT(ng, nl, T, satur_prop_gas, satur_prop_liquid)
         A = np.matrix([[m11, m12, m13],
                        [m21, m22, m23],

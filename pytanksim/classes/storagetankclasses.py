@@ -83,7 +83,7 @@ class StorageTank:
         self.surface_area = surface_area
         self.thermal_resistance = thermal_resistance
     
-    def tank_capacity(self, p, T, q = 0):
+    def capacity(self, p, T, q = 0):
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -93,7 +93,18 @@ class StorageTank:
         
         return fluid.rhomolar() * self.volume
                 
-    
+    def find_quality_at_saturation_capacity(self, T, capacity):
+        fluid = self.stored_fluid.backend
+        fluid.update(CP.QT_INPUTS, 0, T)
+        rhol = fluid.rhomolar()
+        fluid.update(CP.QT_INPUTS, 1, T)
+        rhog = fluid.rhomolar()
+        A = np.array([[1, 1],
+                      [1/rhog, 1/rhol]])
+        b = [capacity, self.volume]
+        return np.linalg.solve(A, b)
+
+        
 
         
        
@@ -185,7 +196,7 @@ class SorbentTank(StorageTank):
         vads = self.sorbent_material.model_isotherm.v_ads
         return tankvol - mads/rhoskel - vads(p,T) * mads
     
-    def tank_capacity(self, p, T, q = 0):
+    def capacity(self, p, T, q = 0):
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -197,5 +208,21 @@ class SorbentTank(StorageTank):
         adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
             self.sorbent_material.mass
         return bulk_fluid_moles + adsorbed_moles
+    
+    def internal_energy(self, p, T, q = 1):
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        ufluid = fluid.umolar()
+        bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
+        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
+            self.sorbent_material.mass
+        uadsorbed = self.sorbent_material.model_isotherm.isosteric_internal_energy(p, T)
+        return ufluid * bulk_fluid_moles + adsorbed_moles * (ufluid - uadsorbed)
+    
+
     
     

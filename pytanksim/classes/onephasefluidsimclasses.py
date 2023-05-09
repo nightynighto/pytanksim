@@ -41,8 +41,12 @@ class OnePhaseFluidSim(BaseSimulation):
 class OnePhaseFluidDefault(OnePhaseFluidSim):
     sim_type = "Default"
     def solve_differentials(self, time, p, T):
-        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
-        
+        phase = self.storage_tank.stored_fluid.determine_phase(p, T)
+        qinit = 0 if self.simulation_params.init_ng < self.simulation_params.init_nl else 1
+        if phase != "Saturated":
+            prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)  
+        else: 
+            prop_dict = self.storage_tank.stored_fluid.saturation_property_dict(T, qinit)
         m11 = self._dn_dp(prop_dict)
         m12 = self._dn_dT(prop_dict)
         m21 = self._du_dp(prop_dict)
@@ -56,10 +60,8 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
-        ##Get the thermodynamic properties of the bulk fluid for later calculations
-        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
+        if ndotin != 0:
             Pinput = flux.pressure_in(p, T)
             Tinput = flux.temperature_in(p,T)
             ##Get the molar enthalpy of the inlet fluid
@@ -69,19 +71,18 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
             hin = 0    
         
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * fluid_props["hf"] + \
+        b2 = ndotin * hin - ndotout * prop_dict["hf"] + \
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
         
         soln = np.linalg.solve(A, b)
-        
         return np.append(soln, 
                          [ndotin,
                          ndotin * hin,
                          ndotout,
-                         ndotout * fluid_props["hf"],
+                         ndotout * prop_dict["hf"],
                          self.boundary_flux.cooling_power(time),
                          self.boundary_flux.heating_power(time),
                          self.heat_leak_in(T) ])
@@ -167,7 +168,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.rtol = 1E-2
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -219,7 +220,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
     def solve_differentials(self, time, T):
         p = self.simulation_params.init_pressure
         fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.nolar_mass()
+        MW = fluid.molar_mass()
         flux = self.boundary_flux
         
         ndotin = flux.mass_flow_in(time)  / MW
@@ -234,9 +235,9 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             hin = 0    
         
         phase = self.storage_tank.stored_fluid.determine_phase(p, T)
-        
+
         if phase == "Saturated":
-            return [0,0, 0, ndotin,
+            return [0, 0, 0, ndotin,
             ndotin * hin,
             self.boundary_flux.cooling_power(time),
             self.boundary_flux.heating_power(time),
@@ -250,14 +251,14 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         
         A = np.array([[m11, m12],
                       [m21, m22]])
-        
+
         b1 = ndotin 
         b2 = ndotin * hin + \
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
-                
+
         soln = np.linalg.solve(A, b)
         
         return np.append(soln,
