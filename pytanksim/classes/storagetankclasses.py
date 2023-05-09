@@ -104,6 +104,16 @@ class StorageTank:
         b = [capacity, self.volume]
         return np.linalg.solve(A, b)
 
+    def internal_energy(self, p, T, q = 1):
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        ufluid = fluid.umolar()
+        bulk_fluid_moles = fluid.rhomolar() * self.volume
+        return ufluid * bulk_fluid_moles 
         
 
         
