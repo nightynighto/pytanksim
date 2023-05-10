@@ -11,7 +11,11 @@ __all__ =[
     "partial_derivative",
     "second_derivative",
     "mixed_second_derivative",
-    "backward_partial_derivative"
+    "backward_partial_derivative",
+    "forward_partial_derivative",
+    "pardev",
+    "backdev",
+    "fordev"
     ]
 
 def pardev(func, loc, stepsize):
@@ -19,7 +23,7 @@ def pardev(func, loc, stepsize):
     loc2 = (loc - stepsize)
     term1 = func(loc1)
     term2 = func(loc2)
-    return (term1 - term2) / (2 * stepsize)
+    return (term1 - term2) / (loc1 - loc2)
 
 
 def partial_derivative(func, var=0, point=[], stepsize=1e-3):
@@ -30,11 +34,12 @@ def partial_derivative(func, var=0, point=[], stepsize=1e-3):
     return pardev(wraps, point[var], stepsize)
 
 def backdev(func, loc, stepsize):
-    loc1 = (loc)
-    loc2 = (loc - stepsize)
-    term1 = func(loc1)
+    loc2 = loc - stepsize
+    loc3 = loc2 - stepsize
+    term1 = func(loc)
     term2 = func(loc2)
-    return (term1 - term2) / (stepsize)
+    term3 = func(loc3)
+    return (3*term1 - 4*term2 + term3) / (loc-loc3)
 
 def backward_partial_derivative(func, var=0, point=[], stepsize=1e-3):
     args = point[:]
@@ -42,6 +47,21 @@ def backward_partial_derivative(func, var=0, point=[], stepsize=1e-3):
         args[var] = x
         return func(*args)
     return backdev(wraps, point[var], stepsize)
+
+def fordev(func, loc, stepsize):
+    loc2 = loc + stepsize
+    loc3 = loc2 + stepsize
+    term1 = func(loc)
+    term2 = func(loc2)
+    term3 = func(loc3)
+    return (-3*term1 + 4* term2 - term3)/(loc3-loc)
+
+def forward_partial_derivative(func, var=0, point= [], stepsize = 1e-3):
+    args = point[:]
+    def wraps(x):
+        args[var] = x
+        return func(*args)
+    return fordev(wraps, point[var], stepsize)
 
 def secder(function, location, stepsize=1e-6):
     loc1 = (location - stepsize)

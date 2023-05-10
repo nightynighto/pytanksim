@@ -68,7 +68,7 @@ class TwoPhaseSorbentSim(BaseSimulation):
         sorbent = self.storage_tank.sorbent_material
         total_surface_area = sorbent.specific_surface_area * sorbent.mass
         du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
-        return saturation_properties_liquid["uf"] + (ng / ((ng+nl)**2)) * total_surface_area * du_dA
+        return saturation_properties_liquid["uf"]  + (ng / ((ng+nl)**2)) * total_surface_area * du_dA
     
     def _du_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         dps_dT = saturation_properties_gas["dps_dT"]
@@ -78,16 +78,18 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dps_dT = saturation_properties_gas["dps_dT"]
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
+        print(dps_dT)
         term = np.zeros(4)
         term[0] = sorbent.mass * (ug - isotherm.isosteric_internal_energy(p, T)) * \
             (fd.partial_derivative(isotherm.n_absolute, 0, [p, T], 1E2) * dps_dT + \
              fd.partial_derivative(isotherm.n_absolute, 1, [p, T], 0.01))
         term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
-            ((dug_dp * dps_dT + dug_dT) - \
-                (fd.partial_derivative(isotherm.isosteric_internal_energy, 0, [p, T], 1E2) * dps_dT + \
-                 fd.partial_derivative(isotherm.isosteric_internal_energy, 1, [p, T], 0.01)))
+            (dug_dp * dps_dT + dug_dT) # -\
+                # (fd.partial_derivative(isotherm.isosteric_internal_energy, 0, [p, T], 1E2) * dps_dT + \
+                #   fd.partial_derivative(isotherm.isosteric_internal_energy, 1, [p, T], 0.01)))
         term[2] = ng * (dug_dT + dug_dp * dps_dT) 
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
+        print(term)
         return sum(term)
     
 class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
@@ -109,7 +111,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         A = np.matrix([[m11, m12, m13],
                        [m21, m22, m23],
                        [m31, m32, m33]])
-        
+        print(A)
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass() 
         ##Convert kg/s to mol/s
@@ -133,6 +135,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T) 
         b = np.array([b1,b2,b3])
+        print(b)
         diffresults = np.linalg.solve(A, b)
         return np.append(diffresults,
                          [ndotin,
