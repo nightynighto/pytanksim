@@ -451,7 +451,7 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         
-        if flux.mass_flow_in:
+        if flux.mass_flow_in(time):
             Pinput = flux.pressure_in(psat, T)
             Tinput = flux.temperature_in(psat,T)
             ##Get the molar enthalpy of the inlet fluid

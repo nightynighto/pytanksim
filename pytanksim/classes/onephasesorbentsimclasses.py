@@ -190,8 +190,6 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                 hin = self.enthalpy_in_calc(p, T)
             else:
                 hin = 0
-            print(dPdt)
-            print(dTdt)
             output = np.array([dPdt, dTdt, ndotin, ndotin * hin,
                              self.boundary_flux.cooling_power(t),
                              self.boundary_flux.heating_power(t), self.heat_leak_in(T),

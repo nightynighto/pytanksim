@@ -219,6 +219,17 @@ class SorbentTank(StorageTank):
             self.sorbent_material.mass
         return bulk_fluid_moles + adsorbed_moles
     
+    def capacity_bulk(self, p, T, q = 0):
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        
+        bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
+        return bulk_fluid_moles
+    
     def internal_energy(self, p, T, q = 1):
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
