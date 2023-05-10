@@ -21,33 +21,49 @@ from pytanksim.classes.basesimclass import BaseSimulation
 class OnePhaseSorbentSim(BaseSimulation):
     sim_phase = "One Phase"
     
-    def _derivfunc(self, p, T, deriv_var = "p"):
-        phase = self.storage_tank.stored_fluid.determine_phase(p,T)
+    def _derivfunc(self, func, var, point, stepsize):
+        pT = point[:2]
+        def phase_func(x):
+            pT[var] = x
+            return self.storage_tank.stored_fluid.determine_phase(pT[0], pT[1])
+        
+        x0 = point[var]
+        x1 = x0 + stepsize
+        x2 = x0 - stepsize
+        phase1 = phase_func(x0)
+        phase2 = phase_func(x1)
+        phase3 = phase_func(x2)
         qinit = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1
-        if phase != "Saturated":
-            return fd.partial_derivative
-        elif (qinit == 0 and deriv_var == "p") or (qinit == 1 and deriv_var == "T"):
-            return fd.forward_partial_derivative
+        if phase1 == phase2 == phase3:
+            return fd.partial_derivative(func, var, point, stepsize)
+        elif phase1 == "Saturated":
+            if (qinit == 0 and phase3 == "Liquid") or (qinit == 1 and phase3 == "Gas"):
+                return fd.backward_partial_derivative(func, var, point, stepsize)
+            else:
+                return fd.forward_partial_derivative(func, var, point, stepsize)
         else:
-            return fd.backward_partial_derivative
+            if phase1 == phase3:
+                return fd.backward_partial_derivative(func, var, point, stepsize)
+            else:
+                return fd.forward_partial_derivative(func, var, point, stepsize)
         
     
     def _dn_dp(self, p, T, fluid_properties):
         drho_dp = fluid_properties["drho_dp"]
         rhof = fluid_properties["rhof"]
-        deriver = self._derivfunc(p, T)
+        deriver = self._derivfunc
         
         term1 = drho_dp * self.storage_tank.bulk_fluid_volume(p, T)
         term2 = - rhof * deriver(self.storage_tank.sorbent_material.model_isotherm.v_ads,
                                      0, [p,T], 1E2) * self.storage_tank.sorbent_material.mass
-        term2 = deriver(self.storage_tank.sorbent_material.model_isotherm.n_absolute, \
+        term3 = deriver(self.storage_tank.sorbent_material.model_isotherm.n_absolute, \
                                       0, [p, T], 1E2) * \
             self.storage_tank.sorbent_material.mass
-        return term1 + term2
+        return term1 + term2 + term3
     
     def _dn_dT(self, p, T, fluid_properties):
         rhof, drho_dT = map(fluid_properties.get, ("rhof", "drho_dT"))
-        deriver = self._derivfunc(p, T, "T")
+        deriver = self._derivfunc
         term = np.zeros(3)
         term[0] =  drho_dT * self.storage_tank.bulk_fluid_volume(p, T)
         term[1] = - rhof * deriver(self.storage_tank.sorbent_material.model_isotherm.v_ads,
@@ -59,7 +75,7 @@ class OnePhaseSorbentSim(BaseSimulation):
     def _dU_dp(self, p, T, nh2, fluid_properties):
         sorbent = self.storage_tank.sorbent_material
         du_dp = fluid_properties["du_dp"]
-        deriver = self._derivfunc(p, T)
+        deriver = self._derivfunc
         term = np.zeros(3)
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1       
 
@@ -76,7 +92,7 @@ class OnePhaseSorbentSim(BaseSimulation):
         du_dT = fluid_properties["du_dT"]
         tank = self.storage_tank
         sorbent = self.storage_tank.sorbent_material
-        deriver = self._derivfunc(p, T, "T")
+        deriver = self._derivfunc
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1       
         term = np.zeros(4)
         term[0] = nh2 * du_dT
@@ -168,12 +184,14 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             if phase != "Saturated":
                 fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
             else:
-                fluid_props = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
+                fluid_props = self.storage_tank.stored_fluid.saturation_property_dict(T, q)
             ##Get the input pressure at a condition
             if flux.mass_flow_in(t) != 0:
                 hin = self.enthalpy_in_calc(p, T)
             else:
                 hin = 0
+            print(dPdt)
+            print(dTdt)
             output = np.array([dPdt, dTdt, ndotin, ndotin * hin,
                              self.boundary_flux.cooling_power(t),
                              self.boundary_flux.heating_power(t), self.heat_leak_in(T),
@@ -251,7 +269,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-2
+        sim.rtol = 1E-5
         # sim.atol = [100, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
