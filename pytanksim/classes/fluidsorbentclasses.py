@@ -204,8 +204,8 @@ class ModelIsotherm:
     def enthalpy_adsorbed_phase(self, p, T):
         return tsu.ads_energy_abs(self.n_absolute, p, T, self.v_ads, self.stored_fluid.backend)
  
-    def pressure_from_absolute_adsorption(self, n_abs, T, p_max_guess = 10E6):
-        p_max_guess = min(p_max_guess, self.stored_fluid.backend.pmax())
+    def pressure_from_absolute_adsorption(self, n_abs, T, p_max_guess = 20E6):
+        p_max_guess = min(p_max_guess, self.stored_fluid.backend.pmax()/10)
         if n_abs == 0:
             return 0
         def optimum_pressure(p):
@@ -217,47 +217,74 @@ class ModelIsotherm:
                                 method="toms748")
         return root.root
     
-    def isosteric_enthalpy(self, p, T):
+    def isosteric_enthalpy(self, p, T, q =1):
         nabs = self.n_absolute(p, T)
         fluid = self.stored_fluid.backend
-        phase = self.stored_fluid.determine_phase(p, T)
-        if phase != "Saturated":
-            fluid.update(CP.PT_INPUTS, p, T)
-        else:
-            fluid.update(CP.QT_INPUTS, 1, T)
-        hfluid = fluid.hmolar()
         def diff_function(x):
             pres = self.pressure_from_absolute_adsorption(nabs, 1/x)
             phase = self.stored_fluid.determine_phase(pres, 1/x)
             if phase != "Saturated":
                 fluid.update(CP.PT_INPUTS, pres, 1/x)
             else:
-                fluid.update(CP.QT_INPUTS, 1, 1/x)
+                fluid.update(CP.QT_INPUTS, q, 1/x)
             return fluid.chemical_potential(0) * x
+        
+        phase = self.stored_fluid.determine_phase(p, T)
         x_loc = 1/T
-        hadsorbed = fd.pardev(diff_function, x_loc, x_loc * 1E-2)
+        step = x_loc * 1E-2
+        temp2 = 1/(x_loc + step)
+        phase2 = self.stored_fluid.determine_phase(p, temp2)
+        temp3 = 1/(x_loc - step)
+        phase3 = self.stored_fluid.determine_phase(p, temp3)
+
+        if phase == phase2 == phase3 != "Saturated":
+            hadsorbed = fd.pardev(diff_function, x_loc, step)
+            fluid.update(CP.PT_INPUTS, p, T)
+        else:
+            if q == 1:
+                hadsorbed = fd.backdev(diff_function, x_loc, step)
+            else:
+                hadsorbed = fd.fordev(diff_function, x_loc, step)
+            if phase == "Saturated":
+                fluid.update(CP.QT_INPUTS, q, T)
+            else:
+                fluid.update(CP.PT_INPUTS, p, T)
+        hfluid = fluid.hmolar()
         return hfluid - hadsorbed 
     
-    def isosteric_internal_energy(self, p, T):
+    def isosteric_internal_energy(self, p, T, q = 1):
         nabs = self.n_absolute(p, T)
         vads = self.v_ads(p,T)
         fluid = self.stored_fluid.backend
-        phase = self.stored_fluid.determine_phase(p, T)
-        if phase != "Saturated":
-            fluid.update(CP.PT_INPUTS, p, T)
-        else:
-            fluid.update(CP.QT_INPUTS, 1, T)
-        ufluid = fluid.umolar()
         def diff_function(x):
             pres = self.pressure_from_absolute_adsorption(nabs, 1/x)
             phase = self.stored_fluid.determine_phase(pres, 1/x)
             if phase != "Saturated":
                 fluid.update(CP.PT_INPUTS, pres, 1/x)
             else:
-                fluid.update(CP.QT_INPUTS, 1, 1/x)
+                fluid.update(CP.QT_INPUTS, q, 1/x)
             return fluid.chemical_potential(0) * x
+        phase = self.stored_fluid.determine_phase(p, T)
         x_loc = 1/T
-        hadsorbed = fd.pardev(diff_function, x_loc, x_loc * 1E-2)
+        step = x_loc * 1E-2
+        temp2 = 1/(x_loc + step)
+        phase2 = self.stored_fluid.determine_phase(p, temp2)
+        temp3 = 1/(x_loc - step)
+        phase3 = self.stored_fluid.determine_phase(p, temp3)
+
+        if phase == phase2 == phase3 != "Saturated":
+           hadsorbed = fd.pardev(diff_function, x_loc, step)
+           fluid.update(CP.PT_INPUTS, p, T)
+        else:
+           if q == 1:
+               hadsorbed = fd.backdev(diff_function, x_loc, step)
+           else:
+               hadsorbed = fd.fordev(diff_function, x_loc, step)
+           if phase == "Saturated":
+               fluid.update(CP.QT_INPUTS, q, T)
+           else:
+               fluid.update(CP.PT_INPUTS, p, T)
+        ufluid = fluid.umolar()
         return ufluid - (hadsorbed - p * vads/nabs)
         
     
