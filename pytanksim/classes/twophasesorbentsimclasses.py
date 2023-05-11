@@ -13,7 +13,7 @@ import numpy as np
 import pytanksim.utils.finitedifferences as fd
 from tqdm.auto import tqdm
 from assimulo.problem import Explicit_Problem
-from assimulo.solvers import CVode
+from assimulo.solvers import CVode, RodasODE
 from assimulo.exception import TerminateSimulation
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.basesimclass import BaseSimulation
@@ -24,10 +24,10 @@ class TwoPhaseSorbentSim(BaseSimulation):
     #Generate the elements of the matrix representing the governing eqs.
     #First, from mass balance
     
-    def _saturation_deriv(self, ptfunc, T, q = 1):
+    def _saturation_deriv(self, ptfunc, T):
         fluid = self.storage_tank.stored_fluid.backend
         def function_satur(T):
-            fluid.update(CP.QT_INPUTS, q, T)
+            fluid.update(CP.QT_INPUTS, 1, T)
             pres = fluid.p()
             return ptfunc(pres, T)
         Tcrit = fluid.T_critical()
@@ -37,14 +37,9 @@ class TwoPhaseSorbentSim(BaseSimulation):
             return fd.backdev(function_satur, T, 0.01)
     
     def _dn_dT(self, T, saturation_properties):
-        p = saturation_properties["psat"]
-        dps_dT = saturation_properties["dps_dT"]
         sorbent = self.storage_tank.sorbent_material
         isotherm = self.storage_tank.sorbent_material.model_isotherm
-        term1 = fd.partial_derivative(isotherm.n_absolute, 0, [p, T], 1E2) *\
-            dps_dT
-        term2 = fd.partial_derivative(isotherm.n_absolute, 1, [p, T], 0.1)
-        return sorbent.mass * (term1 + term2)
+        return sorbent.mass * self._saturation_deriv(isotherm.n_absolute, T)
 
     ##Then, from the volume change
     
@@ -53,17 +48,12 @@ class TwoPhaseSorbentSim(BaseSimulation):
     
     def _dv_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         sorbent = self.storage_tank.sorbent_material
-        p = saturation_properties_gas["psat"]
         term = np.zeros(4)
         dps_dT = saturation_properties_gas["dps_dT"]
         drhog_dT, rhog, drhog_dp = map(saturation_properties_gas.get, ("drho_dT", "rhof", "drho_dp"))
         drhol_dT, rhol, drhol_dp = map(saturation_properties_liquid.get, ("drho_dT", "rhof", "drho_dp"))
         term[0] = sorbent.mass * \
-            fd.partial_derivative(self.storage_tank.sorbent_material.model_isotherm.v_ads, 
-                                        0, [p, T], 1E2) * dps_dT
-        term[1] = sorbent.mass * \
-            fd.partial_derivative(self.storage_tank.sorbent_material.model_isotherm.v_ads, 
-                                        1, [p, T], 0.01)
+            self._saturation_deriv(sorbent.model_isotherm.v_ads, T)
         term[2] = (-ng/(rhog**2)) * (drhog_dp * dps_dT + drhog_dT)
         term[3] = (-nl/(rhol**2)) * (drhol_dp * dps_dT + drhol_dT)
         return sum(term)
@@ -91,12 +81,11 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
         term = np.zeros(4)
-        term[0] = sorbent.mass * (ug - isotherm.isosteric_internal_energy(p, T)) * \
-            (fd.partial_derivative(isotherm.n_absolute, 0, [p, T], 1E2) * dps_dT + \
-             fd.partial_derivative(isotherm.n_absolute, 1, [p, T], 0.01))
+        term[0] = sorbent.mass * (ug - isotherm.isosteric_internal_energy(p, T, 1)) * \
+            (self._saturation_deriv(isotherm.n_absolute, T))
         term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
-            (dug_dp * dps_dT + dug_dT) -\
-                (self._saturation_deriv(isotherm.isosteric_internal_energy, T))
+            ((dug_dp * dps_dT + dug_dT) -\
+                (self._saturation_deriv(isotherm.isosteric_internal_energy, T)))
         term[2] = ng * (dug_dT + dug_dp * dps_dT) 
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
         return sum(term)
@@ -244,8 +233,9 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         model.handle_event = handle_event
         model.name = "2 Phase Dynamics"
         sim = CVode(model)
+        sim.report_continuously = True
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.atol = [1E-2, 1E-2, 0.01, 1, 1, 1, 1, 1, 1, 1]
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()

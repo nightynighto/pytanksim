@@ -145,7 +145,7 @@ class StoredFluid:
         else:
             fluid.update(CP.QT_INPUTS, 0, T)
             psat = fluid.p()
-            if np.abs(p-psat) < (psat * 1E-6):
+            if np.abs(p-psat) <= (psat * 1E-4):
                 return "Saturated"
             elif p < psat:
                 return "Gas"
