@@ -76,7 +76,6 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                 + self.heat_leak_in(T)
                 
         b = np.array([b1, b2])
-        
         soln = np.linalg.solve(A, b)
         return np.append(soln, 
                          [ndotin,
@@ -168,7 +167,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-2
+        sim.rtol = 1E-10
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -181,14 +180,11 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                    "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            iterable = i
             phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
             if phase == "Saturated":
-                while phase == "Saturated":
-                    iterable = iterable - 1
-                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable,0], y[iterable,1])
-                q = 0 if phase == "Liquid" else 1
-                fluid.update(CP.QT_INPUTS, q, y[i,1])
+                qinit = 0 if self.simulation_params.init_ng < self.simulation_params.init_nl else 1
+                phase = "Liquid" if qinit == 0 else 1
+                fluid.update(CP.QT_INPUTS, qinit, y[i,1])
             else:
                 fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
             nfluid = fluid.rhomolar() * self.storage_tank.volume
@@ -323,7 +319,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.rtol = 1E-10
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -483,7 +479,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics Cooled at Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.rtol = 1E-10
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -651,7 +647,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         model.name = "1 Phase Dynamics Cooled at Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.rtol = 1E-10
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()

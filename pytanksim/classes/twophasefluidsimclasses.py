@@ -506,9 +506,9 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         else:
             hin = 0    
         
-        b1 = ndotin 
+        b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin + ndotout * satur_prop_gas["hf"] +\
+        b3 = ndotin * hin - ndotout * satur_prop_gas["hf"] +\
             - self.boundary_flux.cooling_power(time) + self.boundary_flux.heating_power(time) + \
                 self.heat_leak_in(self.simulation_params.init_temperature)
                 

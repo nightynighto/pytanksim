@@ -256,27 +256,26 @@ class ModelIsotherm:
         nabs = self.n_absolute(p, T)
         vads = self.v_ads(p,T)
         fluid = self.stored_fluid.backend
-        def diff_function(x):
-            pres = self.pressure_from_absolute_adsorption(nabs, 1/x)
-            phase = self.stored_fluid.determine_phase(pres, 1/x)
+        def diff_function(Temper):
+            pres = self.pressure_from_absolute_adsorption(nabs, Temper)
+            phase = self.stored_fluid.determine_phase(pres, Temper)
             if phase != "Saturated":
-                fluid.update(CP.PT_INPUTS, pres, 1/x)
+                fluid.update(CP.PT_INPUTS, pres, Temper)
             else:
-                fluid.update(CP.QT_INPUTS, q, 1/x)
-            return fluid.chemical_potential(0) * x
+                fluid.update(CP.QT_INPUTS, q, Temper)
+            return fluid.chemical_potential(0)
         phase = self.stored_fluid.determine_phase(p, T)
-        x_loc = 1/T
-        step = x_loc * 1E-2
-        temp2 = 1/(x_loc + step)
+        x_loc = T
+        step = x_loc * 1E-6
+        temp2 = x_loc + step
         phase2 = self.stored_fluid.determine_phase(p, temp2)
-        temp3 = 1/(x_loc - step)
+        temp3 = x_loc - step
         phase3 = self.stored_fluid.determine_phase(p, temp3)
-
         if phase == phase2 == phase3 != "Saturated":
            hadsorbed = fd.pardev(diff_function, x_loc, step)
            fluid.update(CP.PT_INPUTS, p, T)
         else:
-           if q == 1:
+           if q == 0:
                hadsorbed = fd.backdev(diff_function, x_loc, step)
            else:
                hadsorbed = fd.fordev(diff_function, x_loc, step)
@@ -284,9 +283,84 @@ class ModelIsotherm:
                fluid.update(CP.QT_INPUTS, q, T)
            else:
                fluid.update(CP.PT_INPUTS, p, T)
+        chempot = fluid.chemical_potential(0)
+        hadsorbed = chempot - T * hadsorbed
         ufluid = fluid.umolar()
         return ufluid - (hadsorbed - p * vads/nabs)
+
+
+    def _derivfunc(self, func, var, point, qinit, stepsize):
+        pT = point[:2]
+        def phase_func(x):
+            pT[var] = x
+            return self.stored_fluid.determine_phase(pT[0], pT[1])
         
+        x0 = point[var]
+        x1 = x0 + stepsize
+        x2 = x0 - stepsize
+        phase1 = phase_func(x0)
+        phase2 = phase_func(x1)
+        phase3 = phase_func(x2)
+        if phase1 == phase2 == phase3 != "Saturated":
+            return fd.partial_derivative(func, var, point, stepsize)
+        elif phase1 == "Saturated":
+            if (qinit == 0 and var == 1) or (qinit == 1 and var == 0):
+                return fd.backward_partial_derivative(func, var, point, stepsize)
+            else:
+                return fd.forward_partial_derivative(func, var, point, stepsize)
+        else:
+            if phase1 == phase3:
+                return fd.backward_partial_derivative(func, var, point, stepsize)
+            elif phase1 == phase2:
+                return fd.forward_partial_derivative(func, var, point, stepsize)   
+            
+    def _derivfunc_second(self, func, point, qinit, stepsize):
+        pT = point
+        def phase_func(x):
+            pT[1] = x
+            return self.stored_fluid.determine_phase(pT[0], pT[1])
+        
+        x0 = point[1]
+        x1 = x0 + stepsize
+        x2 = x0 - stepsize
+        phase1 = phase_func(x0)
+        phase2 = phase_func(x1)
+        phase3 = phase_func(x2)
+        if phase1 == phase2 == phase3 != "Saturated":
+            return fd.secder(func, x0, stepsize)
+        elif phase1 == "Saturated":
+            if qinit == 0:
+                return fd.secbackder(func, x0, stepsize)
+            else:
+                return fd.secforder(func, x0, stepsize)
+        else:
+            if phase1 == phase3:
+                return fd.secbackder(func, x0, stepsize)
+            elif phase1 == phase2:
+                return fd.secforder(func, x0, stepsize)
+
+    def isosteric_energy_temperature_deriv(self, p, T, q = 1, stepsize = 1E-6):
+        nabs = self.n_absolute(p, T)
+        vads = self.v_ads(p,T)
+        fluid = self.stored_fluid.backend
+        def diff_function(Temper):
+            pres = self.pressure_from_absolute_adsorption(nabs, Temper)
+            phase = self.stored_fluid.determine_phase(pres, Temper)
+            if phase != "Saturated":
+                fluid.update(CP.PT_INPUTS, pres, Temper)
+            else:
+                fluid.update(CP.QT_INPUTS, q, Temper)
+            return fluid.chemical_potential(0)
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        du_dT = fluid.first_partial_deriv(CP.iUmolar, CP.iT, CP.iP)
+        dhads_dT = - T * self._derivfunc_second(diff_function, [p, T], q, stepsize)
+        dnabs_dT = self._derivfunc(self.n_absolute, 1, [p, T], q, stepsize)
+        dvads_dT = self._derivfunc(self.v_ads, 1, [p, T], q, stepsize)
+        return du_dT - (dhads_dT - (p/(nabs **2))*(nabs * dvads_dT - dnabs_dT * vads))
     
     def differential_energy(self, p, T):
         if p == 0:

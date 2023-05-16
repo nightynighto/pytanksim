@@ -37,27 +37,28 @@ class OnePhaseSorbentSim(BaseSimulation):
         if phase1 == phase2 == phase3 != "Saturated":
             return fd.partial_derivative(func, var, point, stepsize)
         elif phase1 == "Saturated":
-            if (qinit == 0 and phase3 == "Liquid") or (qinit == 1 and phase3 == "Gas"):
+            if (qinit == 0 and var == 1) or (qinit == 1 and var == 0):
                 return fd.backward_partial_derivative(func, var, point, stepsize)
             else:
                 return fd.forward_partial_derivative(func, var, point, stepsize)
         else:
             if phase1 == phase3:
                 return fd.backward_partial_derivative(func, var, point, stepsize)
-            else:
+            elif phase1 == phase2:
                 return fd.forward_partial_derivative(func, var, point, stepsize)
-        
     
     def _dn_dp(self, p, T, fluid_properties):
         drho_dp = fluid_properties["drho_dp"]
         rhof = fluid_properties["rhof"]
         deriver = self._derivfunc
+        stepsize = min(p*1E-5, 100)
+
         
         term1 = drho_dp * self.storage_tank.bulk_fluid_volume(p, T)
         term2 = - rhof * deriver(self.storage_tank.sorbent_material.model_isotherm.v_ads,
-                                     0, [p,T], 1E3) * self.storage_tank.sorbent_material.mass
+                                     0, [p,T], stepsize) * self.storage_tank.sorbent_material.mass
         term3 = deriver(self.storage_tank.sorbent_material.model_isotherm.n_absolute, \
-                                      0, [p, T], 1E3) * \
+                                      0, [p, T], stepsize) * \
             self.storage_tank.sorbent_material.mass
         return term1 + term2 + term3
     
@@ -67,41 +68,45 @@ class OnePhaseSorbentSim(BaseSimulation):
         term = np.zeros(3)
         term[0] =  drho_dT * self.storage_tank.bulk_fluid_volume(p, T)
         term[1] = - rhof * deriver(self.storage_tank.sorbent_material.model_isotherm.v_ads,
-                                     1, [p,T], 0.01) * self.storage_tank.sorbent_material.mass
+                                     1, [p,T], 1E-6) * self.storage_tank.sorbent_material.mass
         term[2] = deriver(self.storage_tank.sorbent_material.model_isotherm.n_absolute, 1, 
-                                        [p,T], 0.01) * self.storage_tank.sorbent_material.mass
+                                        [p,T], 1E-6) * self.storage_tank.sorbent_material.mass
         return sum(term)
 
-    def _dU_dp(self, p, T, nh2, fluid_properties):
+    def _dU_dp(self, p, T, fluid_properties):
+        q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1       
+        nh2 = self.storage_tank.capacity(p, T, q)
         sorbent = self.storage_tank.sorbent_material
         du_dp = fluid_properties["du_dp"]
         deriver = self._derivfunc
         term = np.zeros(3)
-        q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1       
-
+        
+        stepsize = min(p*1E-5, 100)
+        
         term[0] = nh2 * du_dp
         
         term[1] = -sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
-                                                          0, [p, T], 1E3) *\
+                                                          0, [p, T], stepsize) *\
                 sorbent.model_isotherm.isosteric_internal_energy(p, T, q)
         term[2] = - sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-          deriver(sorbent.model_isotherm.isosteric_internal_energy, 0, [p, T, q], 1E3)
+          deriver(sorbent.model_isotherm.isosteric_internal_energy, 0, [p, T, q], stepsize)
         return sum(term)
 
-    def _dU_dT(self, p, T, nh2, fluid_properties):
+    def _dU_dT(self, p, T, fluid_properties):
         du_dT = fluid_properties["du_dT"]
         tank = self.storage_tank
         sorbent = self.storage_tank.sorbent_material
         deriver = self._derivfunc
-        q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1    
+        q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1   
+        nh2 = self.storage_tank.capacity(p, T, q)
         term = np.zeros(4)
         term[0] = nh2 * du_dT
-        term[1] = sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
-                                                          1, [p, T], 0.01) *\
+        term[1] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
+                                                          1, [p, T], 1E-6) *\
              (- sorbent.model_isotherm.isosteric_internal_energy(p, T, q))
 
-        term[2] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-        (- deriver(sorbent.model_isotherm.isosteric_internal_energy, 1, [p, T, q], 0.01))                                               
+        term[2] = - sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+        (sorbent.model_isotherm.isosteric_energy_temperature_deriv( p, T, q , 1E-4))                                            
         term[3] = tank.heat_capacity(T)
         return sum(term)
 
@@ -855,6 +860,7 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
     
 class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
     sim_type = "Heated"
+
     def _dT_dt_heated_const_pres(self, T, time):
         p = self.simulation_params.init_pressure
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
@@ -872,7 +878,6 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
     def _heating_power_const_pres(self, T, dTdt, time):
         p = self.simulation_params.init_pressure
         fluid = self.storage_tank.stored_fluid.backend
-        nh2 = self.storage_tank.capacity(p, T)
         MW = fluid.molar_mass()
         ndotout= self.boundary_flux.mass_flow_out(time) / MW
         ndotin = self.boundary_flux.mass_flow_in(time) / MW
@@ -891,7 +896,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
             fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T) 
         hout = fluid_props["hf"]
         uf = fluid_props["uf"]
-        d = self._dU_dT(p, T, nh2, fluid_props)
+        d = self._dU_dT(p, T, fluid_props)
         return d * dTdt + ndotout * (hout - uf) - ndotin * (hin - uf) - self.heat_leak_in(T)\
              + self.boundary_flux.cooling_power(time) - self.boundary_flux.heating_power(time)
 
@@ -910,7 +915,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
             T = w[0]
             phase = self.storage_tank.stored_fluid.determine_phase(p, T)
             dTdt =  self._dT_dt_heated_const_pres(T, t) 
-            heating = self._heating_power_const_pres(T, dTdt, t) 
+            heating = self._heating_power_const_pres(T, dTdt, t)
             MW = fluid.molar_mass()
             ndotout= self.boundary_flux.mass_flow_out(t) / MW
             ndotin = self.boundary_flux.mass_flow_in(t) / MW
