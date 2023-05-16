@@ -266,7 +266,7 @@ class ModelIsotherm:
             return fluid.chemical_potential(0)
         phase = self.stored_fluid.determine_phase(p, T)
         x_loc = T
-        step = x_loc * 1E-6
+        step = 1E-2
         temp2 = x_loc + step
         phase2 = self.stored_fluid.determine_phase(p, temp2)
         temp3 = x_loc - step

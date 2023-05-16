@@ -140,8 +140,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                 
         a = self._dn_dp(p, T, fluid_props)
         b = self._dn_dT(p, T, fluid_props)
-        c = self._dU_dp(p, T, nh2, fluid_props)
-        d = self._dU_dT(p, T, nh2, fluid_props)
+        c = self._dU_dp(p, T, fluid_props)
+        d = self._dU_dT(p, T, fluid_props)
         #Put in the right hand side of the mass and energy balance equations
         return (k2 * a - c * k1)/(d*a - b*c)
     
