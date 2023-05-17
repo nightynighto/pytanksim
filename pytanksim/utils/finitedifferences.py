@@ -87,14 +87,12 @@ def second_derivative(func, var=0, point=[], stepsize=1e-6):
 def secforder(function, location, stepsize=1e-6):
     loc1 = (location + stepsize)
     loc2 = (location + 2 * stepsize)
-    loc3 = location + 3*stepsize
-    term1 = 2* function(location)
-    term2 = -5 * function(loc1)
-    term3 = 4 * function(loc2)
-    term4 = -function(loc3)
+    term1 = function(location)
+    term2 = -2 * function(loc1)
+    term3 = function(loc2)
     #print(term1, term2/2, term3)
-    stepsize = (loc3-location)/3
-    return (term1 + term2 + term3 + term4)/(stepsize **3)
+    stepsize = (loc2-location)/2
+    return (term1 + term2 + term3 )/(stepsize **2)
 
 def second_forward_derivative(func, var=0, point=[], stepsize=1e-6):
     args = point[:]
@@ -106,14 +104,12 @@ def second_forward_derivative(func, var=0, point=[], stepsize=1e-6):
 def secbackder(function, location, stepsize=1e-6):
     loc1 = (location - stepsize)
     loc2 = (location - 2* stepsize)
-    loc3 = location - 3 * stepsize
-    term1 = 2 * function(location)
-    term2 = - 5 * function(loc1)
-    term3 = 4* function(loc2)
-    term4 = - function(loc3)
+    term1 = function(location)
+    term2 = - 2 * function(loc1)
+    term3 = function(loc2)
     #print(term1, term2/2, term3)
-    stepsize = (location-loc3)/3
-    return (term1 + term2 + term3 + term4)/(stepsize **3)
+    stepsize = (location-loc2)/2
+    return (term1 + term2 + term3)/(stepsize **2)
 
 def second_backward_derivative(func, var=0, point=[], stepsize=1e-6):
     args = point[:]

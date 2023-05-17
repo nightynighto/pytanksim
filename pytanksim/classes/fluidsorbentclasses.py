@@ -284,9 +284,9 @@ class ModelIsotherm:
            else:
                fluid.update(CP.PT_INPUTS, p, T)
         chempot = fluid.chemical_potential(0)
-        hadsorbed = chempot - T * hadsorbed
+        uadsorbed = chempot - T * hadsorbed
         ufluid = fluid.umolar()
-        return ufluid - (hadsorbed - p * vads/nabs)
+        return ufluid - uadsorbed
 
 
     def _derivfunc(self, func, var, point, qinit, stepsize):
@@ -339,7 +339,7 @@ class ModelIsotherm:
             elif phase1 == phase2:
                 return fd.secforder(func, x0, stepsize)
 
-    def isosteric_energy_temperature_deriv(self, p, T, q = 1, stepsize = 1E-6):
+    def isosteric_energy_temperature_deriv(self, p, T, q = 1, stepsize = 1E-3):
         nabs = self.n_absolute(p, T)
         vads = self.v_ads(p,T)
         fluid = self.stored_fluid.backend
@@ -362,26 +362,39 @@ class ModelIsotherm:
         dvads_dT = self._derivfunc(self.v_ads, 1, [p, T], q, stepsize)
         return du_dT - (dhads_dT - (p/(nabs **2))*(nabs * dvads_dT - dnabs_dT * vads))
     
-    def differential_energy(self, p, T):
-        if p == 0:
-            return 0
-        n_abs = self.n_absolute(p, T)
+    def differential_energy(self, p, T, q=1):
+        nabs = self.n_absolute(p, T)
         fluid = self.stored_fluid.backend
-        def derivfunction(nabs, T):
-            pres = self.pressure_from_absolute_adsorption(nabs, T, p_max_guess = p * 20)
-            fluid.update(CP.PT_INPUTS, pres, T)
-            return np.log(fluid.fugacity(0))
-        term1 = - sp.constants.R * (T**2) * \
-                fd.partial_derivative(derivfunction, 1, [n_abs, T], T * 1E-5)
+        def diff_function(Temper):
+            pres = self.pressure_from_absolute_adsorption(nabs, Temper)
+            phase = self.stored_fluid.determine_phase(pres, Temper)
+            if phase != "Saturated":
+                fluid.update(CP.PT_INPUTS, pres, Temper)
+            else:
+                fluid.update(CP.QT_INPUTS, q, Temper)
+            return fluid.chemical_potential(0)
         phase = self.stored_fluid.determine_phase(p, T)
-        if phase == "Saturated":
-            fluid.update(CP.QT_INPUTS, 1, T)
+        x_loc = T
+        step = 1E-2
+        temp2 = x_loc + step
+        phase2 = self.stored_fluid.determine_phase(p, temp2)
+        temp3 = x_loc - step
+        phase3 = self.stored_fluid.determine_phase(p, temp3)
+        if phase == phase2 == phase3 != "Saturated":
+           hadsorbed = fd.pardev(diff_function, x_loc, step)
+           fluid.update(CP.PT_INPUTS, p, T)
         else:
-            fluid.update(CP.PT_INPUTS, p, T)
-        term2 = fluid.hmolar_residual()
-        term3 = fluid.hmolar()
-        return term1 + (term3 - term2)
- 
+           if q == 0:
+               hadsorbed = fd.backdev(diff_function, x_loc, step)
+           else:
+               hadsorbed = fd.fordev(diff_function, x_loc, step)
+           if phase == "Saturated":
+               fluid.update(CP.QT_INPUTS, q, T)
+           else:
+               fluid.update(CP.PT_INPUTS, p, T)
+        chempot = fluid.chemical_potential(0)
+        uadsorbed = chempot - T * hadsorbed
+        return uadsorbed
     
     def differential_heat(self, p, T):
         if p == 0:
@@ -396,11 +409,11 @@ class ModelIsotherm:
         return u_molar - self.differential_energy(p,T)
     
     
-    def internal_energy_adsorbed(self, p, T):
+    def internal_energy_adsorbed(self, p, T, q = 1):
         n_abs = self.n_absolute(p, T)
-        n_grid = np.linspace(0, n_abs, 30)
-        p_grid = np.array([self.pressure_from_absolute_adsorption(n, T) for n in n_grid ])
-        heat_grid = np.array([self.differential_energy(pres, T) for pres in p_grid])
+        n_grid = np.linspace(n_abs/50, n_abs, 30)
+        p_grid = np.array([self.pressure_from_absolute_adsorption(n, T) if n!= 0 else 0 for n in n_grid ])
+        heat_grid = np.array([self.differential_energy(pres, T, q) for pres in p_grid])
         return sp.integrate.simps(heat_grid, n_grid) / n_abs
     
     def areal_immersion_energy(self, T):

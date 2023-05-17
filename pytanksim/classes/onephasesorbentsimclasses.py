@@ -75,40 +75,41 @@ class OnePhaseSorbentSim(BaseSimulation):
 
     def _dU_dp(self, p, T, fluid_properties):
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1       
-        nh2 = self.storage_tank.capacity(p, T, q)
-        sorbent = self.storage_tank.sorbent_material
-        du_dp = fluid_properties["du_dp"]
+        # nh2 = self.storage_tank.capacity_bulk(p, T, q)
+        tank = self.storage_tank
+        # du_dp = fluid_properties["du_dp"]
         deriver = self._derivfunc
-        term = np.zeros(3)
+        # term = np.zeros(3)
         
-        stepsize = min(p*1E-5, 100)
+        # stepsize = min(p*1E-5, 100)
         
-        term[0] = nh2 * du_dp
+        # term[0] = nh2 * du_dp
         
-        term[1] = -sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
-                                                          0, [p, T], stepsize) *\
-                sorbent.model_isotherm.isosteric_internal_energy(p, T, q)
-        term[2] = - sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-          deriver(sorbent.model_isotherm.isosteric_internal_energy, 0, [p, T, q], stepsize)
-        return sum(term)
+        # term[1] = sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
+        #                                                   0, [p, T], stepsize) *\
+        #         sorbent.model_isotherm.differential_energy(p, T, q)
+        # term[2] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+        #   deriver(sorbent.model_isotherm.internal_energy_adsorbed, 0, [p, T, q], stepsize)
+        return deriver(tank.internal_energy, 0, [p, T, q], 100)
 
     def _dU_dT(self, p, T, fluid_properties):
-        du_dT = fluid_properties["du_dT"]
+        # du_dT = fluid_properties["du_dT"]
         tank = self.storage_tank
-        sorbent = self.storage_tank.sorbent_material
+        # sorbent = self.storage_tank.sorbent_material
         deriver = self._derivfunc
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1   
-        nh2 = self.storage_tank.capacity(p, T, q)
-        term = np.zeros(4)
-        term[0] = nh2 * du_dT
-        term[1] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
-                                                          1, [p, T], 1E-6) *\
-             (- sorbent.model_isotherm.isosteric_internal_energy(p, T, q))
+        # nh2 = self.storage_tank.capacity_bulk(p, T, q)
+        # term = np.zeros(4)
+        # term[0] = nh2 * du_dT
+        # term[1] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
+        #                                                   1, [p, T], 1E-3) *\
+        #      (sorbent.model_isotherm.differential_energy(p, T, q))
 
-        term[2] = - sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-        (sorbent.model_isotherm.isosteric_energy_temperature_deriv( p, T, q , 1E-4))                                            
-        term[3] = tank.heat_capacity(T)
-        return sum(term)
+        # term[2] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+        # deriver(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T, q], 1E-2)                                         
+        # term[3] = tank.heat_capacity(T)
+        # print(term)
+        return deriver(tank.internal_energy, 1, [p, T, q], 1E-1)
 
 
 class OnePhaseSorbentDefault(OnePhaseSorbentSim):
@@ -975,7 +976,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         model.name = "1 Phase dynamics of constant P discharge w/ heating"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-2
+        sim.atol = [1E-3, 1, 1, 1, 1, 1, 1, 1, 1]
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
         try:

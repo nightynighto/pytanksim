@@ -81,11 +81,10 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
         term = np.zeros(4)
-        term[0] = sorbent.mass * (ug - isotherm.isosteric_internal_energy(p, T, 1)) * \
+        term[0] = sorbent.mass * (isotherm.differential_energy(p, T, 1)) * \
             (self._saturation_deriv(isotherm.n_absolute, T))
         term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
-            ((dug_dp * dps_dT + dug_dT) -\
-                (self._saturation_deriv(isotherm.isosteric_internal_energy, T)))
+                (self._saturation_deriv(isotherm.internal_energy_adsorbed, T))
         term[2] = ng * (dug_dT + dug_dp * dps_dT) 
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
         return sum(term)

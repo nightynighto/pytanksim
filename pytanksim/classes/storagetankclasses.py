@@ -237,12 +237,12 @@ class SorbentTank(StorageTank):
             fluid.update(CP.QT_INPUTS, q, T)
         else:
             fluid.update(CP.PT_INPUTS, p, T)
-        ufluid = fluid.umolar()
+        ufluid = fluid.hmolar()
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
         adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
             self.sorbent_material.mass
-        uadsorbed = self.sorbent_material.model_isotherm.isosteric_internal_energy(p, T)
-        return ufluid * bulk_fluid_moles + adsorbed_moles * (ufluid - uadsorbed)
+        uadsorbed = self.sorbent_material.model_isotherm.internal_energy_adsorbed(p, T)
+        return ufluid * bulk_fluid_moles + adsorbed_moles * ( uadsorbed)
     
 
     
