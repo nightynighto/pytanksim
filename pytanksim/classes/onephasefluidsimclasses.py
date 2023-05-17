@@ -32,11 +32,11 @@ class OnePhaseFluidSim(BaseSimulation):
         term[1] = fluid_prop_dict["du_dp"] * fluid_prop_dict["rhof"]
         return self.storage_tank.volume * (sum(term))
     
-    def _du_dT(self, fluid_prop_dict):
+    def _du_dT(self, T, fluid_prop_dict):
         term = np.zeros(2)
         term[0] = fluid_prop_dict["drho_dT"] * fluid_prop_dict["uf"]
         term[1] = fluid_prop_dict["du_dT"] * fluid_prop_dict["rhof"]
-        return self.storage_tank.volume * (sum(term))
+        return self.storage_tank.volume * (sum(term)) + self.storage_tank.heat_capacity(T)
 
 class OnePhaseFluidDefault(OnePhaseFluidSim):
     sim_type = "Default"
@@ -50,7 +50,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         m11 = self._dn_dp(prop_dict)
         m12 = self._dn_dT(prop_dict)
         m21 = self._du_dp(prop_dict)
-        m22 = self._du_dT(prop_dict)
+        m22 = self._du_dT(T, prop_dict)
         
         A = np.array([[m11 , m12],
                       [m21, m22]])
@@ -240,7 +240,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             prop_dict = self.storage_tank.stored_fluid.saturation_property_dict(T, qinit)        
         m11 = self._dn_dT(prop_dict)
         m12 = 1
-        m21 = self._du_dT(prop_dict)
+        m21 = self._du_dT(T, prop_dict)
         m22 = prop_dict["hf"]
         
         A = np.array([[m11, m12],
@@ -391,7 +391,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         m11 = self._dn_dT(prop_dict)
         m12 = 0
-        m21 = self._du_dT(prop_dict)
+        m21 = self._du_dT(T, prop_dict)
         m22 = 1
         
         A = np.array([[m11, m12],
@@ -556,7 +556,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         m11 = self._dn_dT(prop_dict)
         m12 = 0
-        m21 = self._du_dT(prop_dict)
+        m21 = self._du_dT(T, prop_dict)
         m22 = -1
         
         A = np.array([[m11, m12],

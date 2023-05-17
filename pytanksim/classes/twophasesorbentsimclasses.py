@@ -80,13 +80,14 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dps_dT = saturation_properties_gas["dps_dT"]
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
-        term = np.zeros(4)
+        term = np.zeros(5)
         term[0] = sorbent.mass * (isotherm.differential_energy(p, T, 1)) * \
             (self._saturation_deriv(isotherm.n_absolute, T))
         term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
                 (self._saturation_deriv(isotherm.internal_energy_adsorbed, T))
         term[2] = ng * (dug_dT + dug_dp * dps_dT) 
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
+        term[4] = self.storage_tank.heat_capacity(T)
         return sum(term)
     
 class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
@@ -234,7 +235,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         sim = CVode(model)
         sim.report_continuously = True
         sim.discr = "BDF"
-        sim.atol = [1E-2, 1E-2, 0.01, 1, 1, 1, 1, 1, 1, 1]
+        sim.atol = [1, 1, 0.05, 1, 1, 1, 1, 1, 1, 1]
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()

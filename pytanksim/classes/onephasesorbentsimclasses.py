@@ -109,7 +109,7 @@ class OnePhaseSorbentSim(BaseSimulation):
         # deriver(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T, q], 1E-2)                                         
         # term[3] = tank.heat_capacity(T)
         # print(term)
-        return deriver(tank.internal_energy, 1, [p, T, q], 1E-1)
+        return deriver(tank.internal_energy, 1, [p, T, q], 1E-1) + tank.heat_capacity(T)
 
 
 class OnePhaseSorbentDefault(OnePhaseSorbentSim):
