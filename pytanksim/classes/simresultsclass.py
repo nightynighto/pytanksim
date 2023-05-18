@@ -22,6 +22,7 @@ class SimResults:
                  moles_supercritical,
                  tank_params,
                  sim_type,
+                 sim_params,
                  inserted_amount = 0,
                  flow_energy_in = 0,
                  cooling_required = 0,
@@ -74,7 +75,7 @@ class SimResults:
         # length = len(pressure)
         # for key, value in self.results_dict.items():
         #     assert len(value) == length
-            
+        self.sim_params = sim_params 
         self.tank_params = tank_params
         self.sim_type = sim_type
         self.results_df = pd.DataFrame.from_dict(self.results_dict)

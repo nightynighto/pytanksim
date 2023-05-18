@@ -112,10 +112,13 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             sat_gas_event = w[1]
             #Check that the critical temperature hasn't been reached
             crit_temp_event = w[2] - fluid.T_critical()
+            
+            target_capacity_event = self.storage_tank.capacity(p, w[2], w[0]/(w[0] + w[1]))\
+                - self.simulation_params.target_capacity
             return np.array([min_pres_event, max_pres_event,
                              sat_gas_event, sat_liquid_event, 
                              target_temp_event, target_pres_event,
-                             crit_temp_event])
+                             crit_temp_event, target_capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -148,7 +151,9 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
                 print("\n Reached critical temperature. Switch to one phase simulation.")
                 raise TerminateSimulation
             
-                
+            if state_info[7] != 0:
+                print("\n Reached target capacity.")
+                raise TerminateSimulation
             
      
         w0 = np.array([self.simulation_params.init_ng,
@@ -208,7 +213,8 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class TwoPhaseFluidVenting(TwoPhaseFluidSim):
     def solve_differentials(self, time):
@@ -272,14 +278,22 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
-            return np.array([sat_gas_event, sat_liquid_event])
+            p = self.simulation_params.init_pressure
+            T = self.simulation_params.init_temperature
+            target_capacity_event = self.storage_tank.capacity(p, T, w[0]/(w[0] + w[1]))\
+                - self.simulation_params.target_capacity
+            return np.array([sat_gas_event, sat_liquid_event, target_capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
                 print("\n Phase change has ended. Switch to one phase simulation.")
-                raise TerminateSimulation            
+                raise TerminateSimulation        
+                
+            if state_info[2] != 0:
+                print("\n Reached target capacity.")
+                raise TerminateSimulation
             
      
         w0 = np.array([self.simulation_params.init_ng,
@@ -329,7 +343,8 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class TwoPhaseFluidCooled(TwoPhaseFluidSim):
     def solve_differentials(self, time):
@@ -396,13 +411,21 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
-            return np.array([sat_gas_event, sat_liquid_event])
+            p = self.simulation_params.init_pressure
+            T = self.simulation_params.init_temperature
+            target_capacity_event = self.storage_tank.capacity(p, T, w[0]/(w[0] + w[1]))\
+                - self.simulation_params.target_capacity
+            return np.array([sat_gas_event, sat_liquid_event, target_capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
                 print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
+                
+            if state_info[2] != 0:
+                print("\n Reached target capacity.")
                 raise TerminateSimulation
                             
         w0 = np.array([self.simulation_params.init_ng,
@@ -454,7 +477,8 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
                           heat_leak_in = y[:,9],
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
     def solve_differentials(self, time):
@@ -520,13 +544,21 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
-            return np.array([sat_gas_event, sat_liquid_event])
+            p = self.simulation_params.init_pressure
+            T = self.simulation_params.init_temperature
+            target_capacity_event = self.storage_tank.capacity(p, T, w[0]/(w[0] + w[1]))\
+                - self.simulation_params.target_capacity
+            return np.array([sat_gas_event, sat_liquid_event, target_capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
                 print("\n Phase change has ended. Switch to one phase simulation.")
+                raise TerminateSimulation
+            
+            if state_info[2] != 0:
+                print("\n Reached target capacity.")
                 raise TerminateSimulation
                              
         w0 = np.array([self.simulation_params.init_ng,
@@ -573,7 +605,8 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = y[:,2] ,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params =self.simulation_params)
     
 class TwoPhaseFluidControlledInlet(TwoPhaseFluidDefault):
     def solve_differentials(self, time, ng, nl, T):

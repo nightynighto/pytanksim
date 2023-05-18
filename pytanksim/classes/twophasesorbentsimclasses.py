@@ -49,6 +49,10 @@ class TwoPhaseSorbentSim(BaseSimulation):
     def _dv_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         sorbent = self.storage_tank.sorbent_material
         term = np.zeros(4)
+        if ng < 0:
+            ng = 0
+        if nl < 0:
+            nl = 0
         dps_dT = saturation_properties_gas["dps_dT"]
         drhog_dT, rhog, drhog_dp = map(saturation_properties_gas.get, ("drho_dT", "rhof", "drho_dp"))
         drhol_dT, rhol, drhol_dp = map(saturation_properties_liquid.get, ("drho_dT", "rhof", "drho_dp"))
@@ -64,12 +68,20 @@ class TwoPhaseSorbentSim(BaseSimulation):
         sorbent = self.storage_tank.sorbent_material
         total_surface_area = sorbent.specific_surface_area * sorbent.mass
         du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
+        if ng < 0:
+            ng = 0
+        if nl < 0:
+            nl = 0
         return saturation_properties_gas["uf"] - (nl / ((ng+nl)**2)) * total_surface_area * du_dA
     
     def _du_dnl(self, ng, nl, T, saturation_properties_liquid):
         sorbent = self.storage_tank.sorbent_material
         total_surface_area = sorbent.specific_surface_area * sorbent.mass
         du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
+        if ng < 0:
+            ng = 0
+        if nl < 0:
+            nl = 0
         return saturation_properties_liquid["uf"]  + (ng / ((ng+nl)**2)) * total_surface_area * du_dA
     
     def _du_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
@@ -80,6 +92,10 @@ class TwoPhaseSorbentSim(BaseSimulation):
         dps_dT = saturation_properties_gas["dps_dT"]
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
+        if ng < 0:
+            ng = 0
+        if nl < 0:
+            nl = 0
         term = np.zeros(5)
         term[0] = sorbent.mass * (isotherm.differential_energy(p, T, 1)) * \
             (self._saturation_deriv(isotherm.n_absolute, T))
@@ -173,9 +189,20 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             ##Check that the target conditions has not been reached
             target_pres_reach = p - self.simulation_params.target_pres
             target_temp_reach = T - self.simulation_params.target_temp
+            
+            #Check if target capacity has been reached
+            ng = w[0]
+            nl = w[1]
+            if ng <0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            target_capacity_reach = self.storage_tank.capacity(p, T, ng/(ng+nl)) \
+                - self.simulation_params.target_capacity
             return np.array([crit, min_pres_event, max_pres_event,
                              sat_gas_event, sat_liquid_event,
-                             target_pres_reach, target_temp_reach])
+                             target_pres_reach, target_temp_reach,
+                             target_capacity_reach])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -207,6 +234,9 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                 print("\n Target conditions has been reached.")
                 raise TerminateSimulation
                 
+            if state_info[6] != 0:
+                print("Target capacity has been reached.")
+                raise TerminateSimulation
             
      
         w0 = np.array([self.simulation_params.init_ng,
@@ -265,7 +295,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
     sim_type = "Cooled"
@@ -343,14 +374,28 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0]  
             sat_gas_event = w[1]
-            return np.array([sat_gas_event, sat_liquid_event])
+            p = self.simulation_params.init_pressure
+            T = self.simulation_params.init_temperature
+            ng = w[0]
+            nl = w[1]
+            if ng <0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            target_capacity_reach = self.storage_tank.capacity(p, T, ng/(ng+nl)) \
+                - self.simulation_params.target_capacity
+            return np.array([sat_gas_event, sat_liquid_event, target_capacity_reach])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
         
             if state_info[0] != 0 or state_info[1] != 0:
                 print("\n Phase change has ended. Switch to one phase simulation.")
-                raise TerminateSimulation                
+                raise TerminateSimulation   
+                
+            if state_info[2] != 0:
+                print("Target capacity reached.")
+                raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
@@ -371,7 +416,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         model.name = "2 Phase Dynamics Cooled with Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.rtol = 1E-3
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -401,7 +446,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
                           heat_leak_in = y[:,9],
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
     sim_type = "Venting"
@@ -471,7 +517,17 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
-            return np.array([sat_gas_event, sat_liquid_event])
+            p = self.simulation_params.init_pressure
+            T = self.simulation_params.init_temperature
+            ng = w[0]
+            nl = w[1]
+            if ng <0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            target_capacity_reach = self.storage_tank.capacity(p, T, ng/(ng+nl)) \
+                - self.simulation_params.target_capacity
+            return np.array([sat_gas_event, sat_liquid_event, target_capacity_reach])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -479,7 +535,9 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
                 
-            
+            if state_info[2] != 0:
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
      
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
@@ -530,7 +588,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
     sim_type = "Heated"
@@ -604,15 +663,27 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0] 
             sat_gas_event = w[1]
-            return np.array([sat_gas_event, sat_liquid_event])
+            ng = w[0]
+            nl = w[1]
+            if ng <0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            p = self.simulation_params.init_pressure
+            T = self.simulation_params.init_temperature
+            target_capacity_reach = self.storage_tank.capacity(p, T, ng/(ng+nl)) \
+                - self.simulation_params.target_capacity
+            return np.array([sat_gas_event, sat_liquid_event, target_capacity_reach])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
-        
             if state_info[0] != 0 or state_info[1] != 0:
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
-                
+            
+            if state_info[2] != 0:
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
                        self.simulation_params.init_nl,
@@ -631,7 +702,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         model.name = "2 Phase Dynamics Heated with Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.rtol = 1E-3
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -661,7 +732,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
                           heat_leak_in = y[:,9],
                           cooling_required = self.simulation_params.cooling_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
 
 class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
     def solve_differentials(self, ng, nl, T, time):

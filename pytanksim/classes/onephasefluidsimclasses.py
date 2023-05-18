@@ -108,10 +108,14 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                     satstatus = w[0] - satpres
                 else:
                     satstatus = 0
+            q = int(self.simulation_params.init_nl < self.simulation_params.init_ng)
+            capacity_event = self.storage_tank.capacity(w[0], w[1], q) - \
+                self.simulation_params.target_capacity
             return np.array([self.storage_tank.vent_pressure - w[0], satstatus,
                              w[0] - self.storage_tank.min_supply_pressure,
                              w[0] - self.simulation_params.target_pres,
-                             w[1] - self.simulation_params.target_temp])
+                             w[1] - self.simulation_params.target_temp,
+                             capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -137,6 +141,10 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                 print("\n Target conditions reached.")
                 raise TerminateSimulation
             
+            if state_info[5] != 0:
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
+                
             
      
         w0 = np.array([self.simulation_params.init_pressure,
@@ -203,7 +211,8 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 
 class OnePhaseFluidVenting(OnePhaseFluidSim):
@@ -282,7 +291,11 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                     satstatus = p0 - satpres
                 else:
                     satstatus = 0
-            return np.array([satstatus, w[0] - self.simulation_params.target_temp])
+            q = int(self.simulation_params.init_nl < self.simulation_params.init_ng)
+            capacity_event = self.storage_tank.capacity(p0, w[0], q) - \
+                self.simulation_params.target_capacity
+            return np.array([satstatus, w[0] - self.simulation_params.target_temp,
+                             capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -292,6 +305,10 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             if state_info[1] != 0:
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
+            if state_info[2] != 0:
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
+            
             
      
         w0 = np.array([self.simulation_params.init_temperature,
@@ -353,7 +370,8 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                           vented_amount = y[:,1],
                           vented_energy = y[:,2],
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class OnePhaseFluidCooled(OnePhaseFluidSim):
     sim_type = "Cooled"
@@ -437,6 +455,9 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                     satstatus = p0 - satpres
                 else:
                     satstatus = 0
+            q = int(self.simulation_params.init_nl < self.simulation_params.init_ng)
+            capacity_event = self.storage_tank.capacity(p0, w[0], q) - \
+                self.simulation_params.target_capacity
             return np.array([satstatus, w[0] - self.simulation_params.target_temp])
                         
         def handle_event(solver, event_info):
@@ -446,6 +467,9 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                 raise TerminateSimulation
             if state_info[1] != 0:
                 print("\n The simulation has hit the target temperature.")
+                raise TerminateSimulation
+            if state_info[2] != 0:
+                print("\n Target capacity reached.")
                 raise TerminateSimulation
             
      
@@ -510,7 +534,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                           cooling_required = y[:,1],
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
         
 class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
     sim_type = "Heated"
@@ -584,7 +609,11 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         def events(t, w, sw):
             ##Check saturation status
             satstatus = w[0] - Tsat
-            return np.array([satstatus, w[0] - self.simulation_params.target_temp])
+            q = int(self.simulation_params.init_nl < self.simulation_params.init_ng)
+            capacity_event = self.storage_tank.capacity(p0, w[0], q) - \
+                self.simulation_params.target_capacity
+            return np.array([satstatus, w[0] - self.simulation_params.target_temp,
+                             capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -594,7 +623,9 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             if state_info[1] != 0:
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
-            
+            if state_info[2] != 0:
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
      
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.heating_required,
@@ -657,7 +688,8 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = y[:,1],
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class OnePhaseFluidControlledInlet(OnePhaseFluidDefault):
     def solve_differentials(self, time, p, T):

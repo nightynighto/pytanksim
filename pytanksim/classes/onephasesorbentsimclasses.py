@@ -51,7 +51,7 @@ class OnePhaseSorbentSim(BaseSimulation):
         drho_dp = fluid_properties["drho_dp"]
         rhof = fluid_properties["rhof"]
         deriver = self._derivfunc
-        stepsize = min(p*1E-5, 100)
+        stepsize = 100
 
         
         term1 = drho_dp * self.storage_tank.bulk_fluid_volume(p, T)
@@ -68,9 +68,9 @@ class OnePhaseSorbentSim(BaseSimulation):
         term = np.zeros(3)
         term[0] =  drho_dT * self.storage_tank.bulk_fluid_volume(p, T)
         term[1] = - rhof * deriver(self.storage_tank.sorbent_material.model_isotherm.v_ads,
-                                     1, [p,T], 1E-6) * self.storage_tank.sorbent_material.mass
+                                     1, [p,T], 1E-2) * self.storage_tank.sorbent_material.mass
         term[2] = deriver(self.storage_tank.sorbent_material.model_isotherm.n_absolute, 1, 
-                                        [p,T], 1E-6) * self.storage_tank.sorbent_material.mass
+                                        [p,T], 1E-2) * self.storage_tank.sorbent_material.mass
         return sum(term)
 
     def _dU_dp(self, p, T, fluid_properties):
@@ -83,52 +83,50 @@ class OnePhaseSorbentSim(BaseSimulation):
         rho = fluid_properties["rhof"]
         drho_dp = fluid_properties["drho_dp"]
         deriver = self._derivfunc
-        term = np.zeros(5)
+        # term = np.zeros(5)
         
-        stepsize = 100
+        # stepsize = 100
         
-        term[0] = nbulk * du_dp
+        # term[0] = nbulk * du_dp
         
-        term[1] = -deriver(sorbent.model_isotherm.v_ads, 0, [p, T], stepsize) * rho * u
+        # term[1] = -deriver(sorbent.model_isotherm.v_ads, 0, [p, T], stepsize) * rho * u
         
-        term[2] = drho_dp * u * tank.bulk_fluid_volume(p, T)
+        # term[2] = drho_dp * u * tank.bulk_fluid_volume(p, T)
         
-        term[3] = sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
-                                                          0, [p, T], stepsize) *\
-                sorbent.model_isotherm.differential_energy(p, T, q)
-        term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-          deriver(sorbent.model_isotherm.internal_energy_adsorbed, 0, [p, T, q], stepsize)
-        # return deriver(tank.internal_energy, 0, [p, T, q], 100)
-        return sum(term)
+        # term[3] = sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
+        #                                                   0, [p, T], stepsize) *\
+        #         sorbent.model_isotherm.differential_energy(p, T, q)
+        # term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+        #   deriver(sorbent.model_isotherm.internal_energy_adsorbed, 0, [p, T, q], stepsize)
+        return deriver(tank.internal_energy, 0, [p, T, q], 100)
+        # return sum(term)
     
     def _dU_dT(self, p, T, fluid_properties):
-        du_dT = fluid_properties["du_dT"]
-        u = fluid_properties["uf"]
-        rho = fluid_properties["rhof"]
-        drho_dT = fluid_properties["drho_dT"]
+        # du_dT = fluid_properties["du_dT"]
+        # u = fluid_properties["uf"]
+        # rho = fluid_properties["rhof"]
+        # drho_dT = fluid_properties["drho_dT"]
         tank = self.storage_tank
-        sorbent = self.storage_tank.sorbent_material
+        # sorbent = self.storage_tank.sorbent_material
         deriver = self._derivfunc
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1   
-        nbulk = self.storage_tank.capacity_bulk(p, T, q)
-        term = np.zeros(6)
-        stepsize = 1E-2
-        term[0] = nbulk * du_dT
+        # term = np.zeros(6)
+        # stepsize = 1E-1
+        # term[0] = rho * tank.bulk_fluid_volume(p, T) * du_dT
         
-        term[1] = -deriver(sorbent.model_isotherm.v_ads, 1, [p, T], stepsize) * rho * u
+        # term[1] = - deriver(sorbent.model_isotherm.v_ads, 1, [p, T], stepsize) * rho * u
         
-        term[2] = drho_dT * u * tank.bulk_fluid_volume(p, T)
+        # term[2] = drho_dT * u * tank.bulk_fluid_volume(p, T)
         
-        term[3] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
-                                                          1, [p, T], stepsize) *\
-              (sorbent.model_isotherm.differential_energy(p, T, q))
+        # term[3] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
+        #                                                   1, [p, T], stepsize) *\
+        #       (sorbent.model_isotherm.differential_energy(p, T, q))
 
-        term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-        deriver(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T, q], stepsize)                                         
-        term[5] = tank.heat_capacity(T)
-        # print(term)
-        # return deriver(tank.internal_energy, 1, [p, T, q], 1E-1) + tank.heat_capacity(T)
-        return sum(term)
+        # term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+        # deriver(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T, q], stepsize)                                         
+        # term[5] = tank.heat_capacity(T)
+        return deriver(tank.internal_energy, 1, [p, T, q], 1E-1) + tank.heat_capacity(T)
+        # return sum(term)
 
 
 class OnePhaseSorbentDefault(OnePhaseSorbentSim):
@@ -233,12 +231,15 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                 else:
                     satstatus = 0
             
+            capacity_event = self.storage_tank.capacity(w[0], w[1], q) - \
+                self.simulation_params.target_capacity
             
             return np.array([self.storage_tank.vent_pressure - w[0], 
                              satstatus,
                              w[0] - self.storage_tank.min_supply_pressure,
                              w[1] - self.simulation_params.target_temp,
-                             w[0] - self.simulation_params.target_pres])
+                             w[0] - self.simulation_params.target_pres,
+                             capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -264,6 +265,11 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             
             if state_info[3] != 0 and state_info[4] != 0:
                 print("\n The simulation target condition has been reached.")
+                raise TerminateSimulation
+                
+                
+            if state_info[5] != 0:
+                print("\n Target capacity reached.")
                 raise TerminateSimulation
         
             
@@ -342,7 +348,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                           vented_amount = y[:, 7],
                           vented_energy = y[:, 8],
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class OnePhaseSorbentVenting(OnePhaseSorbentSim):
     sim_type = "Venting"
@@ -364,7 +371,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
             q = int(self.simulation_params.init_ng > self.simulation_params.init_nl)
             fluid_props = self.storage_tank.stored_fluid.saturation_property_dict(T, q)
         b = self._dn_dT(p, T, fluid_props)
-        d = self._dU_dT(p, T, nh2, fluid_props)
+        d = self._dU_dT(p, T, fluid_props)
         hf = fluid_props["hf"]
         uf = fluid_props["uf"]
         return(ndotin*(hin-hf) + self.boundary_flux.heating_power(time) -\
@@ -435,16 +442,28 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                     satstatus = p0 - satpres
                 else:
                     satstatus = 0
-            return np.array([satstatus, w[0]-self.simulation_params.target_temp])
+                    
+            q = int(self.simulation_params.init_ng > self.simulation_params.init_nl)
+            capacity_event = self.storage_tank.capacity(p0, w[0], q)\
+                - self.simulation_params.target_capacity
+            return np.array([satstatus, w[0]-self.simulation_params.target_temp,
+                             capacity_event])
     
         def handle_event(solver, event_info):
-            if event_info[0] !=0 and solver.y[0] <= Tcrit:
+            state_info = event_info[0]
+            if state_info[0] !=0 and solver.y[0] <= Tcrit:
                 print("\n Saturation condition reached, switch to two-phase solver!")
                 raise TerminateSimulation
                 
-            if event_info[1] != 0:
+            if state_info[1] != 0:
                 print("\n Final refueling condition achieved, exiting simulation.")
                 raise TerminateSimulation
+                
+            if state_info[2] != 0:
+                print("Target capacity reached.")
+                raise TerminateSimulation
+                
+            
     
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.vented_amount,
@@ -514,7 +533,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                           cooling_required = self.simulation_params.cooling_required,
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
 
     
 class OnePhaseSorbentCooled(OnePhaseSorbentSim):
@@ -539,7 +559,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         hout = fluid_props["hf"]
         uf = fluid_props["uf"]
-        d = self._dU_dT(p, T, nh2, fluid_props)
+        d = self._dU_dT(p, T, fluid_props)
         return - d * dTdt + ndotin * (hin-uf) - ndotout * (hout-uf) + self.heat_leak_in(T)\
             +self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)
 
@@ -586,16 +606,30 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                     satstatus = p - satpres
                 else:
                     satstatus = 0
-            return np.array([satstatus, w[0]-self.simulation_params.target_temp])
+                    
+            q = int(self.simulation_params.init_ng > self.simulation_params.init_nl)
+            capacity_event = self.storage_tank.capacity(p, w[0], q)\
+                - self.simulation_params.target_capacity
+            return np.array([satstatus, w[0]-self.simulation_params.target_temp,
+                             capacity_event])
     
         def handle_event(solver, event_info):
-            if event_info[0] !=0 and solver.y[0] <= Tcrit:
+            state_info = event_info[0]
+            
+            if state_info[0] !=0 and solver.y[0] <= Tcrit:
                 print("\n Saturation condition reached, switch to two-phase solver!")
                 raise TerminateSimulation
 
-            if event_info[1] !=0 and p == self.simulation_params.target_pres:
+            if state_info[1] !=0 and p == self.simulation_params.target_pres:
                 print("\n Final refueling temperature achieved, exiting simulation.")
                 raise TerminateSimulation
+            
+            if state_info[2] != 0:
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
+                
+                
+        
         
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.cooling_required,
@@ -658,7 +692,8 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                           heat_leak_in = y[:,8],
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
 
 class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
     sim_type = "Controlled Inlet"
@@ -683,17 +718,16 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
             hout = 0
         
         k1 = ndotin - ndotout
-        k2 = ndotin * (hin - fluid_props["uf"]) - ndotout * (hout - fluid_props["uf"]) + \
+        k2 = ndotin * (hin ) - ndotout * (hout ) + \
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
         #print(hin, hgas)
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1
-        nh2 = self.storage_tank.capacity(p, T, q)
 
         a = self._dn_dp(p, T, fluid_props)
         b = self._dn_dT(p, T, fluid_props)
-        c = self._dU_dp(p, T, nh2,  fluid_props)
-        d = self._dU_dT(p, T, nh2, fluid_props)
+        c = self._dU_dp(p, T,  fluid_props)
+        d = self._dU_dT(p, T, fluid_props)
         #Put in the right hand side of the mass and energy balance equations
         return (k2 * a - c * k1)/(d*a - b*c)
     
@@ -720,9 +754,8 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             p, T = w[:2]
-            phase = self.storage_tank.stored_fluid.determine_phase(p, T)
-            dTdt = self._dT_dt(p, T, t) if phase != "Saturated" else 0
-            dPdt = self._dP_dt(p, T, dTdt, t) if phase != "Saturated" else 0
+            dTdt = self._dT_dt(p, T, t) 
+            dPdt = self._dP_dt(p, T, dTdt, t) 
             fluid = self.storage_tank.stored_fluid.backend
             MW = fluid.molar_mass() 
             ##Convert kg/s to mol/s
@@ -756,12 +789,15 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
                 else:
                     satstatus = 0
             
-            
+            q = int(self.simulation_params.init_ng > self.simulation_params.init_nl)
+            capacity_event = self.storage_tank.capacity(w[0], w[1], q)\
+                - self.simulation_params.target_capacity
             return np.array([self.storage_tank.vent_pressure - w[0], 
                              satstatus,
                              w[0] - self.storage_tank.min_supply_pressure,
                              w[1] - self.simulation_params.target_temp,
-                             w[0] - self.simulation_params.target_pres])
+                             w[0] - self.simulation_params.target_pres,
+                             capacity_event])
                         
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -789,6 +825,9 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
                 print("\n The simulation target condition has been reached.")
                 raise TerminateSimulation
         
+            if state_info[5] != 0 :
+                print("\n Target capacity reached.")
+                raise TerminateSimulation
             
             
      
@@ -862,7 +901,8 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
                           vented_amount = y[:, 7],
                           vented_energy = y[:, 8],
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
 class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
     sim_type = "Heated"
@@ -946,15 +986,25 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
                     satstatus = p - satpres
                 else:
                     satstatus = 0
-            return np.array([satstatus, w[0]-self.simulation_params.target_temp])
+                    
+            q = int(self.simulation_params.init_ng > self.simulation_params.init_nl)
+            capacity_event = self.storage_tank.capacity(p, w[0], q)\
+                - self.simulation_params.target_capacity
+            return np.array([satstatus, w[0]-self.simulation_params.target_temp,
+                             capacity_event])
     
         def handle_event(solver, event_info):
-            if event_info[0] !=0 and solver.y[0] <= Tcrit:
+            state_info = event_info[0]
+            if state_info[0] !=0 and solver.y[0] <= Tcrit:
                 print("\n Saturation condition reached, switch to two-phase solver!")
                 raise TerminateSimulation
 
-            if event_info[1] !=0:
+            if state_info[1] !=0:
                 print("\n Final temperature achieved, exiting simulation.")
+                raise TerminateSimulation
+            
+            if state_info[2] != 0:
+                print("\n Reached target capacity.")
                 raise TerminateSimulation
         
         w0 = np.array([self.simulation_params.init_temperature, 
@@ -975,7 +1025,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         model.name = "1 Phase dynamics of constant P discharge w/ heating"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-4
+        sim.atol = [0.01, 100, 1 ,1 ,1 ,1 ,1 ,1 ,1]
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
         try:
@@ -1019,6 +1069,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
                           heat_leak_in = y[:,7],
                           cooling_required = self.simulation_params.cooling_required,
                           sim_type= self.sim_type,
-                          tank_params = self.storage_tank)
+                          tank_params = self.storage_tank,
+                          sim_params = self.simulation_params)
     
     

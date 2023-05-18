@@ -42,15 +42,34 @@ class SimulationParams:
     heat_leak_in : float = 0
     stop_at_target_pressure : bool = False
     stop_at_target_temp : bool = False
+    target_capacity : float = 0
     
     
     @classmethod
     def from_SimResults(cls,
                         sim_results : SimResults,
-                        final_time : float = None,
                         displayed_points : float = 200,
-                        target_temp :  float = None):
+                        final_time : float = None,
+                        target_pres : float = None,
+                        target_temp :  float = None,
+                        stop_at_target_pressure : bool = False,
+                        stop_at_target_temp : bool = False,
+                        target_capacity: float = None
+                        ):
         final_conditions = sim_results.get_final_conditions()
+        
+        if target_temp == None:
+            target_temp = sim_results.sim_params.target_temp
+        if target_pres == None:
+            target_pres = sim_results.sim_params.target_pres
+        if stop_at_target_temp == None:
+            stop_at_target_temp = sim_results.sim_params.stop_at_target_temp
+        if stop_at_target_pressure == None:
+            stop_at_target_pressure = sim_results.sim_params.stop_at_target_pressure
+        if target_capacity == None:
+            target_capacity = sim_results.sim_params.target_capacity
+        if final_time == None:
+            final_time = sim_results.sim_params.final_time
         
         if final_conditions["moles_gas"] == final_conditions["moles_liquid"] == 0:
             fluid = sim_results.tank_params.stored_fluid.backend
@@ -77,7 +96,11 @@ class SimulationParams:
                    heating_additional = final_conditions["heating_additional"],
                    final_time = final_time,
                    target_temp = target_temp,
-                   displayed_points = displayed_points
+                   target_pres = target_pres,
+                   stop_at_target_pressure = stop_at_target_pressure,
+                   stop_at_target_temp = stop_at_target_temp,
+                   target_capacity = target_capacity,
+                   displayed_points = displayed_points,
                    )
         
 
