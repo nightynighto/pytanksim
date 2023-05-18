@@ -545,15 +545,12 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             hin = 0    
         
         phase = self.storage_tank.stored_fluid.determine_phase(p, T)
-        if phase == "Saturated":
-            return [0, 0, ndotin,
-            ndotin * hin,
-            ndotout, 0,
-            self.boundary_flux.cooling_power(time),
-            self.boundary_flux.heating_power(time),
-            self.heat_leak_in(T)]
         
-        prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+        if phase != "Saturated":
+            prop_dict = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
+        else:
+            q = 1 if self.simulation_params.init_ng > self.simulation_params.init_nl else 0
+            prop_dict = self.storage_tank.stored_fluid.saturation_property_dict(T, q)
         m11 = self._dn_dT(prop_dict)
         m12 = 0
         m21 = self._du_dT(T, prop_dict)
@@ -575,7 +572,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * prop_dict["hf"] + \
              - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(T)
+                + self.heat_leak_in(T) + self.boundary_flux.heating_power(time)
                 
         b = np.array([b1, b2])
         
@@ -598,6 +595,11 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         fluid.update(CP.QT_INPUTS, 0, Tcrit)
         pcrit = fluid.p()
         p0 = self.simulation_params.init_pressure
+        if p0 <= pcrit:
+            fluid.update(CP.PQ_INPUTS, p0, 0)
+            Tsat = fluid.T()
+        else:
+            Tsat = 0
         
         def rhs(t, w, sw):
             last_t, dt = state
@@ -609,15 +611,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         
         def events(t, w, sw):
             ##Check saturation status
-            if w[0] >= Tcrit:
-                satstatus = p0 - pcrit
-            else:
-                fluid.update(CP.QT_INPUTS, 0, w[0])
-                satpres = fluid.p()
-                if np.abs(p0-satpres) > (1E-6 * satpres):
-                    satstatus = p0 - satpres
-                else:
-                    satstatus = 0
+            satstatus = w[0] - Tsat
             return np.array([satstatus, w[0] - self.simulation_params.target_temp])
                         
         def handle_event(solver, event_info):
@@ -644,7 +638,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
-        model.name = "1 Phase Dynamics Cooled at Constant Pressure"
+        model.name = "1 Phase Dynamics Heated at Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-10

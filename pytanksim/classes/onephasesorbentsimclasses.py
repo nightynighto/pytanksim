@@ -75,41 +75,60 @@ class OnePhaseSorbentSim(BaseSimulation):
 
     def _dU_dp(self, p, T, fluid_properties):
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1       
-        # nh2 = self.storage_tank.capacity_bulk(p, T, q)
+        nbulk = self.storage_tank.capacity_bulk(p, T, q)
         tank = self.storage_tank
-        # du_dp = fluid_properties["du_dp"]
+        sorbent = tank.sorbent_material
+        u = fluid_properties["uf"]
+        du_dp = fluid_properties["du_dp"]
+        rho = fluid_properties["rhof"]
+        drho_dp = fluid_properties["drho_dp"]
         deriver = self._derivfunc
-        # term = np.zeros(3)
+        term = np.zeros(5)
         
-        # stepsize = min(p*1E-5, 100)
+        stepsize = 100
         
-        # term[0] = nh2 * du_dp
+        term[0] = nbulk * du_dp
         
-        # term[1] = sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
-        #                                                   0, [p, T], stepsize) *\
-        #         sorbent.model_isotherm.differential_energy(p, T, q)
-        # term[2] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-        #   deriver(sorbent.model_isotherm.internal_energy_adsorbed, 0, [p, T, q], stepsize)
-        return deriver(tank.internal_energy, 0, [p, T, q], 100)
-
+        term[1] = -deriver(sorbent.model_isotherm.v_ads, 0, [p, T], stepsize) * rho * u
+        
+        term[2] = drho_dp * u * tank.bulk_fluid_volume(p, T)
+        
+        term[3] = sorbent.mass * deriver(sorbent.model_isotherm.n_absolute,
+                                                          0, [p, T], stepsize) *\
+                sorbent.model_isotherm.differential_energy(p, T, q)
+        term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+          deriver(sorbent.model_isotherm.internal_energy_adsorbed, 0, [p, T, q], stepsize)
+        # return deriver(tank.internal_energy, 0, [p, T, q], 100)
+        return sum(term)
+    
     def _dU_dT(self, p, T, fluid_properties):
-        # du_dT = fluid_properties["du_dT"]
+        du_dT = fluid_properties["du_dT"]
+        u = fluid_properties["uf"]
+        rho = fluid_properties["rhof"]
+        drho_dT = fluid_properties["drho_dT"]
         tank = self.storage_tank
-        # sorbent = self.storage_tank.sorbent_material
+        sorbent = self.storage_tank.sorbent_material
         deriver = self._derivfunc
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1   
-        # nh2 = self.storage_tank.capacity_bulk(p, T, q)
-        # term = np.zeros(4)
-        # term[0] = nh2 * du_dT
-        # term[1] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
-        #                                                   1, [p, T], 1E-3) *\
-        #      (sorbent.model_isotherm.differential_energy(p, T, q))
+        nbulk = self.storage_tank.capacity_bulk(p, T, q)
+        term = np.zeros(6)
+        stepsize = 1E-2
+        term[0] = nbulk * du_dT
+        
+        term[1] = -deriver(sorbent.model_isotherm.v_ads, 1, [p, T], stepsize) * rho * u
+        
+        term[2] = drho_dT * u * tank.bulk_fluid_volume(p, T)
+        
+        term[3] = sorbent.mass *  deriver(sorbent.model_isotherm.n_absolute,
+                                                          1, [p, T], stepsize) *\
+              (sorbent.model_isotherm.differential_energy(p, T, q))
 
-        # term[2] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
-        # deriver(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T, q], 1E-2)                                         
-        # term[3] = tank.heat_capacity(T)
+        term[4] = sorbent.mass * sorbent.model_isotherm.n_absolute(p, T) * \
+        deriver(sorbent.model_isotherm.internal_energy_adsorbed, 1, [p, T, q], stepsize)                                         
+        term[5] = tank.heat_capacity(T)
         # print(term)
-        return deriver(tank.internal_energy, 1, [p, T, q], 1E-1) + tank.heat_capacity(T)
+        # return deriver(tank.internal_energy, 1, [p, T, q], 1E-1) + tank.heat_capacity(T)
+        return sum(term)
 
 
 class OnePhaseSorbentDefault(OnePhaseSorbentSim):
@@ -135,7 +154,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         else:
             fluid_props = self.storage_tank.stored_fluid.saturation_property_dict(T, qinit)
         k1 = ndotin - ndotout
-        k2 = ndotin * (hin - fluid_props["uf"]) - ndotout * (fluid_props["hf"] - fluid_props["uf"]) + \
+        k2 = ndotin * (hin ) - ndotout * (fluid_props["hf"]) + \
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
                 
@@ -273,8 +292,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-5
-        # sim.atol = [100, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
+        # sim.rtol = 1E-5
+        sim.atol = [100, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
@@ -896,9 +915,9 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         else:    
             fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T) 
         hout = fluid_props["hf"]
-        uf = fluid_props["uf"]
+        # uf = fluid_props["uf"]
         d = self._dU_dT(p, T, fluid_props)
-        return d * dTdt + ndotout * (hout - uf) - ndotin * (hin - uf) - self.heat_leak_in(T)\
+        return d * dTdt + ndotout * (hout ) - ndotin * (hin ) - self.heat_leak_in(T)\
              + self.boundary_flux.cooling_power(time) - self.boundary_flux.heating_power(time)
 
     def run(self):
@@ -976,7 +995,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         model.name = "1 Phase dynamics of constant P discharge w/ heating"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = [1E-3, 1, 1, 1, 1, 1, 1, 1, 1]
+        sim.rtol = 1E-4
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
         try:

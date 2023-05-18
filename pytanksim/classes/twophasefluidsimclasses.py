@@ -564,7 +564,7 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         model = Explicit_Problem(rhs, w0, self.simulation_params.init_time, sw0 = switches0 )
         model.state_events = events
         model.handle_event = handle_event
-        model.name = "2 Phase Dynamics w/ cooling"
+        model.name = "2 Phase Dynamics w/ Heating"
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-6
