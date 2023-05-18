@@ -119,11 +119,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time):
-            Pinput = flux.pressure_in(p, T)
-            Tinput = flux.temperature_in(p,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0
         b1 = ndotin - ndotout
@@ -305,11 +301,10 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         MW = fluid.molar_mass()
         ndotin = self.boundary_flux.mass_flow_in(time)  / MW
         ndotout = self.boundary_flux.mass_flow_out(time) / MW
-        Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
-        Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
+        
         ##Get the molar enthalpy of the inlet fluid
-        fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-        hin = fluid.hmolar()
+        hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T) if ndotin else 0
+        
         return - dng_dt * m31 - dnl_dt * m32 + ndotin * hin - ndotout * satur_prop_gas["hf"] + \
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T) 
@@ -330,10 +325,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             MW = fluid.molar_mass()
             ndotin = flux.mass_flow_in(t)  / MW
             ndotout = flux.mass_flow_out(t) / MW
-            Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
-            Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(self.simulation_params.init_pressure, self.simulation_params.init_temperature) if ndotin else 0
             fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
             hout = fluid.hmolar()
             return np.append(diffresults,
@@ -441,14 +433,7 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         
-        if flux.mass_flow_in(time):
-            Pinput = flux.pressure_in(psat, T)
-            Tinput = flux.temperature_in(psat,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
-        else:
-            hin = 0
+        hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T) if ndotin else 0
         
         b1 = ndotin
         b2 = 0
@@ -581,14 +566,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         MW = fluid.molar_mass()
         ndotin = self.boundary_flux.mass_flow_in(time)  / MW
         ndotout = self.boundary_flux.mass_flow_out(time) / MW
-        if ndotin != 0:
-            Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
-            Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
-        ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
-        else:
-            hin = 0
+        hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T) if ndotin else 0
         return dng_dt * m31 + dnl_dt * m32 - ndotin * hin + ndotout * satur_prop_gas["hf"] + \
            - self.boundary_flux.heating_power(time) + self.boundary_flux.cooling_power(time) - self.heat_leak_in(T) 
     
@@ -608,13 +586,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             MW = fluid.molar_mass()
             ndotin = flux.mass_flow_in(t)  / MW
             ndotout = flux.mass_flow_out(t) / MW
-            if ndotin != 0:
-                Pinput =self.boundary_flux.pressure_in(self.simulation_params.init_pressure, self.simulation_params.init_temperature)
-                Tinput = self.boundary_flux.temperature_in(self.simulation_params.init_pressure,self.simulation_params.init_temperature)
-                fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-                hin = fluid.hmolar()
-            else:
-                hin = 0
+            hin = self.enthalpy_in_calc(self.simulation_params.init_pressure, self.simulation_params.init_temperature) if ndotin else 0
             fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
             hout = fluid.hmolar()
             return np.append(diffresults, [

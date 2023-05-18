@@ -56,17 +56,12 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                       [m21, m22]])
         
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
         ##Get the input pressure at a condition
         if ndotin != 0:
-            Pinput = flux.pressure_in(p, T)
-            Tinput = flux.temperature_in(p,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0    
         
@@ -222,11 +217,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         ndotin = flux.mass_flow_in(time)  / MW
         
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(p, T)
-            Tinput = flux.temperature_in(p,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0    
         
@@ -374,11 +365,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         ndotin = flux.mass_flow_in(time)  / MW
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(p, T)
-            Tinput = flux.temperature_in(p,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0    
         phase = self.storage_tank.stored_fluid.determine_phase(p, T)
@@ -530,17 +517,12 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
     def solve_differentials(self, time, T):
         p = self.simulation_params.init_pressure
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(p, T)
-            Tinput = flux.temperature_in(p,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0    
         
@@ -558,16 +540,6 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         
         A = np.array([[m11, m12],
                       [m21, m22]])
-        
-        ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(p, T)
-            Tinput = flux.temperature_in(p,T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
-        else:
-            hin = 0    
         
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * prop_dict["hf"] + \
@@ -728,17 +700,7 @@ class OnePhaseFluidControlledInlet(OnePhaseFluidDefault):
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
-
-        ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            hin = self.boundary_flux.enthalpy_in(time)
-        else:
-            hin = 0 
-            
-        if flux.mass_flow_out(time) != 0:
-            hout = self.boundary_flux.enthalpy_out(time)
-        else:
-            hout = 0    
+ 
         
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * hout + \

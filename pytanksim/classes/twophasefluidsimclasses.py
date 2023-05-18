@@ -57,17 +57,12 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
                       [m21, m22, m23],
                       [m31, m32, m33]])
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(satur_prop_gas["psat"], T)
-            Tinput = flux.temperature_in(satur_prop_gas["psat"],T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T)
         else:
             hin = 0    
         
@@ -236,16 +231,11 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
                       [m31, m32, m33]])
          
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(satur_prop_gas["psat"], self.simulation_params.init_temperature)
-            Tinput = flux.temperature_in(satur_prop_gas["psat"],self.simulation_params.init_temperature)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], self.simulation_params.init_temperature)
         else:
             hin = 0    
         
@@ -362,17 +352,12 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
                       [m31, m32, m33]])
          
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(satur_prop_gas["psat"], self.simulation_params.init_temperature)
-            Tinput = flux.temperature_in(satur_prop_gas["psat"],self.simulation_params.init_temperature)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], self.simulation_params.init_temperature)
         else:
             hin = 0    
         
@@ -492,17 +477,12 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
                       [m31, m32, m33]])
          
         MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid = self.storage_tank.stored_fluid.backend
         flux = self.boundary_flux
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
         ##Get the input pressure at a condition
         if flux.mass_flow_in(time) != 0:
-            Pinput = flux.pressure_in(satur_prop_gas["psat"], self.simulation_params.init_temperature)
-            Tinput = flux.temperature_in(satur_prop_gas["psat"],self.simulation_params.init_temperature)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], self.simulation_params.init_temperature)
         else:
             hin = 0    
         

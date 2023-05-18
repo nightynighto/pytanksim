@@ -353,11 +353,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         MW = fluid.molar_mass()
         ndotin = self.boundary_flux.mass_flow_in(time) / MW
         if self.boundary_flux.mass_flow_in(time) != 0:
-            Pinput = self.boundary_flux.pressure_in(p, T)
-            Tinput = self.boundary_flux.temperature_in(p, T)
-            ##Get the molar enthalpy of the inlet fluid
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0
         phase = self.storage_tank.stored_fluid.determine_phase(p, T)
@@ -419,11 +415,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                 fluid.update(CP.QT_INPUTS, 1, T)
             hf = fluid.hmolar()
             if ndotin != 0:
-                Pinput = self.boundary_flux.pressure_in(p0, T)
-                Tinput = self.boundary_flux.temperature_in(p0, T)
-                ##Get the molar enthalpy of the inlet fluid
-                fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-                hin = fluid.hmolar()
+                hin = self.enthalpy_in_calc(p0, T)
             else:
                 hin = 0
             results = np.array([dTdt, ndotout, ndotout * hf,
@@ -543,10 +535,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         MW = fluid.molar_mass()
         ndotin = self.boundary_flux.mass_flow_in(time) / MW
         ndotout = self.boundary_flux.mass_flow_out(time) / MW
-        Pinput = self.boundary_flux.pressure_in(p, T)
-        Tinput =self.boundary_flux.temperature_in(p, T)
-        fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-        hin = fluid.hmolar()
+        hin = self.enthalpy_in_calc(p, T) if ndotin else 0
         fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
         hout = fluid_props["hf"]
         uf = fluid_props["uf"]
@@ -572,15 +561,12 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             dTdt =  self._dT_dt_cooled_const_pres(T, t) if phase != "Saturated" else 0
             cooling = self._cooling_power_const_pres(T, dTdt, t) if phase != "Saturated" else 0
             MW = self.storage_tank.stored_fluid.backend.molar_mass()
-            Pinput = self.boundary_flux.pressure_in(p, T)
-            Tinput =self.boundary_flux.temperature_in(p, T)
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
             
             fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T) \
                 if phase != "Saturated" else self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
             ndotin =  self.boundary_flux.mass_flow_in(t)/MW
             ndotout = self.boundary_flux.mass_flow_out(t)/MW
+            hin = self.enthalpy_in_calc(p, T) if ndotin else 0
             return np.array([dTdt, cooling, 
                              ndotin, ndotin * hin,
                              ndotout,
@@ -902,10 +888,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         ndotout= self.boundary_flux.mass_flow_out(time) / MW
         ndotin = self.boundary_flux.mass_flow_in(time) / MW
         if ndotin != 0:
-            Pinput = self.boundary_flux.pressure_in(p, T)
-            Tinput =self.boundary_flux.temperature_in(p, T)
-            fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-            hin = fluid.hmolar()
+            hin = self.enthalpy_in_calc(p, T)
         else:
             hin = 0
         phase = self.storage_tank.stored_fluid.determine_phase(p, T)
@@ -940,10 +923,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
             ndotout= self.boundary_flux.mass_flow_out(t) / MW
             ndotin = self.boundary_flux.mass_flow_in(t) / MW
             if ndotin !=0:
-                Pinput = self.boundary_flux.pressure_in(p, T)
-                Tinput =self.boundary_flux.temperature_in(p, T)
-                fluid.update(CP.PT_INPUTS, Pinput, Tinput)
-                hin = fluid.hmolar()
+                hin = self.enthalpy_in_calc(p, T)
             else:
                 hin = 0
             fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T) if phase != "Saturated" else \
