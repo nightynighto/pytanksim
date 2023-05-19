@@ -113,7 +113,14 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             #Check that the critical temperature hasn't been reached
             crit_temp_event = w[2] - fluid.T_critical()
             
-            target_capacity_event = self.storage_tank.capacity(p, w[2], w[0]/(w[0] + w[1]))\
+            ng = w[0]
+            nl = w[1]
+            if ng < 0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            
+            target_capacity_event = self.storage_tank.capacity(p, w[2], ng/(ng+nl))\
                 - self.simulation_params.target_capacity
             return np.array([min_pres_event, max_pres_event,
                              sat_gas_event, sat_liquid_event, 
@@ -280,7 +287,13 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
             sat_gas_event = w[1]
             p = self.simulation_params.init_pressure
             T = self.simulation_params.init_temperature
-            target_capacity_event = self.storage_tank.capacity(p, T, w[0]/(w[0] + w[1]))\
+            ng = w[0]
+            nl = w[1]
+            if ng < 0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            target_capacity_event = self.storage_tank.capacity(p, T, ng/(ng + nl))\
                 - self.simulation_params.target_capacity
             return np.array([sat_gas_event, sat_liquid_event, target_capacity_event])
                         
@@ -413,7 +426,13 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
             sat_gas_event = w[1]
             p = self.simulation_params.init_pressure
             T = self.simulation_params.init_temperature
-            target_capacity_event = self.storage_tank.capacity(p, T, w[0]/(w[0] + w[1]))\
+            ng = w[0]
+            nl = w[1]
+            if ng < 0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            target_capacity_event = self.storage_tank.capacity(p, T, ng/(ng + nl))\
                 - self.simulation_params.target_capacity
             return np.array([sat_gas_event, sat_liquid_event, target_capacity_event])
                         
@@ -546,7 +565,13 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
             sat_gas_event = w[1]
             p = self.simulation_params.init_pressure
             T = self.simulation_params.init_temperature
-            target_capacity_event = self.storage_tank.capacity(p, T, w[0]/(w[0] + w[1]))\
+            ng = w[0]
+            nl = w[1]
+            if ng < 0:
+                ng = 0
+            if nl <0:
+                nl = 0
+            target_capacity_event = self.storage_tank.capacity(p, T, ng/(ng + nl))\
                 - self.simulation_params.target_capacity
             return np.array([sat_gas_event, sat_liquid_event, target_capacity_event])
                         

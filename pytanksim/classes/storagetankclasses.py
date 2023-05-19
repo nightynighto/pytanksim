@@ -11,6 +11,8 @@ from pytanksim.classes.fluidsorbentclasses import StoredFluid, SorbentMaterial
 from pytanksim.utils.tanksimutils import Cs_gen
 import CoolProp as CP
 import numpy as np
+import scipy as sp
+import pandas as pd
 
 class StorageTank:
     def __init__(self,
@@ -102,7 +104,8 @@ class StorageTank:
         A = np.array([[1, 1],
                       [1/rhog, 1/rhol]])
         b = [capacity, self.volume]
-        return np.linalg.solve(A, b)
+        res = np.linalg.solve(A, b)
+        return res[0]/(res[0]+res[1])
 
     def internal_energy(self, p, T, q = 1):
         fluid = self.stored_fluid.backend
@@ -115,10 +118,48 @@ class StorageTank:
         bulk_fluid_moles = fluid.rhomolar() * self.volume
         return ufluid * bulk_fluid_moles 
         
-
-        
+    def conditions_at_capacity_temperature(self, cap, T, p_guess, q_guess):
+        bnds = ((10, 20E6),(0,1))
+        def optim(x):
+            return (self.capacity(x[0], T, x[1]) - cap)**2
+        res = sp.optimize.minimize(optim,(p_guess, q_guess), bounds = bnds)
+        if res.fun > 1:
+            self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+            psat = self.stored_fluid.backend.p()
+            q = self.find_quality_at_saturation_capacity(T, cap)
+            res.x[0] = psat
+            res.x[1] = q
+        return res
+    
+    def conditions_at_capacity_pressure(self, cap, p, T_guess, q_guess):
+        bnds = ((15, 1500),(0,1))
+        def optim(x):
+            return (self.capacity(p, x[0], x[1]) - cap)**2
+        res = sp.optimize.minimize(optim,(T_guess, q_guess), bounds = bnds)
+        if res.fun > 1:
+            self.stored_fluid.backend.update(CP.PQ_INPUTS, p, 0)
+            Tsat = self.stored_fluid.backend.T()
+            q = self.find_quality_at_saturation_capacity(Tsat, cap)
+            res.x[0] = Tsat
+            res.x[1] = q
+        return res
        
-        
+    def calculate_dormancy(self, p, T, q, heating_power):
+        init_cap = self.capacity(p, T, q)
+        init_heat = self.internal_energy(p, T, q )
+        vent_cond = self.conditions_at_capacity_pressure(init_cap, self.vent_pressure, T, q).x
+        final_heat = self.internal_energy(self.vent_pressure, vent_cond[0], vent_cond[1])
+        final_cap = self.capacity(self.vent_pressure, vent_cond[0], vent_cond[1])
+        return pd.DataFrame({"dormancy time" : (final_heat - init_heat)/heating_power,
+                "final temperature" : vent_cond[0],
+                "final quality" : vent_cond[1],
+                "final pressure": self.vent_pressure,
+                "capacity error": final_cap - init_cap,
+                "total energy change" : final_heat - init_heat}, index = [0])
+    
+    
+    
+       
         
         
 class SorbentTank(StorageTank):
@@ -213,7 +254,6 @@ class SorbentTank(StorageTank):
             fluid.update(CP.QT_INPUTS, q, T)
         else:
             fluid.update(CP.PT_INPUTS, p, T)
-        
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
         adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
             self.sorbent_material.mass
@@ -244,6 +284,55 @@ class SorbentTank(StorageTank):
         uadsorbed = self.sorbent_material.model_isotherm.internal_energy_adsorbed(p, T)
         return ufluid * bulk_fluid_moles + adsorbed_moles * (uadsorbed)
     
-
+    def internal_energy_sorbent(self, p, T, q = 1):
+        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
+            self.sorbent_material.mass
+        uadsorbed = self.sorbent_material.model_isotherm.internal_energy_adsorbed(p, T)
+        return adsorbed_moles * (uadsorbed)
     
+    def internal_energy_bulk(self, p, T, q = 1):
+        fluid = self.stored_fluid.backend
+        phase = self.stored_fluid.determine_phase(p, T)
+        if phase == "Saturated":
+            fluid.update(CP.QT_INPUTS, q, T)
+        else:
+            fluid.update(CP.PT_INPUTS, p, T)
+        ufluid = fluid.umolar()
+        bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
+        return ufluid * bulk_fluid_moles
+    
+    def find_quality_at_saturation_capacity(self, T, capacity):
+        fluid = self.stored_fluid.backend
+        fluid.update(CP.QT_INPUTS, 0, T)
+        rhol = fluid.rhomolar()
+        fluid.update(CP.QT_INPUTS, 1, T)
+        rhog = fluid.rhomolar()
+        p = fluid.p()
+        bulk_capacity = capacity - self.sorbent_material.mass *\
+            self.sorbent_material.model_isotherm.n_absolute(p, T)
+        A = np.array([[1, 1],
+                      [1/rhog, 1/rhol]])
+        b = [bulk_capacity, self.bulk_fluid_volume(p, T)]
+        res = np.linalg.solve(A, b)
+        q =  res[0]/(res[0]+res[1])
+        return q
+    
+    def calculate_dormancy(self, p, T, q, heating_power):
+        init_cap = self.capacity(p, T, q)
+        init_ene = self.internal_energy(p, T, q )
+        init_ene_ads = self.internal_energy_sorbent(p, T, q)
+        init_ene_bulk = self.internal_energy_bulk(p, T, q)
+        vent_cond = self.conditions_at_capacity_pressure(init_cap, self.vent_pressure, T, q).x
+        final_ene = self.internal_energy(self.vent_pressure, vent_cond[0], vent_cond[1])
+        final_cap = self.capacity(self.vent_pressure, vent_cond[0], vent_cond[1])
+        final_ene_ads = self.internal_energy_sorbent(self.vent_pressure, vent_cond[0], vent_cond[1])
+        final_ene_bulk = self.internal_energy_bulk(self.vent_pressure, vent_cond[0], vent_cond[1])
+        return pd.DataFrame({"dormancy time" : (final_ene - init_ene)/heating_power,
+                "final temperature" : vent_cond[0],
+                "final quality" : vent_cond[1],
+                "final pressure": self.vent_pressure,
+                "capacity error": final_cap - init_cap,
+                "total energy change" : final_ene - init_ene,
+                "sorbent energy contribution" : final_ene_ads - init_ene_ads,
+                "bulk energy contribution" : final_ene_bulk - init_ene_bulk}, index = [0])
     

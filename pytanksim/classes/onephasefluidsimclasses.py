@@ -186,7 +186,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
             phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
             if phase == "Saturated":
                 qinit = 0 if self.simulation_params.init_ng < self.simulation_params.init_nl else 1
-                phase = "Liquid" if qinit == 0 else 1
+                phase = "Liquid" if qinit == 0 else "Gas"
                 fluid.update(CP.QT_INPUTS, qinit, y[i,1])
             else:
                 fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
