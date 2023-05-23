@@ -65,16 +65,15 @@ class TwoPhaseSorbentSim(BaseSimulation):
     ##Finally, from the energy balance
     
     def _du_dng(self, ng, nl, T, saturation_properties_gas):
-        sorbent = self.storage_tank.sorbent_material
-        total_surface_area = sorbent.specific_surface_area * sorbent.mass
-        du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
         if ng < 0:
             ng = 0
         if nl < 0:
             nl = 0
-        return saturation_properties_gas["uf"] - (nl / ((ng+nl)**2)) * total_surface_area * du_dA
+        return saturation_properties_gas["uf"] 
     
     def _du_dnl(self, ng, nl, T, saturation_properties_liquid):
+        p = saturation_properties_liquid["psat"]
+        volume = self.storage_tank.bulk_fluid_volume(p, T)
         sorbent = self.storage_tank.sorbent_material
         total_surface_area = sorbent.specific_surface_area * sorbent.mass
         du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
@@ -82,21 +81,28 @@ class TwoPhaseSorbentSim(BaseSimulation):
             ng = 0
         if nl < 0:
             nl = 0
-        return saturation_properties_liquid["uf"]  + (ng / ((ng+nl)**2)) * total_surface_area * du_dA
+        return saturation_properties_liquid["uf"] \
+            + (total_surface_area/(saturation_properties_liquid["rhof"] * volume)) *\
+             du_dA
     
     def _du_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         dps_dT = saturation_properties_gas["dps_dT"]
         p = saturation_properties_gas["psat"]
         sorbent = self.storage_tank.sorbent_material
+        total_surface_area = sorbent.specific_surface_area * sorbent.mass
         isotherm = self.storage_tank.sorbent_material.model_isotherm
         dps_dT = saturation_properties_gas["dps_dT"]
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
+        rhol, drhol_dT, drhol_dp =  map(saturation_properties_liquid.get, ("rhof", "drho_dT", "drho_dp"))
+        du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
         if ng < 0:
             ng = 0
         if nl < 0:
             nl = 0
-        term = np.zeros(5)
+        bulkvol = self.storage_tank.bulk_fluid_volume(p, T)
+        dbulkvol_dT = self._saturation_deriv(self.storage_tank.bulk_fluid_volume, T)
+        term = np.zeros(6)
         term[0] = sorbent.mass * (isotherm.differential_energy(p, T, 1)) * \
             (self._saturation_deriv(isotherm.n_absolute, T))
         term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
@@ -104,6 +110,8 @@ class TwoPhaseSorbentSim(BaseSimulation):
         term[2] = ng * (dug_dT + dug_dp * dps_dT) 
         term[3] = nl * (dul_dT + dul_dp * dps_dT)
         term[4] = self.storage_tank.heat_capacity(T)
+        term[5] = - nl * total_surface_area * du_dA *\
+            (drhol_dT * bulkvol + dbulkvol_dT * rhol) / ((rhol*bulkvol)**2)
         return sum(term)
     
 class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
