@@ -143,19 +143,27 @@ class StorageTank:
             res.x[0] = Tsat
             res.x[1] = q
         return res
-       
+           
     def calculate_dormancy(self, p, T, q, heating_power):
         init_cap = self.capacity(p, T, q)
         init_heat = self.internal_energy(p, T, q )
         vent_cond = self.conditions_at_capacity_pressure(init_cap, self.vent_pressure, T, q).x
         final_heat = self.internal_energy(self.vent_pressure, vent_cond[0], vent_cond[1])
         final_cap = self.capacity(self.vent_pressure, vent_cond[0], vent_cond[1])
+        def heat_capacity_change(T1, T2):
+            xgrid = np.linspace(T1, T2, 100)
+            heatcapgrid = [self.heat_capacity(temper) for temper in xgrid]
+            return sp.integrate.simps(heatcapgrid, xgrid)
+                
+        final_heat = final_heat + heat_capacity_change(T, vent_cond[0])
+        
         return pd.DataFrame({"dormancy time" : (final_heat - init_heat)/heating_power,
                 "final temperature" : vent_cond[0],
                 "final quality" : vent_cond[1],
                 "final pressure": self.vent_pressure,
                 "capacity error": final_cap - init_cap,
-                "total energy change" : final_heat - init_heat}, index = [0])
+                "total energy change" : final_heat - init_heat,
+                "solid heat capacity contribution": heat_capacity_change(T, vent_cond[0])}, index = [0])
     
     
     
@@ -317,7 +325,17 @@ class SorbentTank(StorageTank):
         q =  res[0]/(res[0]+res[1])
         return q
     
-    def calculate_dormancy(self, p, T, q, heating_power):
+    def find_temperature_at_saturation_quality(self, q, cap):
+        def optim(x):
+            self.stored_fluid.backend.update(CP.QT_INPUTS, q, x)
+            p = self.stored_fluid.backend.p()
+            return (self.capacity(p, x, q) - cap)**2
+        res = sp.optimize.minimize_scalar(optim, method = "bounded", bounds = (15, 33.145))
+        return res
+    
+    def calculate_dormancy(self, p, T, q, heating_power, init_time = 0):
+        if init_time != 0:
+            print("Warning: energy breakdown not accurate for non-zero initial time.")
         init_cap = self.capacity(p, T, q)
         init_ene = self.internal_energy(p, T, q )
         init_ene_ads = self.internal_energy_sorbent(p, T, q)
@@ -327,12 +345,48 @@ class SorbentTank(StorageTank):
         final_cap = self.capacity(self.vent_pressure, vent_cond[0], vent_cond[1])
         final_ene_ads = self.internal_energy_sorbent(self.vent_pressure, vent_cond[0], vent_cond[1])
         final_ene_bulk = self.internal_energy_bulk(self.vent_pressure, vent_cond[0], vent_cond[1])
-        return pd.DataFrame({"dormancy time" : (final_ene - init_ene)/heating_power,
+        
+        def heat_capacity_change(T1, T2):
+            xgrid = np.linspace(T1, T2, 100)
+            heatcapgrid = [self.heat_capacity(temper) for temper in xgrid]
+            return sp.integrate.simps(heatcapgrid, xgrid)
+        
+        final_ene += heat_capacity_change(T, vent_cond[0])
+        
+        res1 = self.find_temperature_at_saturation_quality(1,init_cap)
+        res2 = self.find_temperature_at_saturation_quality(0,init_cap)
+        if (res1.x > T and res1.fun < 1) or (res2.x > T and res2.fun < 1):
+            resfinal = res1.x if res1.fun < res2.fun else res2.x
+            lower_bound = q if resfinal == res2.x else 1
+            upper_bound = 0 if resfinal == res2.x else q
+            total_surface_area = self.sorbent_material.mass *\
+                self.sorbent_material.specific_surface_area
+            qgrid = np.linspace(lower_bound, upper_bound, 100)
+            Agrid = np.zeros_like(qgrid)
+            ygrid = np.zeros_like(qgrid)
+            for i, qual in enumerate(qgrid):
+                temper = self.find_temperature_at_saturation_quality(qual,init_cap).x
+                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, temper)
+                p = self.stored_fluid.backend.p()
+                rhol = self.stored_fluid.backend.rhomolar()
+                nl = (1 - qual) * self.capacity_bulk(p, temper, qual)
+                vbulk = self.bulk_fluid_volume(p, temper)
+                Agrid[i] = total_surface_area * (nl/(rhol * vbulk))
+                ygrid[i] = self.sorbent_material.model_isotherm.areal_immersion_energy(temper)
+            integ_res = sp.integrate.simps(ygrid, Agrid)
+            integ_res = integ_res if lower_bound == q else  - integ_res
+            final_ene = final_ene + integ_res
+        else:
+            integ_res = 0
+        return pd.DataFrame({"dormancy time" : init_time + (final_ene - init_ene)/heating_power,
                 "final temperature" : vent_cond[0],
                 "final quality" : vent_cond[1],
                 "final pressure": self.vent_pressure,
                 "capacity error": final_cap - init_cap,
                 "total energy change" : final_ene - init_ene,
                 "sorbent energy contribution" : final_ene_ads - init_ene_ads,
-                "bulk energy contribution" : final_ene_bulk - init_ene_bulk}, index = [0])
+                "bulk energy contribution" : final_ene_bulk - init_ene_bulk,
+                "immersion heat contribution" : integ_res,
+                "solid heat capacity contribution": heat_capacity_change(T, vent_cond[0]) }, index = [0],
+                )
     

@@ -24,17 +24,17 @@ class TwoPhaseSorbentSim(BaseSimulation):
     #Generate the elements of the matrix representing the governing eqs.
     #First, from mass balance
     
-    def _saturation_deriv(self, ptfunc, T):
+    def _saturation_deriv(self, ptfunc, T, **kwargs):
         fluid = self.storage_tank.stored_fluid.backend
         def function_satur(T):
             fluid.update(CP.QT_INPUTS, 1, T)
             pres = fluid.p()
-            return ptfunc(pres, T)
+            return ptfunc(pres, T, **kwargs)
         Tcrit = fluid.T_critical()
-        if T < (Tcrit - 0.01):
-            return fd.pardev(function_satur, T, 0.01)
+        if T < (Tcrit - 0.001):
+            return fd.pardev(function_satur, T, 0.001)
         else:
-            return fd.backdev(function_satur, T, 0.01)
+            return fd.backdev(function_satur, T, 0.001)
     
     def _dn_dT(self, T, saturation_properties):
         sorbent = self.storage_tank.sorbent_material
@@ -83,14 +83,13 @@ class TwoPhaseSorbentSim(BaseSimulation):
             nl = 0
         return saturation_properties_liquid["uf"] \
             + (total_surface_area/(saturation_properties_liquid["rhof"] * volume)) *\
-             du_dA
+              du_dA
     
     def _du_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         dps_dT = saturation_properties_gas["dps_dT"]
         p = saturation_properties_gas["psat"]
         sorbent = self.storage_tank.sorbent_material
         total_surface_area = sorbent.specific_surface_area * sorbent.mass
-        isotherm = self.storage_tank.sorbent_material.model_isotherm
         dps_dT = saturation_properties_gas["dps_dT"]
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
@@ -100,17 +99,15 @@ class TwoPhaseSorbentSim(BaseSimulation):
             ng = 0
         if nl < 0:
             nl = 0
+        
         bulkvol = self.storage_tank.bulk_fluid_volume(p, T)
         dbulkvol_dT = self._saturation_deriv(self.storage_tank.bulk_fluid_volume, T)
-        term = np.zeros(6)
-        term[0] = sorbent.mass * (isotherm.differential_energy(p, T, 1)) * \
-            (self._saturation_deriv(isotherm.n_absolute, T))
-        term[1] = sorbent.mass * isotherm.n_absolute(p, T) * \
-                (self._saturation_deriv(isotherm.internal_energy_adsorbed, T))
-        term[2] = ng * (dug_dT + dug_dp * dps_dT) 
-        term[3] = nl * (dul_dT + dul_dp * dps_dT)
-        term[4] = self.storage_tank.heat_capacity(T)
-        term[5] = - nl * total_surface_area * du_dA *\
+        term = np.zeros(5)
+        term[0] = self._saturation_deriv(self.storage_tank.internal_energy_sorbent, T)
+        term[1] = ng * (dug_dT + dug_dp * dps_dT) 
+        term[2] = nl * (dul_dT + dul_dp * dps_dT)
+        term[3] = self.storage_tank.heat_capacity(T)
+        term[4] = - nl * total_surface_area * du_dA *\
             (drhol_dT * bulkvol + dbulkvol_dT * rhol) / ((rhol*bulkvol)**2)
         return sum(term)
     

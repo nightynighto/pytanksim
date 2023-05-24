@@ -411,7 +411,7 @@ class ModelIsotherm:
     
     def internal_energy_adsorbed(self, p, T, q = 1):
         n_abs = self.n_absolute(p, T)
-        n_grid = np.linspace(n_abs/50, n_abs, 30)
+        n_grid = np.linspace(1, n_abs, int(n_abs))
         p_grid = np.array([self.pressure_from_absolute_adsorption(n, T) if n!= 0 else 0 for n in n_grid ])
         heat_grid = np.array([self.differential_energy(pres, T, q) for pres in p_grid])
         return sp.integrate.simps(heat_grid, n_grid) / n_abs

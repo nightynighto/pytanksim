@@ -76,7 +76,7 @@ class OnePhaseSorbentSim(BaseSimulation):
         # term[2] = deriver(self.storage_tank.sorbent_material.model_isotherm.n_absolute, 1, 
         #                                 [p,T], 1E-2) * self.storage_tank.sorbent_material.mass
         # return sum(term)
-        return deriver(self.storage_tank.capacity, 1, [p, T, qinit], 1E-3)
+        return deriver(self.storage_tank.capacity, 1, [p, T, qinit], 1E-2)
 
 
     def _dU_dp(self, p, T, fluid_properties):
@@ -181,7 +181,6 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         fluid.update(CP.QT_INPUTS, 0, Tcrit)
         pcrit = fluid.p()
         q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1
-        print(Tcrit)
         
         def rhs(t, w, sw):
             last_t, dt = state
@@ -190,7 +189,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             state[0] = last_t + dt * n
             p, T = w[:2]
             phase = self.storage_tank.stored_fluid.determine_phase(p, T)
-            dTdt, dPdt = self._solve_differentials(p, T, t, phase)
+            dPdt, dTdt = self._solve_differentials(p, T, t, phase)
             fluid = self.storage_tank.stored_fluid.backend
             MW = fluid.molar_mass() 
             ##Convert kg/s to mol/s
@@ -293,7 +292,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         sim = CVode(model)
         sim.discr = "BDF"
         # sim.rtol = 1E-5
-        sim.atol = [100, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
+        sim.atol = [1000, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
