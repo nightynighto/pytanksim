@@ -355,10 +355,15 @@ class SorbentTank(StorageTank):
         
         res1 = self.find_temperature_at_saturation_quality(1,init_cap)
         res2 = self.find_temperature_at_saturation_quality(0,init_cap)
-        if (res1.x > T and res1.fun < 1) or (res2.x > T and res2.fun < 1):
+        if (res1.x > T and res1.fun < 1) or (res2.x > T and res2.fun < 1) or (vent_cond[1] != q):
             resfinal = res1.x if res1.fun < res2.fun else res2.x
-            lower_bound = q if resfinal == res2.x else 1
-            upper_bound = 0 if resfinal == res2.x else q
+            
+            if vent_cond[1] != q:
+                lower_bound = max(q, vent_cond[1])
+                upper_bound = min(q, vent_cond[1])
+            else:
+                lower_bound = q if resfinal == res2.x else 1
+                upper_bound = 0 if resfinal == res2.x else q
             total_surface_area = self.sorbent_material.mass *\
                 self.sorbent_material.specific_surface_area
             qgrid = np.linspace(lower_bound, upper_bound, 100)
