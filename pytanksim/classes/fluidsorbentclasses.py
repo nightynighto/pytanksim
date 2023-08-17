@@ -373,25 +373,9 @@ class ModelIsotherm:
             else:
                 fluid.update(CP.QT_INPUTS, q, Temper)
             return fluid.chemical_potential(0)
-        phase = self.stored_fluid.determine_phase(p, T)
         x_loc = T
         step = 1E-2
-        temp2 = x_loc + step
-        phase2 = self.stored_fluid.determine_phase(p, temp2)
-        temp3 = x_loc - step
-        phase3 = self.stored_fluid.determine_phase(p, temp3)
-        if phase == phase2 == phase3 != "Saturated":
-           hadsorbed = fd.pardev(diff_function, x_loc, step)
-           fluid.update(CP.PT_INPUTS, p, T)
-        else:
-           if q == 0:
-               hadsorbed = fd.backdev(diff_function, x_loc, step)
-           else:
-               hadsorbed = fd.fordev(diff_function, x_loc, step)
-           if phase == "Saturated":
-               fluid.update(CP.QT_INPUTS, q, T)
-           else:
-               fluid.update(CP.PT_INPUTS, p, T)
+        hadsorbed = fd.pardev(diff_function, x_loc, step)
         chempot = fluid.chemical_potential(0)
         uadsorbed = chempot - T * hadsorbed
         return uadsorbed
@@ -411,7 +395,10 @@ class ModelIsotherm:
     
     def internal_energy_adsorbed(self, p, T, q = 1):
         n_abs = self.n_absolute(p, T)
-        n_grid = np.linspace(1, n_abs, int(n_abs))
+        if n_abs > 1:
+            n_grid = np.linspace(1, n_abs, 50)
+        else:
+            n_grid = np.linspace(n_abs/30, n_abs, 30)
         p_grid = np.array([self.pressure_from_absolute_adsorption(n, T) if n!= 0 else 0 for n in n_grid ])
         heat_grid = np.array([self.differential_energy(pres, T, q) for pres in p_grid])
         return sp.integrate.simps(heat_grid, n_grid) / n_abs

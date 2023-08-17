@@ -476,6 +476,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-4
+        sim.report_continuously = True
+        
         t,  y = sim.simulate(self.simulation_params.final_time, 
                              self.simulation_params.displayed_points)
         try:

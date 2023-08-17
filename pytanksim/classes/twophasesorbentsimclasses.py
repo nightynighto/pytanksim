@@ -72,24 +72,23 @@ class TwoPhaseSorbentSim(BaseSimulation):
         return saturation_properties_gas["uf"] 
     
     def _du_dnl(self, ng, nl, T, saturation_properties_liquid):
-        p = saturation_properties_liquid["psat"]
-        volume = self.storage_tank.bulk_fluid_volume(p, T)
         sorbent = self.storage_tank.sorbent_material
-        total_surface_area = sorbent.specific_surface_area * sorbent.mass
+        total_surface_area = sorbent.specific_surface_area * sorbent.mass * 1000
         du_dA = sorbent.model_isotherm.areal_immersion_energy(T)
+        p = saturation_properties_liquid["psat"]
+        bulkvol = self.storage_tank.bulk_fluid_volume(p, T)
         if ng < 0:
             ng = 0
         if nl < 0:
             nl = 0
         return saturation_properties_liquid["uf"] \
-            + (total_surface_area/(saturation_properties_liquid["rhof"] * volume)) *\
-              du_dA
+           + du_dA * total_surface_area /(saturation_properties_liquid["rhof"]*bulkvol)
     
     def _du_dT(self, ng, nl, T, saturation_properties_gas, saturation_properties_liquid):
         dps_dT = saturation_properties_gas["dps_dT"]
         p = saturation_properties_gas["psat"]
         sorbent = self.storage_tank.sorbent_material
-        total_surface_area = sorbent.specific_surface_area * sorbent.mass
+        total_surface_area = sorbent.specific_surface_area * sorbent.mass * 1000
         dps_dT = saturation_properties_gas["dps_dT"]
         dug_dT, ug, dug_dp = map(saturation_properties_gas.get, ("du_dT", "uf", "du_dp"))
         dul_dT, ul, dul_dp = map(saturation_properties_liquid.get, ("du_dT", "uf", "du_dp"))
