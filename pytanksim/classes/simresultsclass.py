@@ -10,6 +10,7 @@ import numpy as np
 from typing import List
 import pandas as pd
 import csv
+import matplotlib.pyplot as plt
 from pytanksim.classes.storagetankclasses import SorbentTank
 
 
@@ -173,7 +174,55 @@ class SimResults:
             data.writerows(header_info)
             
         df_export.to_csv(filename, header=True, mode="a")
+        
+    def plot_results(self, x_axis, y_axes, colors = ["r","b","g"] , mass_unit = "kg"):
+        if isinstance(y_axes, str):
+            y_axes = [y_axes]
+        if len(y_axes)>3:
+            raise ValueError("You cannot fit more than 3 y-variables in a single plot")
+        if len(y_axes) < 1:
+            raise ValueError("Please input correct column names for the y-variables")
+        if mass_unit == "kg":
+            y_axes = [sub.replace("amount","kg").replace("moles","kg") for sub 
+                      in y_axes]
+        if len(y_axes) > 0:
+            fig, ax = plt.subplots()
+            ax.set_xlabel(SimResults.fancy_colnames_dict[x_axis])
+            ax.set_ylabel(SimResults.fancy_colnames_dict[y_axes[0]], color=colors[0])
+            p1, = ax.plot(self.results_df[x_axis], self.results_df[y_axes[0]], 
+                   label = SimResults.fancy_colnames_dict[y_axes[0]],
+                   color = colors[0])
+            handles = [p1]
+            ax.yaxis.get_offset_text().set_color(colors[0])
+            axlist = []
+            if len(y_axes) > 1:
+                ax2 = ax.twinx()
+                ax2.set_ylabel(SimResults.fancy_colnames_dict[y_axes[1]], color=colors[1])
+                ax2.yaxis.get_offset_text().set_color(colors[1])
+                p2, = ax2.plot(self.results_df[x_axis], self.results_df[y_axes[1]],
+                        label = SimResults.fancy_colnames_dict[y_axes[1]], color = colors[1])
+                handles = [p1, p2]
+                axlist.append(ax2)
+                if len(y_axes) > 2:
+                    ax3 = ax.twinx()
+                    ax3.set_ylabel(SimResults.fancy_colnames_dict[y_axes[2]], color=colors[2])
+                    ax3.yaxis.get_offset_text().set_color(colors[2])
+                    p3, = ax3.plot(self.results_df[x_axis], self.results_df[y_axes[2]],
+                            label = SimResults.fancy_colnames_dict[y_axes[2]],
+                            color = colors[2])
+                    ax3.spines.right.set_position(("axes", 1.2))
+                    ax3.yaxis.get_offset_text().set_position((1.3,1.1))
+                    fig.subplots_adjust(right=0.75)
+                    handles = [p1,p2,p3]
+                    axlist.append(ax3)
+            ax.legend(handles=handles)
+            axlist.append(ax)
+            return np.array(axlist) if len(axlist)>1 else ax
+        
+            
+            
      
+        
     @classmethod
     def combine_SimResults(cls, 
                            sim_results_list : "List[SimResults]"
