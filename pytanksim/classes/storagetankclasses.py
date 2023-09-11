@@ -365,7 +365,7 @@ class SorbentTank(StorageTank):
                 lower_bound = q if resfinal == res2.x else 1
                 upper_bound = 0 if resfinal == res2.x else q
             total_surface_area = self.sorbent_material.mass *\
-                self.sorbent_material.specific_surface_area
+                self.sorbent_material.specific_surface_area * 1000
             qgrid = np.linspace(lower_bound, upper_bound, 100)
             Agrid = np.zeros_like(qgrid)
             ygrid = np.zeros_like(qgrid)

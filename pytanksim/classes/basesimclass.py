@@ -6,7 +6,7 @@ Created on Wed Feb  1 16:45:42 2023
 """
 
 
-__all__ = ["SimulationParams", "BoundaryFlux", "BaseSimulation"]
+__all__ = ["SimParams", "BoundaryFlux", "BaseSimulation"]
 
 
 from pytanksim.classes.simresultsclass import SimResults
@@ -19,7 +19,7 @@ import numpy as np
 
 
 @dataclass
-class SimulationParams:
+class SimParams:
     """Class for storing parameters for the tank simulation"""
     
     init_temperature : float # in K
@@ -199,7 +199,7 @@ class BaseSimulation:
     sim_type = None
     sim_phase = None
     def __init__(self, 
-                 simulation_params : SimulationParams,
+                 simulation_params : SimParams,
                  storage_tank : StorageTank,
                  boundary_flux : BoundaryFlux):
         self.simulation_params = simulation_params

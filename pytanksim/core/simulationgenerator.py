@@ -8,7 +8,7 @@ Created on Fri Feb  3 14:58:53 2023
 __all__ = ["generate_simulation"]
 
 from pytanksim.classes.excessisothermclass import ExcessIsotherm
-from pytanksim.classes.basesimclass import BoundaryFlux, SimulationParams
+from pytanksim.classes.basesimclass import BoundaryFlux, SimParams
 from pytanksim.classes.fluidsorbentclasses import StoredFluid, MPTAModel, SorbentMaterial
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.onephasesorbentsimclasses import *
@@ -49,7 +49,7 @@ sim_class_dict = {
 def generate_simulation(
         storage_tank : Union[StorageTank, SorbentTank],
         boundary_flux : BoundaryFlux,
-        simulation_params : SimulationParams,
+        simulation_params : SimParams,
         simulation_type = "Default",
         phase = 1,
         ):
