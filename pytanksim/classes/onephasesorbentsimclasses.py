@@ -691,7 +691,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
 
 class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
     sim_type = "Controlled Inlet"
-    def _dT_dt(self, p, T, time):
+    def _solve_differentials(self, p, T, time, phase):
         fluid = self.storage_tank.stored_fluid.backend
         MW = fluid.molar_mass() 
         ##Convert kg/s to mol/s
@@ -699,14 +699,18 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
         ndotin = flux.mass_flow_in(time)  / MW
         ndotout = flux.mass_flow_out(time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
-        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
+        qinit = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1
+        if phase != "Saturated":
+            fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p,T)
+        else:
+            fluid_props = self.storage_tank.stored_fluid.saturation_property_dict(T, qinit)
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
+        if ndotin != 0:
             hin = self.boundary_flux.enthalpy_in(time)
         else:
             hin = 0
         
-        if flux.mass_flow_out(time) != 0:
+        if ndotout != 0:
             hout = self.boundary_flux.enthalpy_out(time)
         else:
             hout = 0
@@ -723,17 +727,11 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
         c = self._dU_dp(p, T,  fluid_props)
         d = self._dU_dT(p, T, fluid_props)
         #Put in the right hand side of the mass and energy balance equations
-        return (k2 * a - c * k1)/(d*a - b*c)
+        A = [[a, b],
+             [c,d]]
+        b = [k1, k2]
+        return np.linalg.solve(A,b)
     
-    def _dP_dt(self, p, T, dTdt, time):
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
-        fluid_props = self.storage_tank.stored_fluid.fluid_property_dict(p, T)
-        ndotin = self.boundary_flux.mass_flow_in(time) / MW
-        ndotout = self.boundary_flux.mass_flow_out(time) / MW 
-        k1 = ndotin - ndotout
-        a = self._dn_dp(p, T, fluid_props)
-        b = self._dn_dT(p, T, fluid_props)
-        return (k1 - b * dTdt)/a
     
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
@@ -748,8 +746,8 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             p, T = w[:2]
-            dTdt = self._dT_dt(p, T, t) 
-            dPdt = self._dP_dt(p, T, dTdt, t) 
+            phase = self.storage_tank.stored_fluid.determine_phase(p, T)
+            dPdt, dTdt = self._solve_differentials(p, T, t, phase)
             fluid = self.storage_tank.stored_fluid.backend
             MW = fluid.molar_mass() 
             ##Convert kg/s to mol/s
@@ -761,15 +759,16 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
                 hin = self.boundary_flux.enthalpy_in(t)
             else:
                 hin = 0
-           
+            
             if flux.mass_flow_out(t) != 0:
                 hout = self.boundary_flux.enthalpy_out(t)
             else:
                 hout = 0
-            return np.array([dPdt, dTdt, ndotin, ndotin * hin,
+            output = np.array([dPdt, dTdt, ndotin, ndotin * hin,
                              self.boundary_flux.cooling_power(t),
                              self.boundary_flux.heating_power(t), self.heat_leak_in(T),
                              ndotout, ndotout * hout])
+            return output
         
         def events(t, w, sw):
             ##Check saturation status
@@ -827,13 +826,13 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
      
         w0 = np.array([self.simulation_params.init_pressure,
                        self.simulation_params.init_temperature,
-                       self.simulation_params.inserted_amount,
-                       self.simulation_params.flow_energy_in,
-                       self.simulation_params.cooling_additional,
-                       self.simulation_params.heating_additional,
-                       self.simulation_params.heat_leak_in,
-                       self.simulation_params.vented_amount,
-                       self.simulation_params.vented_energy
+                       # self.simulation_params.inserted_amount,
+                       # self.simulation_params.flow_energy_in,
+                       # self.simulation_params.cooling_additional,
+                       # self.simulation_params.heating_additional,
+                       # self.simulation_params.heat_leak_in,
+                       # self.simulation_params.vented_amount,
+                       # self.simulation_params.vented_energy
                        ])
         
         
