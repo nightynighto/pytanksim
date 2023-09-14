@@ -60,6 +60,52 @@ class SimResults:
         "inserted_kg_per_s" : "Refueling Rate (kg/s)"
         }
     
+    short_colnames_inv ={ 
+        "time" : "t",
+        "pressure" : "p",
+        "temperature" : "T",
+        "moles_adsorbed" : "na" ,
+        "moles_gas" : "ng",
+        "moles_liquid" : "nl",
+        "moles_supercritical" : "ns",
+        "cooling_required" : "Qcoolreq",
+        "heating_required" :"Qheatreq",
+        "vented_amount" : "nout",
+        "vented_energy" : "Hout",
+        "inserted_amount" : "nin",
+        "flow_energy_in" : "Hin",
+        "cooling_additional" : "Qcooladd",
+        "heating_additional" : "Qheatadd",
+        "heat_leak_in" : "Qleak",
+        "kg_adsorbed" : "ma" ,
+        "kg_gas" : "mg",
+        "kg_liquid" : "ml",
+        "kg_supercritical" : "ms",
+        "vented_kg" : "mout",
+        "inserted_kg" : "min",
+        "moles_adsorbed_per_s" : "na_dot",
+        "moles_gas_per_s" :  "ng_dot",
+        "moles_liquid_per_s" : "nl_dot",
+        "moles_supercritical_per_s" : "ns_dot",
+        "cooling_required_W" : "Qcoolreq_dot",
+        "heating_required_W" : "Qheatreq_dot",
+        "vented_amount_per_s" : "nout_dot",
+        "vented_energy_W" : "Hout_dot",
+        "inserted_amount_per_s" : "nin_dot",
+        "flow_energy_in_W" : "Hin_dot",
+        "cooling_additional_W" : "Qcooladd_dot",
+        "heating_additional_W" : "Qheatadd_dot",
+        "heat_leak_in_W" : "Qleak_dot",
+        "kg_adsorbed_per_s" : "ma_dot",
+        "kg_gas_per_s" :  "mg_dot",
+        "kg_liquid_per_s" : "ml_dot",
+        "kg_supercritical_per_s" : "ms_dot",
+        "vented_kg_per_s" : "mout_dot",
+        "inserted_kg_per_s" : "min_dot"
+        }
+    
+    short_colnames = {v:k for k,v in short_colnames_inv.items()}
+    
     def __init__(self,
                  pressure : "List[float]|np.ndarray",
                  temperature : "List[float]|np.ndarray",
@@ -175,17 +221,17 @@ class SimResults:
             
         df_export.to_csv(filename, header=True, mode="a")
         
-    def plot_results(self, x_axis, y_axes, colors = ["r","b","g"] , mass_unit = "kg"):
+    def plot(self, x_axis, y_axes, colors = ["r","b","g"]):
         if isinstance(y_axes, str):
             y_axes = [y_axes]
         if len(y_axes)>3:
             raise ValueError("You cannot fit more than 3 y-variables in a single plot")
         if len(y_axes) < 1:
             raise ValueError("Please input correct column names for the y-variables")
-        if mass_unit == "kg":
-            y_axes = [sub.replace("amount","kg").replace("moles","kg") for sub 
-                      in y_axes]
+        y_axes = [SimResults.short_colnames[y] for y in y_axes]
+        x_axis = SimResults.short_colnames[x_axis]
         if len(y_axes) > 0:
+            plt.style.use('seaborn-paper')
             fig, ax = plt.subplots()
             ax.set_xlabel(SimResults.fancy_colnames_dict[x_axis])
             ax.set_ylabel(SimResults.fancy_colnames_dict[y_axes[0]], color=colors[0])
@@ -224,11 +270,31 @@ class SimResults:
      
         
     @classmethod
-    def combine_SimResults(cls, 
+    def combine(cls, 
                            sim_results_list : "List[SimResults]"
                            ) -> "SimResults":
         list_of_df =  [result.results_df for result in sim_results_list]
         concat_df = pd.concat(list_of_df, ignore_index = True)
+        concat_df = concat_df.drop_duplicates(subset = "time")
         concat_df = concat_df.sort_values("time")
-        return cls()
+        return cls(
+        pressure = concat_df["pressure"].to_numpy(),
+        temperature  = concat_df["temperature"].to_numpy(),
+        time = concat_df["time"].to_numpy(),
+        moles_adsorbed  = concat_df["moles_adsorbed"].to_numpy(),
+        moles_gas  = concat_df["moles_gas"].to_numpy(),
+        moles_liquid = concat_df["moles_liquid"].to_numpy(),
+        moles_supercritical  = concat_df["moles_supercritical"].to_numpy(),
+        tank_params = sim_results_list[-1].tank_params,
+        sim_type = "Combined",
+        sim_params = None,
+        inserted_amount = concat_df["inserted_amount"].to_numpy(),
+        flow_energy_in = concat_df["flow_energy_in"].to_numpy(),
+        cooling_required = concat_df["cooling_required"].to_numpy(),
+        heating_required = concat_df["heating_required"].to_numpy(),
+        cooling_additional = concat_df["cooling_additional"].to_numpy(),
+        heating_additional = concat_df["heating_additional"].to_numpy(),
+        heat_leak_in = concat_df["heat_leak_in"].to_numpy(),
+        vented_amount = concat_df["vented_amount"].to_numpy(), 
+        vented_energy= concat_df["vented_energy"].to_numpy(),)
     

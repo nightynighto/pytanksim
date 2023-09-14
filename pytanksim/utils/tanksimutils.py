@@ -34,7 +34,7 @@ def Cs_gen(mads, mcarbon, malum, msteel):
     def Cs(T):
         return ((mads+mcarbon)*1000/12)*Cdebye(T,1500) +\
             (malum*1000/26.9) * Cdebye(T, 389.4) +\
-                (msteel * 1000 / 55.485) * Cdebye(T, 373)
+                (msteel * 1000 / 55.485) * Cdebye(T, 500)
     return Cs
 
 def tank_capacity_excess(nexcess, mads, rhoskel, tankvol, pempty, tempty, pfull, tfull, fluid):

@@ -8,4 +8,5 @@ from pytanksim.classes.excessisothermclass import ExcessIsotherm
 from pytanksim.classes.basesimclass import BoundaryFlux, SimParams
 from pytanksim.classes.fluidsorbentclasses import StoredFluid, MPTAModel, SorbentMaterial
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
+from pytanksim.classes.simresultsclass import SimResults
 from .simulationgenerator import *
