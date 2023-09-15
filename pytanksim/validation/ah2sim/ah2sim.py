@@ -7,6 +7,7 @@ Created on Mon Feb  6 15:52:49 2023
 
 import pytanksim as pts
 import numpy as np
+from scipy.special import comb
 
 
 
@@ -55,39 +56,34 @@ storage_tank = pts.SorbentTank(
 
 
 
-def Pin(p, T):
-    return p*1.25
+
+
+def smoothstep(x, x_min=0, x_max=1, N=1):
+    x = np.clip((x - x_min) / (x_max - x_min), 0, 1)
+
+    result = 0
+    for n in range(0, N + 1):
+         result += comb(N + n, n) * comb(2 * N + 1, N - n) * (-x) ** n
+
+    result *= x ** (N + 1)
+
+    return result
 
 def mfin(time):
-    if time <=953:
-        return 2.048E-5
-    else:
-        return 0
+    return  2.048E-5 - 2.048E-5 * smoothstep(time, 952.5, 953, 6 )
     
 def mfout(time):
-    if time >= 3822 :
-        return 2.186E-5
-    else:
-        return 0
+    return 2.186E-5 * smoothstep(time, 3821.5, 3822, 6 )
 
-def enthalpyin(time):
-    if time <= 953:
-        return 3928600 * stored_fluid.backend.molar_mass()
-    else:
-        return 0
-    
-def enthalpyout(time):
-    if time >= 3822:
-        return 3946400 * stored_fluid.backend.molar_mass()
-    else:
-        return 0
+entin = 3928600 * stored_fluid.backend.molar_mass()
+entout =  3946400 * stored_fluid.backend.molar_mass()
 
 boundary_flux = pts.BoundaryFlux(
                 mass_flow_in = mfin,
                 mass_flow_out = mfout,
                 environment_temp = 302.5,
-                enthalpy_in = enthalpyin,
-                enthalpy_out = enthalpyout
+                enthalpy_in = entin,
+                enthalpy_out = entout, 
     )
 
 simulation_params = pts.SimParams(

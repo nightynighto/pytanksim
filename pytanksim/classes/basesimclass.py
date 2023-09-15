@@ -185,6 +185,7 @@ class BoundaryFlux:
         self.fill_rate = fill_rate
         self.environment_temp =environment_temp
         self.enthalpy_in = enthalpy_in
+        self.enthalpy_out = enthalpy_out
         
         
         if mass_flow_in != 0 and (pressure_in == None and temperature_in == None and enthalpy_in == None):

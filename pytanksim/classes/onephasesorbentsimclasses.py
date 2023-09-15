@@ -716,11 +716,9 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
             hout = 0
         
         k1 = ndotin - ndotout
-        k2 = ndotin * (hin ) - ndotout * (hout ) + \
+        k2 = ndotin * hin - ndotout * hout + \
             self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
                 + self.heat_leak_in(T)
-        #print(hin, hgas)
-        q = 0 if self.simulation_params.init_nl > self.simulation_params.init_ng else 1
 
         a = self._dn_dp(p, T, fluid_props)
         b = self._dn_dT(p, T, fluid_props)
@@ -730,7 +728,8 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
         A = [[a, b],
              [c,d]]
         b = [k1, k2]
-        return np.linalg.solve(A,b)
+        output = np.linalg.solve(A,b)
+        return output
     
     
     def run(self):
@@ -826,13 +825,13 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
      
         w0 = np.array([self.simulation_params.init_pressure,
                        self.simulation_params.init_temperature,
-                       # self.simulation_params.inserted_amount,
-                       # self.simulation_params.flow_energy_in,
-                       # self.simulation_params.cooling_additional,
-                       # self.simulation_params.heating_additional,
-                       # self.simulation_params.heat_leak_in,
-                       # self.simulation_params.vented_amount,
-                       # self.simulation_params.vented_energy
+                        self.simulation_params.inserted_amount,
+                        self.simulation_params.flow_energy_in,
+                        self.simulation_params.cooling_additional,
+                        self.simulation_params.heating_additional,
+                        self.simulation_params.heat_leak_in,
+                        self.simulation_params.vented_amount,
+                        self.simulation_params.vented_energy
                        ])
         
         
@@ -848,7 +847,7 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-5
+        sim.rtol = 1E-4
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
