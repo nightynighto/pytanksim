@@ -25,7 +25,8 @@ for i, temper in enumerate(temperatures):
 
 
 model_isotherm_mda = pts.classes.MDAModel.from_ExcessIsotherms(excesslist, sorbent = "AX21",
-                                                                stored_fluid = stored_fluid)
+                                                                stored_fluid = stored_fluid,
+                                                                m_mode = "Constant")
 
 
 tankvol = 0.0024946
@@ -50,7 +51,7 @@ storage_tank = pts.SorbentTank(
                     min_supply_pressure = 0,
                     sorbent_material = sorbent_material,
                     surface_area = 0.1277,
-                    thermal_resistance = 1/(36 * 0.1277)
+                    thermal_resistance = 1/(28 * 0.1277)
     )
 
 
@@ -73,7 +74,7 @@ def mfin(time):
     return  2.048E-5 - 2.048E-5 * smoothstep(time, 952.5, 953, 6 )
     
 def mfout(time):
-    return 2.186E-5 * smoothstep(time, 3821.5, 3822, 6 )
+    return 2.186E-5 * smoothstep(time, 3821.5, 3822, 6)
 
 entin = 3928600 * stored_fluid.backend.molar_mass()
 entout =  3946400 * stored_fluid.backend.molar_mass()

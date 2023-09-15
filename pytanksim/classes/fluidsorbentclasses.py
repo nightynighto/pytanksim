@@ -659,17 +659,23 @@ class MDAModel(ModelIsotherm):
                   sorbent : str,
                   stored_fluid : StoredFluid,
                   nmax : float,
-                  p0 : float,
+                  f0 : float,
                   alpha : float,
                   beta : float,
-                  va : float):
+                  va : float,
+                  m : float = 2,
+                  va_mode : str = "Constant",
+                  f0_mode : str = "Constant"):
          self.sorbent = sorbent
          self.stored_fluid = stored_fluid
-         self.p0 = p0
+         self.f0 = f0
          self.alpha = alpha
          self.beta = beta
          self.va = va
          self.nmax = nmax
+         self.m = m
+         self.va_mode = va_mode
+         self.f0_mode = f0_mode
      
     def n_absolute(self, p, T):
         phase = self.stored_fluid.determine_phase(p, T)
@@ -678,10 +684,35 @@ class MDAModel(ModelIsotherm):
         else:
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
         fug = self.stored_fluid.backend.fugacity(0)
-        return self.nmax * np.exp(-((sp.constants.R * T / (self.alpha + self.beta * T))**2)\
-                                   * ((np.log(self.p0/fug))**2))
+        
+        if self.f0_mode == "Constant":
+            f0 = self.f0
+        if self.f0_mode == "Dubinin":
+            pc = self.stored_fluid.backend.p_critical()
+            Tc = self.stored_fluid.backend.T_critical()
+            if T < Tc:
+                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+                f0 = self.stored_fluid.backend.fugacity(0)
+            else:
+                p0 = ((T/Tc)**2) * pc
+                self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
+                f0 = self.stored_fluid.backend.fugacity(0)
+            
+        return self.nmax * np.exp(-((sp.constants.R * T / \
+                                     (self.alpha + self.beta * T))**self.m)\
+                                   * ((np.log(f0/fug))**self.m))
+    
     def v_ads(self, p, T):
-        return self.va
+        if self.va_mode == "Constant":
+            return self.va
+        if self.va_mode == "Ozawa":
+            self.stored_fluid.backend.update(CP.PQ_INPUTS, p, 0)
+            Tb = self.stored_fluid.backend.T()
+            vb = 1/self.stored_fluid.backend.rhomolar()
+            ads_specific_volume = vb * np.exp((T-Tb)/T)
+            ads_density = 1/ads_specific_volume
+            na = self.n_absolute(p, T) 
+            return na / ads_density
     
     def n_excess(self, p, T) :
         fluid = self.stored_fluid.backend
@@ -697,10 +728,15 @@ class MDAModel(ModelIsotherm):
                              stored_fluid : StoredFluid = None,
                              sorbent: str = None,
                              nmaxguess: float = 71.6,
-                             p0guess: float = 1470E6,
+                             f0guess: float = 1470E6,
                              alphaguess: float = 3080, 
                              betaguess: float = 18.9,
-                             vaguess : float = 0.00143):
+                             vaguess : float = 0.00143,
+                             mguess : float = 2.0,
+                             va_mode : str = "Fit",
+                             f0_mode : str = "Fit",
+                             m_mode : str = "Fit",
+                             pore_volume : float = 0.003):
         """
         This function takes a list of excessisotherms object,
         fits an MPTA model, and uses the fitted parameters to
@@ -753,7 +789,42 @@ class MDAModel(ModelIsotherm):
         temperature_combined = []
         pressure_combined = []
         
+        def va_switch(paramsvar, p, T, stored_fluid, nabs):
+            if va_mode == "Fit":
+                return paramsvar["va"]
+            elif va_mode == "Constant":
+                return vaguess
+            elif va_mode == "Ozawa":
+                stored_fluid.backend.update(CP.PQ_INPUTS, p, 0)
+                Tb = stored_fluid.backend.T()
+                vb = 1/stored_fluid.backend.rhomolar()
+                ads_specific_volume = vb * np.exp((T-Tb)/T)
+                ads_density = 1/ads_specific_volume
+                return nabs / ads_density
         
+        def m_switch(paramsvar):
+            if m_mode == "Constant":
+                return mguess
+            elif m_mode == "Fit":
+                return paramsvar["m"]
+        
+        def f0_switch(paramsvar, T, stored_fluid):
+            if f0_mode == "Fit":
+                return paramsvar["f0"]
+            elif f0_mode == "Dubinin":
+                pc = stored_fluid.backend.p_critical()
+                Tc = stored_fluid.backend.T_critical()
+                if T < Tc:
+                    stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+                    f0 = stored_fluid.backend.fugacity(0)
+                else:
+                    p0 = ((T/Tc)**2) * pc
+                    stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
+                    f0 = stored_fluid.backend.fugacity(0)
+                return f0
+            
+        
+        min_nmax = 1
         for i, isotherm in enumerate(excess_isotherms):
             pressure_data = isotherm.pressure
             loading_data = isotherm.loading
@@ -761,14 +832,18 @@ class MDAModel(ModelIsotherm):
             loading_combined = np.append(loading_combined, loading_data)
             temperature_combined = np.append(temperature_combined, np.repeat(temperature,len(pressure_data)))
             pressure_combined = np.append(pressure_combined, pressure_data)
-                    
+            min_nmax = max(loading_data) if max(loading_data) > min_nmax else min_nmax
         params = lmfit.Parameters()
-        params.add("nmax", nmaxguess, True, 0, 300)
-        params.add("p0", p0guess, True, 1E5)
-        params.add("alpha", alphaguess, True, 0, 10000)
+        params.add("nmax", nmaxguess, True, min_nmax, 300)
+        if f0_mode == "Fit":
+            params.add("f0", f0guess, True, 1E5)
+        params.add("alpha", alphaguess, True, 500, 80000)
         params.add("beta", betaguess, True, 0, 100)
-        params.add("va", vaguess)
-        
+        if va_mode =="Fit":
+            params.add("va", vaguess, min = 0, max = pore_volume)
+        if m_mode == "Fit":
+            params.add("m", mguess , min = 1, max = 6)
+            
         def n_excess(p, T, params, stored_fluid):
             phase = stored_fluid.determine_phase(p, T)
             if phase != "Saturated":
@@ -777,8 +852,14 @@ class MDAModel(ModelIsotherm):
                 stored_fluid.backend.update(CP.QT_INPUTS, 1, T)
             fug = stored_fluid.backend.fugacity(0)
             rhof = stored_fluid.backend.rhomolar()
-            return params["nmax"] * np.exp(-((sp.constants.R * T / (params["alpha"] + params["beta"] * T))**2)\
-                                       * ((np.log(params["p0"]/fug))**2)) - rhof * params["va"]
+            
+            f0 = f0_switch(params, T, stored_fluid)
+            m = m_switch(params)
+            nabs = params["nmax"] * \
+                np.exp(-((sp.constants.R * T / \
+                          (params["alpha"] + params["beta"] * T))**m) * ((np.log(f0/fug))**m))
+            va = va_switch(params, p, T, stored_fluid, nabs)
+            return nabs - rhof * va
         
         def fit_penalty(params, dataP, dataAd, dataT, stored_fluid):
             value = params.valuesdict()
@@ -793,13 +874,23 @@ class MDAModel(ModelIsotherm):
                                                                 stored_fluid))
         print(lmfit.fit_report(fitting))
         paramsdict = fitting.params.valuesdict()
+        
+        f0_res = paramsdict["f0"] if f0_mode == "Fit" else f0guess
+        va_res = paramsdict["va"] if va_mode == "Fit" else vaguess
+        m_res = paramsdict["m"] if m_mode == "Fit" else mguess        
+        vamode = "Constant" if va_mode == "Fit" else va_mode
+        f0mode = "Constant" if f0_mode == "Fit" else f0_mode
+        
         return cls(sorbent = sorbent,
                    stored_fluid = stored_fluid,
                    nmax = paramsdict["nmax"],
-                   p0 = paramsdict["p0"],
+                   f0 = f0_res,
                    alpha = paramsdict["alpha"],
                    beta = paramsdict["beta"],
-                   va = paramsdict["va"])
+                   va = va_res,
+                   m = m_res,
+                   va_mode = vamode,
+                   f0_mode = f0mode)
     
     
     
