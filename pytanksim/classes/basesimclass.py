@@ -142,39 +142,35 @@ class BoundaryFlux:
         """
         
         def float_function_generator(floatingvalue):
-            def float_function(p,T):
-                return floatingvalue
-            return float_function
-        
-        def float_function_generator_time(floatingvalue):
-            def float_function(time):
-                return floatingvalue
+            def float_function(p,T,time):
+                return float(floatingvalue)
             return float_function
         
         
-        if isinstance(pressure_in, float):
+        
+        if isinstance(pressure_in, (float,int)):
             pressure_in = float_function_generator(pressure_in)
         
-        if isinstance(temperature_in, float):
+        if isinstance(temperature_in, (float,int)):
             temperature_in = float_function_generator(temperature_in)
             
-        if isinstance(mass_flow_in, float):
-            mass_flow_in = float_function_generator_time(mass_flow_in)
+        if isinstance(mass_flow_in, (float,int)):
+            mass_flow_in = float_function_generator(mass_flow_in)
         
-        if isinstance(mass_flow_out, float):
-            mass_flow_out = float_function_generator_time(mass_flow_out)
+        if isinstance(mass_flow_out, (float,int)):
+            mass_flow_out = float_function_generator(mass_flow_out)
         
-        if isinstance(enthalpy_in, float):
-            enthalpy_in = float_function_generator_time(enthalpy_in)
+        if isinstance(enthalpy_in, (float,int)):
+            enthalpy_in = float_function_generator(enthalpy_in)
         
-        if isinstance(enthalpy_out, float):
-            enthalpy_out = float_function_generator_time(enthalpy_out)
+        if isinstance(enthalpy_out, (float, int)):
+            enthalpy_out = float_function_generator(enthalpy_out)
             
-        if isinstance(heating_power, float):
-            heating_power = float_function_generator_time(heating_power)
+        if isinstance(heating_power, (float,int)):
+            heating_power = float_function_generator(heating_power)
         
-        if isinstance(cooling_power, float):
-            cooling_power = float_function_generator_time(cooling_power)
+        if isinstance(cooling_power, (float,int)):
+            cooling_power = float_function_generator(cooling_power)
         
         self.mass_flow_in = mass_flow_in
         self.mass_flow_out = mass_flow_out
@@ -206,9 +202,9 @@ class BaseSimulation:
         self.simulation_params = simulation_params
         self.storage_tank = storage_tank
         self.boundary_flux = boundary_flux
+        self.has_sorbent = False
         if isinstance(self.storage_tank, SorbentTank):
             self.has_sorbent = True
-        self.has_sorbent = False
         
     def heat_leak_in(self, T):
         if self.boundary_flux.environment_temp == 0:
@@ -219,9 +215,9 @@ class BaseSimulation:
     def run(self):
         raise NotImplementedError
     
-    def enthalpy_in_calc(self, p, T):
-        pin = self.boundary_flux.pressure_in(p, T)
-        Tin = self.boundary_flux.temperature_in(p, T)
+    def enthalpy_in_calc(self, p, T, time):
+        pin = self.boundary_flux.pressure_in(p, T, time)
+        Tin = self.boundary_flux.temperature_in(p, T, time)
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
         if Tin <= Tcrit:
