@@ -602,7 +602,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
 
 class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
     sim_type = "Controlled Inlet"
-    def _solve_differentials(self, p, T, time):
+    def solve_differentials(self, p, T, time):
         stored_fluid = self.storage_tank.stored_fluid
         MW = stored_fluid.backend.molar_mass() 
         ##Convert kg/s to mol/s
