@@ -13,7 +13,7 @@ import numpy as np
 import pytanksim.utils.finitedifferences as fd
 from tqdm.auto import tqdm
 from assimulo.problem import Explicit_Problem
-from assimulo.solvers import CVode, RodasODE
+from assimulo.solvers import CVode
 from assimulo.exception import TerminateSimulation
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.basesimclass import BaseSimulation
@@ -114,9 +114,10 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
     sim_type = "Default"
     
     def solve_differentials(self, ng, nl, T, time):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
-        
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid =  stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_gas["psat"]
         m11 = 1
         m12 = 1
         m13 = self._dn_dT(T, satur_prop_gas)
@@ -129,44 +130,49 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         A = np.matrix([[m11, m12, m13],
                        [m21, m22, m23],
                        [m31, m32, m33]])
-        fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.molar_mass() 
+        MW = stored_fluid.backend.molar_mass() 
         ##Convert kg/s to mol/s
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
-        p = satur_prop_gas["psat"]
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time):
-            hin = self.enthalpy_in_calc(p, T)
-        else:
-            hin = 0
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
+        
+        cooling_additional = flux.cooling_power(p, T, time)
+        heating_additional = flux.heating_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
+        hf = satur_prop_gas["hf"]
+        
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * satur_prop_gas["hf"] + \
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(T) 
+        b3 = ndotin * hin - ndotout * hf + \
+            heating_additional - cooling_additional \
+                + heat_leak 
         b = np.array([b1,b2,b3])
         diffresults = np.linalg.solve(A, b)
         return np.append(diffresults,
                          [ndotin,
                          ndotin * hin,
                          ndotout,
-                         ndotout * satur_prop_gas["hf"],
-                         self.boundary_flux.cooling_power(time),
-                         self.boundary_flux.heating_power(time),
-                         self.heat_leak_in(T) ]
+                         ndotout * hf,
+                         cooling_additional,
+                         heating_additional,
+                         heat_leak ]
                          )
         
     
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
 
-        
         def rhs(t, w, sw):
             last_t, dt = state
             n = int((t - last_t)/dt)
@@ -305,87 +311,79 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
 class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
     sim_type = "Cooled"
     
-    def _dn_dt(self, time):
+    def solve_differentials(self, time, ng, nl):
         T = self.simulation_params.init_temperature
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)    
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0) 
+        p = satur_prop_gas["psat"]
         m11 = 1
         m12 = 1
+        m13 = 0
         m21 = self._dv_dn(satur_prop_gas)
         m22 = self._dv_dn(satur_prop_liquid)
-        fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.molar_mass() 
-        ##Convert kg/s to mol/s
-        flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
-        b1 = ndotin - ndotout
-        b2 = 0
-        A = np.array([[m11, m12],
-                     [m21, m22]])
-        b = np.array([b1, b2])
-        return np.linalg.solve(A, b)
-    
-    def _cooling_power(self, time, ng, nl, dng_dt, dnl_dt):
-        T = self.simulation_params.init_temperature
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
+        m23 = 0
         m31 = self._du_dng(ng, nl, T, satur_prop_gas)
         m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
-        fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.molar_mass()
-        ndotin = self.boundary_flux.mass_flow_in(time)  / MW
-        ndotout = self.boundary_flux.mass_flow_out(time) / MW
+        m33 = 1
+        A = np.array([[m11, m12, m13],
+                      [m21, m22, m23],
+                      [m31, m32, m33]])
+        MW = stored_fluid.backend.molar_mass() 
+        ##Convert kg/s to mol/s
+        flux = self.boundary_flux
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
+        ##Get the thermodynamic properties of the bulk fluid for later calculations
+        ##Get the input pressure at a condition
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         
-        ##Get the molar enthalpy of the inlet fluid
-        hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T) if ndotin else 0
+        cooling_additional = flux.cooling_power(p, T, time)
+        heating_additional = flux.heating_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
+        hf = satur_prop_gas["hf"]
         
-        return - dng_dt * m31 - dnl_dt * m32 + ndotin * hin - ndotout * satur_prop_gas["hf"] + \
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(T) 
+        b1 = ndotin - ndotout
+        b2 = 0
+        b3 = ndotin * hin - ndotout * hf + \
+            heating_additional - cooling_additional \
+                + heat_leak 
+        b = np.array([b1,b2,b3])
+        diffresults = np.linalg.solve(A, b)
+        return np.append(diffresults, [
+            ndotin,
+            ndotin * hin,
+            ndotout,
+            ndotout * hf,
+            cooling_additional,
+            heating_additional,
+            heat_leak
+            ])
+
     
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
-        fluid = self.storage_tank.stored_fluid.backend
 
         def rhs(t, w, sw):
             last_t, dt = state
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            diffresults = self._dn_dt(t)
-            cool_power = self._cooling_power(t, w[0], w[1], diffresults[0], diffresults[1])
-            flux = self.boundary_flux
-            MW = fluid.molar_mass()
-            ndotin = flux.mass_flow_in(t)  / MW
-            ndotout = flux.mass_flow_out(t) / MW
-            hin = self.enthalpy_in_calc(self.simulation_params.init_pressure, self.simulation_params.init_temperature) if ndotin else 0
-            fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
-            hout = fluid.hmolar()
-            return np.append(diffresults,
-                             [cool_power,
-                              ndotin,
-                              ndotin * hin,
-                              ndotout,
-                              ndotout * hout,
-                              self.boundary_flux.cooling_power(t),
-                              self.boundary_flux.heating_power(t),
-                              self.heat_leak_in(self.simulation_params.init_temperature)]
-                             )
-        
+            return self.solve_differentials(t, w[0], w[1])
         def events(t, w, sw):
             #check that either phase has not fully saturated
             sat_liquid_event = w[0]  
             sat_gas_event = w[1]
             p = self.simulation_params.init_pressure
             T = self.simulation_params.init_temperature
-            ng = w[0]
-            nl = w[1]
-            if ng <0:
-                ng = 0
-            if nl <0:
-                nl = 0
+            ng = 0 if w[0]<0  else w[0]
+            nl = 0 if w[1]<0 else w[1]
+            
             target_capacity_reach = self.storage_tank.capacity(p, T, ng/(ng+nl)) \
                 - self.simulation_params.target_capacity
             return np.array([sat_gas_event, sat_liquid_event, target_capacity_reach])
@@ -458,11 +456,10 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
     
     def solve_differentials(self, ng, nl, time):
         T = self.simulation_params.init_temperature
-        fluid = self.storage_tank.stored_fluid.backend
-        fluid.update(CP.QT_INPUTS, 0, T)
-        psat = fluid.p()
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
+
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
         m11 = 1
         m12 = 1 
         m13 = 1
@@ -477,34 +474,44 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                       [m21, m22, m23],
                       [m31, m32, m33]])
         
-        
-        MW = fluid.molar_mass() 
+        p = satur_prop_gas["psat"]
+        MW = stored_fluid.backend.molar_mass() 
         ##Convert kg/s to mol/s
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
         
-        hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T) if ndotin else 0
+        hin = self.enthalpy_in_calc(p, T, time) if ndotin else 0
+        cooling_additional = flux.cooling_power(p, T, time)
+        heating_additional = flux.heating_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
+        hf = satur_prop_gas["hf"]
         
         b1 = ndotin
         b2 = 0
         b3 = ndotin * hin + \
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(T) 
+            heating_additional - cooling_additional\
+                + heat_leak
         
         b = np.array([b1,b2,b3])
         
-        soln = np.linalg.solve(A, b)
-        
-        return np.append(soln, [
-            soln[-1] * satur_prop_gas["hf"],
+        diffresults = np.linalg.solve(A, b)
+        ndotout = diffresults[-1]
+        return np.append(diffresults, [
+            ndotout * hf,
             ndotin,
             ndotin * hin,
-            self.boundary_flux.cooling_power(time),
-            self.boundary_flux.heating_power(time),
-            self.heat_leak_in(self.simulation_params.init_temperature)
+            cooling_additional,
+            heating_additional,
+            heat_leak
             ])
     
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
+        
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
 
@@ -598,70 +605,65 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
 class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
     sim_type = "Heated"
     
-    def _dn_dt(self, time):
+    def solve_differentials(self, time, ng, nl):
         T = self.simulation_params.init_temperature
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)    
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0) 
+        p = satur_prop_gas["psat"]
         m11 = 1
         m12 = 1
+        m13 = 0
         m21 = self._dv_dn(satur_prop_gas)
         m22 = self._dv_dn(satur_prop_liquid)
-        fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.molar_mass() 
-        ##Convert kg/s to mol/s
-        flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
-        b1 = ndotin - ndotout
-        b2 = 0
-        A = np.array([[m11, m12],
-                     [m21, m22]])
-        b = np.array([b1, b2])
-        return np.linalg.solve(A, b)
-    
-    def _heating_power(self, time, ng, nl, dng_dt, dnl_dt):
-        T = self.simulation_params.init_temperature
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
+        m23 = 0
         m31 = self._du_dng(ng, nl, T, satur_prop_gas)
         m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
-        fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.molar_mass()
-        ndotin = self.boundary_flux.mass_flow_in(time)  / MW
-        ndotout = self.boundary_flux.mass_flow_out(time) / MW
-        hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T) if ndotin else 0
-        return dng_dt * m31 + dnl_dt * m32 - ndotin * hin + ndotout * satur_prop_gas["hf"] + \
-           - self.boundary_flux.heating_power(time) + self.boundary_flux.cooling_power(time) - self.heat_leak_in(T) 
-    
+        m33 = -1
+        A = np.array([[m11, m12, m13],
+                      [m21, m22, m23],
+                      [m31, m32, m33]])
+        MW = stored_fluid.backend.molar_mass() 
+        ##Convert kg/s to mol/s
+        flux = self.boundary_flux
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
+        ##Get the thermodynamic properties of the bulk fluid for later calculations
+        ##Get the input pressure at a condition
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
+        
+        cooling_additional = flux.cooling_power(p, T, time)
+        heating_additional = flux.heating_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
+        hf = satur_prop_gas["hf"]
+        
+        b1 = ndotin - ndotout
+        b2 = 0
+        b3 = ndotin * hin - ndotout * hf + \
+            heating_additional - cooling_additional \
+                + heat_leak 
+        b = np.array([b1,b2,b3])
+        diffresults = np.linalg.solve(A, b)
+        return np.append(diffresults, [
+            ndotin,
+            ndotin * hin,
+            ndotout,
+            ndotout * hf,
+            cooling_additional,
+            heating_additional,
+            heat_leak
+            ])
+           
     def run(self):
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
-        fluid = self.storage_tank.stored_fluid.backend
 
         def rhs(t, w, sw):
             last_t, dt = state
             n = int((t - last_t)/dt)
             pbar.update(n)
             state[0] = last_t + dt * n
-            diffresults = self._dn_dt(t)
-            heating_power = self._heating_power(t, w[0], w[1], diffresults[0], diffresults[1])
-            flux = self.boundary_flux
-            MW = fluid.molar_mass()
-            ndotin = flux.mass_flow_in(t)  / MW
-            ndotout = flux.mass_flow_out(t) / MW
-            hin = self.enthalpy_in_calc(self.simulation_params.init_pressure, self.simulation_params.init_temperature) if ndotin else 0
-            fluid.update(CP.QT_INPUTS, 1, self.simulation_params.init_temperature)
-            hout = fluid.hmolar()
-            return np.append(diffresults, [
-                heating_power,
-                ndotin,
-                ndotin * hin,
-                ndotout,
-                ndotout * hout,
-                self.boundary_flux.cooling_power(t),
-                self.boundary_flux.heating_power(t),
-                self.heat_leak_in(self.simulation_params.init_temperature)
-                ])
+            return self.solve_differentials(t, w[0], w[1])
         
         def events(t, w, sw):
             #check that either phase has not fully saturated
@@ -741,9 +743,10 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
 
 class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
     def solve_differentials(self, ng, nl, T, time):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid =  self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
-        
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid =  stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_gas["psat"]
         m11 = 1
         m12 = 1
         m13 = self._dn_dT(T, satur_prop_gas)
@@ -757,28 +760,23 @@ class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
                        [m21, m22, m23],
                        [m31, m32, m33]])
         
-        fluid = self.storage_tank.stored_fluid.backend
-        MW = fluid.molar_mass() 
+        MW = stored_fluid.backend.molar_mass() 
         ##Convert kg/s to mol/s
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
         ##Get the input pressure at a condition
-        if ndotin != 0:
-            hin = self.boundary_flux.enthalpy_in(time)
-        else:
-            hin = 0
-            
-        if ndotout != 0:
-            hout = self.boundary_flux.enthalpy_out(time)
-        else:
-            hout = 0
+        hin = 0 if ndotin == 0 else flux.enthalpy_in(p, T, time)
+        hout = 0 if ndotout == 0 else flux.enthalpy_out(p, T, time)
+        cooling_additional = flux.cooling_power(p, T, time)
+        heating_additional = flux.heating_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
         b1 = ndotin - ndotout
         b2 = 0
         b3 = ndotin * hin - ndotout * hout\
-             + self.boundary_flux.heating_power - self.boundary_flux.cooling_power\
-                + self.heat_leak_in(T) 
+             + heating_additional - cooling_additional\
+                + heat_leak
         b = np.array([b1,b2,b3])
         diffresults = np.linalg.solve(A, b)
         
@@ -787,9 +785,9 @@ class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
                          ndotin * hin,
                          ndotout,
                          ndotout * hout,
-                         self.boundary_flux.cooling_power(time),
-                         self.boundary_flux.heating_power(time),
-                         self.heat_leak_in(T) ]
+                         cooling_additional,
+                         heating_additional,
+                         heat_leak ]
                          )
     
     

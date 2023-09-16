@@ -40,9 +40,10 @@ class TwoPhaseFluidSim(BaseSimulation):
     
 class TwoPhaseFluidDefault(TwoPhaseFluidSim):
     def solve_differentials(self, time, ng, nl, T):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid = self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
-        
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_liquid["psat"]
         m11 = 1
         m12 = 1
         m13 = 0
@@ -56,21 +57,24 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         A = np.array([[m11 , m12, m13],
                       [m21, m22, m23],
                       [m31, m32, m33]])
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        
+        MW = stored_fluid.backend.molar_mass()
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], T)
-        else:
-            hin = 0    
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
+        
+        hf = satur_prop_gas["hf"]
+        heating_additional = flux.heating_power(p, T, time)
+        cooling_additional = flux.cooling_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * satur_prop_gas["hf"] + \
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(T)
+        b3 = ndotin * hin - ndotout * hf + \
+            heating_additional - cooling_additional\
+                + heat_leak
                 
         b = np.array([b1,b2,b3])
         diffresults = np.linalg.solve(A, b)
@@ -78,12 +82,17 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         return np.append(diffresults, [ndotin,
         ndotin * hin,
         ndotout,
-        ndotout * satur_prop_gas["hf"],
-        self.boundary_flux.cooling_power(time),
-        self.boundary_flux.heating_power(time),
-        self.heat_leak_in(T)])
+        ndotout * hf,
+        cooling_additional,
+        heating_additional,
+        heat_leak])
     
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
@@ -188,6 +197,7 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         sim.discr = "BDF"
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
+        
         try:
             tqdm._instances.clear()
         except Exception:
@@ -225,8 +235,13 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
     
 class TwoPhaseFluidVenting(TwoPhaseFluidSim):
     def solve_differentials(self, time):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(self.simulation_params.init_temperature, 1)
-        satur_prop_liquid = self.storage_tank.stored_fluid.saturation_property_dict(self.simulation_params.init_temperature, 0)
+        T = self.simulation_params.init_temperature
+       
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
+        
+        p = satur_prop_gas["psat"]
         
         m11 = 1
         m12 = 1
@@ -243,33 +258,41 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
                       [m21, m22, m23],
                       [m31, m32, m33]])
          
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        MW = stored_fluid.backend.molar_mass()
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], self.simulation_params.init_temperature)
-        else:
-            hin = 0    
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)  
+            
+        hf = satur_prop_gas["hf"]
+        heating_additional = flux.heating_power(p, T, time)
+        cooling_additional = flux.cooling_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin 
         b2 = 0
         b3 = ndotin * hin + \
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(self.simulation_params.init_temperature)
+            heating_additional - cooling_additional\
+                + heat_leak
                 
         b = np.array([b1,b2,b3])
         
         diffresults = np.linalg.solve(A, b)
         ndotout = diffresults[-1]
-        diffresults = np.append(diffresults, ndotout * satur_prop_gas["hf"])
-        return np.append(diffresults, [ndotin,
+        diffresults = np.append(diffresults, )
+        return np.append(diffresults, [ndotout * hf,
+                                       ndotin,
                                        ndotin * hin,
-                                       self.boundary_flux.cooling_power(time),
-                                       self.boundary_flux.heating_power(time),
-                                       self.heat_leak_in(self.simulation_params.init_temperature)]) 
+                                       cooling_additional,
+                                       heating_additional,
+                                       heat_leak]) 
         
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]        
         
@@ -329,6 +352,7 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         sim.discr = "BDF"
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
+        
         try:
             tqdm._instances.clear()
         except Exception:
@@ -361,8 +385,12 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
     
 class TwoPhaseFluidCooled(TwoPhaseFluidSim):
     def solve_differentials(self, time):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(self.simulation_params.init_temperature, 1)
-        satur_prop_liquid = self.storage_tank.stored_fluid.saturation_property_dict(self.simulation_params.init_temperature, 0)
+        T = self.simulation_params.init_temperature
+        
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_gas["psat"]
         
         m11 = 1
         m12 = 1
@@ -379,21 +407,23 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
                       [m21, m22, m23],
                       [m31, m32, m33]])
          
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        MW = stored_fluid.backend.molar_mass()
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], self.simulation_params.init_temperature)
-        else:
-            hin = 0    
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
+            
+        hf = satur_prop_gas["hf"]
+        heating_additional = flux.heating_power(p, T, time)
+        cooling_additional = flux.cooling_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin 
         b2 = 0
-        b3 = ndotin * hin + ndotout * satur_prop_gas["hf"] +\
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time) + \
-                self.heat_leak_in(self.simulation_params.init_temperature)
+        b3 = ndotin * hin + ndotout * hf +\
+            heating_additional - cooling_additional + \
+                heat_leak
                 
         b = np.array([b1,b2,b3])
         
@@ -401,13 +431,18 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         return np.append(diffresults, [ndotin,
                                        ndotin * hin,
                                        ndotout,
-                                       ndotout * satur_prop_gas["hf"],
-                                       self.boundary_flux.cooling_power(time),
-                                       self.boundary_flux.heating_power(time),
-                                       self.heat_leak_in(self.simulation_params.init_temperature)
+                                       ndotout * hf,
+                                       cooling_additional,
+                                       heating_additional,
+                                       heat_leak
                                        ]) 
     
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
         
@@ -469,6 +504,7 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         sim.discr = "BDF"
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
+        
         try:
             tqdm._instances.clear()
         except Exception:
@@ -476,8 +512,6 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         
         print("Saving results...")
         
-            
-
             
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
@@ -501,8 +535,11 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
     
 class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
     def solve_differentials(self, time):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(self.simulation_params.init_temperature, 1)
-        satur_prop_liquid = self.storage_tank.stored_fluid.saturation_property_dict(self.simulation_params.init_temperature, 0)
+        T = self.simulation_params.init_temperature
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_gas["psat"]
         
         m11 = 1
         m12 = 1
@@ -515,25 +552,27 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         m33 = -1
         
         
-        A = np.array([[m11 , m12, m13],
+        A = np.array([[m11, m12, m13],
                       [m21, m22, m23],
                       [m31, m32, m33]])
          
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        MW = stored_fluid.backend.molar_mass()
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            hin = self.enthalpy_in_calc(satur_prop_gas["psat"], self.simulation_params.init_temperature)
-        else:
-            hin = 0    
+        hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
+            
+        hf = satur_prop_gas["hf"]
+        heating_additional = flux.heating_power(p, T, time)
+        cooling_additional = flux.cooling_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * satur_prop_gas["hf"] +\
-            - self.boundary_flux.cooling_power(time) + self.boundary_flux.heating_power(time) + \
-                self.heat_leak_in(self.simulation_params.init_temperature)
+        b3 = ndotin * hin - ndotout * hf +\
+            - cooling_additional + heating_additional + \
+                heat_leak
                 
         b = np.array([b1,b2,b3])
         
@@ -541,15 +580,19 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         return np.append(diffresults, [ndotin,
                                        ndotin * hin,
                                        ndotout,
-                                       ndotout * satur_prop_gas["hf"],
-                                       self.boundary_flux.cooling_power(time),
-                                       self.boundary_flux.heating_power(time),
-                                       self.heat_leak_in(self.simulation_params.init_temperature)]) 
+                                       ndotout * hf,
+                                       cooling_additional,
+                                       heating_additional,
+                                       heat_leak]) 
     
     def run(self):
+        try:
+            tqdm._instances.clear()
+        except Exception:
+            pass
+        
         pbar = tqdm(total=1000, unit = "‰")
         state = [0, self.simulation_params.final_time/1000]
-        
         
         def rhs(t, w, sw):
             last_t, dt = state
@@ -606,6 +649,7 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         sim.discr = "BDF"
         sim.rtol = 1E-6
         t,  y = sim.simulate(self.simulation_params.final_time, self.simulation_params.displayed_points)
+        
         try:
             tqdm._instances.clear()
         except Exception:
@@ -635,8 +679,10 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
     
 class TwoPhaseFluidControlledInlet(TwoPhaseFluidDefault):
     def solve_differentials(self, time, ng, nl, T):
-        satur_prop_gas = self.storage_tank.stored_fluid.saturation_property_dict(T, 1)
-        satur_prop_liquid = self.storage_tank.stored_fluid.saturation_property_dict(T, 0)
+        stored_fluid = self.storage_tank.stored_fluid
+        satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
+        satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_gas["psat"]
         
         m11 = 1
         m12 = 1
@@ -652,26 +698,23 @@ class TwoPhaseFluidControlledInlet(TwoPhaseFluidDefault):
                       [m21, m22, m23],
                       [m31, m32, m33]])
          
-        MW = self.storage_tank.stored_fluid.backend.molar_mass()
+        MW = stored_fluid.backend.molar_mass()
         flux = self.boundary_flux
-        ndotin = flux.mass_flow_in(time)  / MW
-        ndotout = flux.mass_flow_out(time) / MW
+        ndotin = flux.mass_flow_in(p, T, time)  / MW
+        ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the input pressure at a condition
-        if flux.mass_flow_in(time) != 0:
-            hin = flux.enthalpy_in(time)
-        else:
-            hin = 0
+        hin = 0 if ndotin == 0 else flux.enthalpy_in(p, T, time)
+        hout = 0 if ndotout == 0 else flux.enthalpy_out(p, T, time)
         
-        if flux.mass_flow_out(time) != 0:
-            hout = flux.enthalpy_out(time)
-        else:
-            hout = 0
+        heating_additional = flux.heating_power(p, T, time)
+        cooling_additional = flux.cooling_power(p, T, time)
+        heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin - ndotout
         b2 = 0
         b3 = ndotin * hin - ndotout * hout + \
-            self.boundary_flux.heating_power(time) - self.boundary_flux.cooling_power(time)\
-                + self.heat_leak_in(T)
+            heating_additional - cooling_additional \
+                + heat_leak
                 
         b = np.array([b1,b2,b3])
         
@@ -681,6 +724,6 @@ class TwoPhaseFluidControlledInlet(TwoPhaseFluidDefault):
         ndotin * hin,
         ndotout,
         ndotout * hout,
-        self.boundary_flux.cooling_power(time),
-        self.boundary_flux.heating_power(time),
-        self.heat_leak_in(T)])
+        cooling_additional,
+        heating_additional,
+        heat_leak])
