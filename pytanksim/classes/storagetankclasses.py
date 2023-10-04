@@ -17,8 +17,8 @@ import pandas as pd
 class StorageTank:
     def __init__(self,
                  volume : float,  
-                 aluminum_mass : float, 
                  stored_fluid : StoredFluid,
+                 aluminum_mass : float = 0, 
                  carbon_fiber_mass: float = 0,
                  steel_mass: float = 0,
                  max_pressure : float = None,
@@ -173,8 +173,8 @@ class StorageTank:
 class SorbentTank(StorageTank):
     def __init__(self,
                  volume : float,  
-                 aluminum_mass : float, 
                  sorbent_material : SorbentMaterial,
+                 aluminum_mass : float = 0, 
                  carbon_fiber_mass: float = 0,
                  steel_mass: float = 0,
                  max_pressure : float = None,
@@ -253,7 +253,9 @@ class SorbentTank(StorageTank):
         mads = self.sorbent_material.mass
         rhoskel = self.sorbent_material.skeletal_density
         vads = self.sorbent_material.model_isotherm.v_ads
-        return tankvol - mads/rhoskel - vads(p,T) * mads
+        outputraw = tankvol - mads/rhoskel - vads(p,T) * mads
+        output =  outputraw if outputraw >= 0 else 0
+        return output
     
     def capacity(self, p, T, q = 0):
         fluid = self.stored_fluid.backend

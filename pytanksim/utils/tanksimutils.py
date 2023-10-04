@@ -31,10 +31,13 @@ def Cs_gen(mads, mcarbon, malum, msteel):
         for i in range(1, N):
             y[i] = integrand(grid[i])
         return 9 * R * ((T/theta)**3) * sp.integrate.simps(y, grid)
+    carbon_molar_mass = 12.01E-3
+    alum_molar_mass = 26.98E-3
+    iron_molar_mass = 55.845E-3
     def Cs(T):
-        return ((mads+mcarbon)*1000/12)*Cdebye(T,1500) +\
-            (malum*1000/26.9) * Cdebye(T, 389.4) +\
-                (msteel * 1000 / 55.485) * Cdebye(T, 500)
+        return ((mads+mcarbon) / carbon_molar_mass)*Cdebye(T,1500) +\
+            (malum/alum_molar_mass) * Cdebye(T, 389.4) +\
+                (msteel /iron_molar_mass) * Cdebye(T, 500)
     return Cs
 
 def tank_capacity_excess(nexcess, mads, rhoskel, tankvol, pempty, tempty, pfull, tfull, fluid):

@@ -44,6 +44,8 @@ class SimParams:
     stop_at_target_temp : bool = False
     target_capacity : float = 0
     
+            
+    
     
     @classmethod
     def from_SimResults(cls,
@@ -205,6 +207,7 @@ class BaseSimulation:
         self.has_sorbent = False
         if isinstance(self.storage_tank, SorbentTank):
             self.has_sorbent = True
+        
         
     def heat_leak_in(self, T):
         if self.boundary_flux.environment_temp == 0:

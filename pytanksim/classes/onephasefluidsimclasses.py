@@ -196,11 +196,15 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                    "Liquid" : np.zeros_like(t)}
         
         for i in range(0, len(t)):
-            phase = self.storage_tank.stored_fluid.determine_phase(y[i, 0], y[i, 1])
+            iterable = i
+            phase = self.storage_tank.stored_fluid.determine_phase(y[i,0], y[i, 1])
             if phase == "Saturated":
-                qinit = int(self.simulation_params.init_ng > self.simulation_params.init_nl)
-                phase = "Liquid" if qinit == 0 else "Gas"
-                fluid.update(CP.QT_INPUTS, qinit, y[i,1])
+                while phase == "Saturated":
+                    iterable = iterable - 1
+                    phase = self.storage_tank.stored_fluid.determine_phase(y[iterable, 0],\
+                                                                           y[iterable,1])
+                q = 0 if phase == "Liquid" else 1
+                fluid.update(CP.QT_INPUTS, q, y[i,1])
             else:
                 fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
             nfluid = fluid.rhomolar() * self.storage_tank.volume

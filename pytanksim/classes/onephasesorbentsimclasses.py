@@ -113,12 +113,11 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                      [c, d]])
         b = np.array([k1,k2])
         
-        diffresults = np.linalg.solve(A, b)
-        
+        diffresults = np.linalg.solve(A, b)        
         return np.append(diffresults, [ndotin,
                                        ndotin * hin,
                                        cooling_additional,
-                                       heating_additional.
+                                       heating_additional,
                                        heat_leak,
                                        ndotout,
                                        ndotout * hf
@@ -640,7 +639,7 @@ class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
             ndotin,
             ndotin * hin,
             cooling_additional,
-            heating_additional.
+            heating_additional,
             heat_leak,
             ndotout,
             ndotout * hout 
