@@ -21,11 +21,11 @@ class StorageTank:
                  aluminum_mass : float = 0, 
                  carbon_fiber_mass: float = 0,
                  steel_mass: float = 0,
-                 max_pressure : float = None,
                  vent_pressure : float = None,
                  min_supply_pressure : float = 1E5,
                  thermal_resistance : float = 0,
-                 surface_area : float = 0
+                 surface_area : float = 0,
+                 heat_transfer_coefficient : float = 0
                  ):
         """
         This class represents a tank for storing fluids.
@@ -57,9 +57,8 @@ class StorageTank:
         
 
         """
-        assert volume > 0
-        assert aluminum_mass >= 0
-        
+        if (aluminum_mass or carbon_fiber_mass or steel_mass or volume) < 0:
+            raise ValueError("Please input valid values for the mass and volume (>=0)")
         
         
         self.volume = volume
@@ -74,16 +73,26 @@ class StorageTank:
         self.stored_fluid = stored_fluid
         self.min_supply_pressure = min_supply_pressure
         
-        if max_pressure == None:
-            backend = self.stored_fluid.backend
-            self.max_pressure = backend.pmax()
-        else: self.max_pressure = max_pressure
+        backend = self.stored_fluid.backend
+        self.max_pressure = backend.pmax()/10
+        
         if vent_pressure == None:
             self.vent_pressure = self.max_pressure
         else: self.vent_pressure = vent_pressure
+        
+        if self.max_pressure < self.vent_pressure:
+            raise ValueError(
+                "You set the venting pressure to be larger than the valid  \n" +
+                "pressure range input for CoolProp.")
             
         self.surface_area = surface_area
-        self.thermal_resistance = thermal_resistance
+        self.heat_transfer_coefficient = heat_transfer_coefficient
+        if self.thermal_resistance >= 0:
+            self.thermal_resistance = thermal_resistance
+        elif (self.surface_area and self.heat_transfer_coefficient) >= 0:
+            self.thermal_resistance = 1/(self.surface_area * self.heat_transfer_coefficient)
+            
+            
     
     def capacity(self, p, T, q = 0):
         fluid = self.stored_fluid.backend
@@ -177,11 +186,11 @@ class SorbentTank(StorageTank):
                  aluminum_mass : float = 0, 
                  carbon_fiber_mass: float = 0,
                  steel_mass: float = 0,
-                 max_pressure : float = None,
                  vent_pressure : float = None,
                  min_supply_pressure : float = 1E5,
                  thermal_resistance : float = 0,
                  surface_area : float = 0,
+                 heat_transfer_coefficient : float = 0
                  ):
         """
         Init for the class SorbentTank.
@@ -218,12 +227,12 @@ class SorbentTank(StorageTank):
                          aluminum_mass = aluminum_mass,
                          stored_fluid = stored_fluid,
                          carbon_fiber_mass = carbon_fiber_mass,
-                         min_supply_pressure= min_supply_pressure,
-                         max_pressure = max_pressure,
+                         min_supply_pressure = min_supply_pressure,
                          vent_pressure = vent_pressure,
                          thermal_resistance = thermal_resistance,
                          surface_area = surface_area,
-                         steel_mass = steel_mass)
+                         steel_mass = steel_mass,
+                         heat_transfer_coefficient = heat_transfer_coefficient)
         self.sorbent_material = sorbent_material
         self.heat_capacity =  Cs_gen(mads = self.sorbent_material.mass, 
                                      mcarbon = self.carbon_fiber_mass, 

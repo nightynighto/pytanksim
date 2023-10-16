@@ -210,7 +210,7 @@ class BaseSimulation:
         
         
     def heat_leak_in(self, T):
-        if self.boundary_flux.environment_temp == 0:
+        if self.boundary_flux.environment_temp == 0 or self.storage_tank.thermal_resistance == 0:
             return 0
         else:
             return (self.boundary_flux.environment_temp - T)/self.storage_tank.thermal_resistance
