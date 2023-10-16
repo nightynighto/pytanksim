@@ -1195,7 +1195,9 @@ class SorbentMaterial:
                  skeletal_density : float,
                  bulk_density : float,
                  specific_surface_area : float,
-                 model_isotherm : ModelIsotherm = None):
+                 model_isotherm : ModelIsotherm,
+                 molar_mass : float = 12.01E-3,
+                 Debye_temperature : float = 1500):
         """
         
 
@@ -1218,6 +1220,8 @@ class SorbentMaterial:
         self.bulk_density = bulk_density
         self.model_isotherm = model_isotherm
         self.specific_surface_area = specific_surface_area
+        self.molar_mass = molar_mass
+        self.Debye_temperature = Debye_temperature
         
     def isosteric_heat(self, p, T):
         dn_dP = fd.partial_derivative(self.model_isotherm.n_absolute, 0,

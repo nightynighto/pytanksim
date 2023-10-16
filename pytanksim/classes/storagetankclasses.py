@@ -181,7 +181,8 @@ class SorbentTank(StorageTank):
                  vent_pressure : float = None,
                  min_supply_pressure : float = 1E5,
                  thermal_resistance : float = 0,
-                 surface_area : float = 0):
+                 surface_area : float = 0,
+                 ):
         """
         Init for the class SorbentTank.
         This class represents a fluid storage tank which contains sorbents.
@@ -227,7 +228,9 @@ class SorbentTank(StorageTank):
         self.heat_capacity =  Cs_gen(mads = self.sorbent_material.mass, 
                                      mcarbon = self.carbon_fiber_mass, 
                                      malum = self.aluminum_mass,
-                                     msteel = self.steel_mass)
+                                     msteel = self.steel_mass,
+                                     Tads = self.sorbent_material.Debye_temperature,
+                                     MWads = self.sorbent_material.molar_mass)
         
     
     def bulk_fluid_volume(self,

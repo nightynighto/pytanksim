@@ -20,7 +20,7 @@ from copy import deepcopy
 
 
 #Create a function that gives the Cs as a function of T and structural component mass
-def Cs_gen(mads, mcarbon, malum, msteel):
+def Cs_gen(mads, mcarbon, malum, msteel, Tads = 1500, MWads = 12.01E-3):
     R = sp.constants.R
     def Cdebye(T,theta):
         N=50
@@ -35,7 +35,7 @@ def Cs_gen(mads, mcarbon, malum, msteel):
     alum_molar_mass = 26.98E-3
     iron_molar_mass = 55.845E-3
     def Cs(T):
-        return ((mads+mcarbon) / carbon_molar_mass)*Cdebye(T,1500) +\
+        return (mads/MWads)*Cdebye(T,Tads) +(mcarbon / carbon_molar_mass)*Cdebye(T,1500) +\
             (malum/alum_molar_mass) * Cdebye(T, 389.4) +\
                 (msteel /iron_molar_mass) * Cdebye(T, 500)
     return Cs
