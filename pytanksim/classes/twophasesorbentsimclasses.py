@@ -142,11 +142,11 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = satur_prop_gas["hf"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * hf + \
+        b3 = ndotin * hin - ndotout * hout + \
             heating_additional - cooling_additional \
                 + heat_leak 
         b = np.array([b1,b2,b3])
@@ -155,7 +155,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                          [ndotin,
                          ndotin * hin,
                          ndotout,
-                         ndotout * hf,
+                         ndotout * hout,
                          cooling_additional,
                          heating_additional,
                          heat_leak ]
@@ -341,11 +341,11 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = satur_prop_gas["hf"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * hf + \
+        b3 = ndotin * hin - ndotout * hout + \
             heating_additional - cooling_additional \
                 + heat_leak 
         b = np.array([b1,b2,b3])
@@ -354,7 +354,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * hf,
+            ndotout * hout,
             cooling_additional,
             heating_additional,
             heat_leak
@@ -456,10 +456,12 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
     
     def solve_differentials(self, ng, nl, time):
         T = self.simulation_params.init_temperature
-
+        
         stored_fluid = self.storage_tank.stored_fluid
         satur_prop_gas = stored_fluid.saturation_property_dict(T, 1)
         satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
+        p = satur_prop_gas["psat"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         m11 = 1
         m12 = 1 
         m13 = 1
@@ -468,13 +470,12 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         m23 = 0
         m31 = self._du_dng(ng, nl, T, satur_prop_gas)
         m32 = self._du_dnl(ng, nl, T, satur_prop_liquid)
-        m33 = satur_prop_gas["hf"]
+        m33 = hout
         
         A = np.array([[m11, m12, m13],
                       [m21, m22, m23],
                       [m31, m32, m33]])
         
-        p = satur_prop_gas["psat"]
         MW = stored_fluid.backend.molar_mass() 
         ##Convert kg/s to mol/s
         flux = self.boundary_flux
@@ -484,7 +485,6 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = satur_prop_gas["hf"]
         
         b1 = ndotin
         b2 = 0
@@ -497,7 +497,7 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         diffresults = np.linalg.solve(A, b)
         ndotout = diffresults[-1]
         return np.append(diffresults, [
-            ndotout * hf,
+            ndotout * hout,
             ndotin,
             ndotin * hin,
             cooling_additional,
@@ -635,11 +635,11 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = satur_prop_gas["hf"]
-        
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
+                
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * hf + \
+        b3 = ndotin * hin - ndotout * hout + \
             heating_additional - cooling_additional \
                 + heat_leak 
         b = np.array([b1,b2,b3])
@@ -648,7 +648,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * hf,
+            ndotout * hout,
             cooling_additional,
             heating_additional,
             heat_leak

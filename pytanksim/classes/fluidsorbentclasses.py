@@ -253,7 +253,6 @@ class ModelIsotherm:
     
     def isosteric_internal_energy(self, p, T, q = 1):
         nabs = self.n_absolute(p, T)
-        vads = self.v_ads(p,T)
         fluid = self.stored_fluid.backend
         def diff_function(Temper):
             pres = self.pressure_from_absolute_adsorption(nabs, Temper)

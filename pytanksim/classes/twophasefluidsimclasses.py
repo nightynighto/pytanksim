@@ -65,14 +65,14 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         ##Get the input pressure at a condition
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         
-        hf = satur_prop_gas["hf"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * hf + \
+        b3 = ndotin * hin - ndotout * hout + \
             heating_additional - cooling_additional\
                 + heat_leak
                 
@@ -82,7 +82,7 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         return np.append(diffresults, [ndotin,
         ndotin * hin,
         ndotout,
-        ndotout * hf,
+        ndotout * hout,
         cooling_additional,
         heating_additional,
         heat_leak])
@@ -242,6 +242,7 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         satur_prop_liquid = stored_fluid.saturation_property_dict(T, 0)
         
         p = satur_prop_gas["psat"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         
         m11 = 1
         m12 = 1
@@ -251,7 +252,7 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         m23 = 0
         m31 = satur_prop_gas["uf"]
         m32 = satur_prop_liquid["uf"]
-        m33 = satur_prop_gas["hf"]
+        m33 = hout
         
         
         A = np.array([[m11 , m12, m13],
@@ -264,7 +265,6 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         ##Get the input pressure at a condition
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)  
             
-        hf = satur_prop_gas["hf"]
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
@@ -280,7 +280,7 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         diffresults = np.linalg.solve(A, b)
         ndotout = diffresults[-1]
         diffresults = np.append(diffresults, )
-        return np.append(diffresults, [ndotout * hf,
+        return np.append(diffresults, [ndotout * hout,
                                        ndotin,
                                        ndotin * hin,
                                        cooling_additional,
@@ -414,14 +414,14 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         ##Get the input pressure at a condition
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
             
-        hf = satur_prop_gas["hf"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin 
         b2 = 0
-        b3 = ndotin * hin + ndotout * hf +\
+        b3 = ndotin * hin + ndotout * hout +\
             heating_additional - cooling_additional + \
                 heat_leak
                 
@@ -431,7 +431,7 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         return np.append(diffresults, [ndotin,
                                        ndotin * hin,
                                        ndotout,
-                                       ndotout * hf,
+                                       ndotout * hout,
                                        cooling_additional,
                                        heating_additional,
                                        heat_leak
@@ -563,14 +563,14 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         ##Get the input pressure at a condition
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
             
-        hf = satur_prop_gas["hf"]
+        hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin - ndotout
         b2 = 0
-        b3 = ndotin * hin - ndotout * hf +\
+        b3 = ndotin * hin - ndotout * hout +\
             - cooling_additional + heating_additional + \
                 heat_leak
                 
@@ -580,7 +580,7 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         return np.append(diffresults, [ndotin,
                                        ndotin * hin,
                                        ndotout,
-                                       ndotout * hf,
+                                       ndotout * hout,
                                        cooling_additional,
                                        heating_additional,
                                        heat_leak]) 

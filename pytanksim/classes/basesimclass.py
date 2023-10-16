@@ -117,8 +117,8 @@ class BoundaryFlux:
                  temperature_in: Callable[[float, float], float] = None,
                  fill_rate: float = None,
                  environment_temp: float = 0,
-                 enthalpy_in: Callable[[float], float] = 0.0,
-                 enthalpy_out: Callable[[float], float] = 0.0):
+                 enthalpy_in: Callable[[float], float] = None,
+                 enthalpy_out: Callable[[float], float] = None):
         """
         
         Parameters
@@ -219,19 +219,28 @@ class BaseSimulation:
         raise NotImplementedError
     
     def enthalpy_in_calc(self, p, T, time):
-        pin = self.boundary_flux.pressure_in(p, T, time)
-        Tin = self.boundary_flux.temperature_in(p, T, time)
-        fluid = self.storage_tank.stored_fluid.backend
-        Tcrit = fluid.T_critical()
-        if Tin <= Tcrit:
-            fluid.update(CP.QT_INPUTS, 0, Tin)
-            psat = fluid.p()
-            if np.abs(pin-psat) <= 1E-6 * psat:
+        if self.boundary_flux.enthalpy_in == None:
+            pin = self.boundary_flux.pressure_in(p, T, time)
+            Tin = self.boundary_flux.temperature_in(p, T, time)
+            fluid = self.storage_tank.stored_fluid.backend
+            Tcrit = fluid.T_critical()
+            if Tin <= Tcrit:
                 fluid.update(CP.QT_INPUTS, 0, Tin)
-                return fluid.hmolar()
+                psat = fluid.p()
+                if np.abs(pin-psat) <= 1E-6 * psat:
+                    fluid.update(CP.QT_INPUTS, 0, Tin)
+                    return fluid.hmolar()
+                else:
+                    fluid.update(CP.PT_INPUTS, pin, Tin)
+                    return fluid.hmolar()
             else:
                 fluid.update(CP.PT_INPUTS, pin, Tin)
                 return fluid.hmolar()
         else:
-            fluid.update(CP.PT_INPUTS, pin, Tin)
-            return fluid.hmolar()
+            return self.boundary_flux.enthalpy_in(p, T, time)
+    
+    def enthalpy_out_calc(self, fluid_property_dict, p, T, time):
+        if self.boundary_flux.enthalpy_out == None:
+            return fluid_property_dict["hf"]
+        else:
+            return self.boundary_flux.enthalpy_out(p, T, time)

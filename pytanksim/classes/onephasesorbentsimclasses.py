@@ -97,10 +97,10 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = fluid_props["hf"]
+        hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         
         k1 = ndotin - ndotout
-        k2 = ndotin * hin - ndotout * hf + \
+        k2 = ndotin * hin - ndotout * hout + \
                heating_additional - cooling_additional \
                 + heat_leak
                 
@@ -120,7 +120,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                                        heating_additional,
                                        heat_leak,
                                        ndotout,
-                                       ndotout * hf
+                                       ndotout * hout
                                        ])
 
     
@@ -293,11 +293,11 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = fluid_props["hf"]
+        hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         m11 = self._dn_dT(p, T, fluid_props)
         m12 = 1
         m21 = self._dU_dT(p, T, fluid_props)
-        m22 = hf
+        m22 = hout
         A = np.array([[m11, m12],
                       [m21, m22]])
         b1 = ndotin
@@ -306,7 +306,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         diffresults = np.linalg.solve(A, b)
         ndotout = diffresults[-1]
         return np.append(diffresults, [
-            ndotout * hf,
+            ndotout * hout,
             ndotin,
             ndotin * hin, 
             cooling_additional,
@@ -453,7 +453,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         ndotout = flux.mass_flow_out(p, T, time) / MW
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         fluid_props = stored_fluid.fluid_property_dict(p, T)
-        hf = fluid_props["hf"]
+        hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
@@ -464,7 +464,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         A = [[m11, m12],
              [m21, m22]]
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * hf + heating_additional\
+        b2 = ndotin * hin - ndotout * hout + heating_additional\
             - cooling_additional + heat_leak
         b = np.array([b1, b2])
         diffresults = np.linalg.solve(A, b)
@@ -472,7 +472,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * hf,
+            ndotout * hout,
             cooling_additional,
             heating_additional,
             heat_leak
@@ -658,7 +658,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         ndotout = flux.mass_flow_out(p, T, time) / MW
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         fluid_props = stored_fluid.fluid_property_dict(p, T)
-        hf = fluid_props["hf"]
+        hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
@@ -669,7 +669,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         A = [[m11, m12],
              [m21, m22]]
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * hf + heating_additional\
+        b2 = ndotin * hin - ndotout * hout + heating_additional\
             - cooling_additional + heat_leak
         b = np.array([b1, b2])
         diffresults = np.linalg.solve(A, b)
@@ -677,7 +677,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * hf,
+            ndotout * hout,
             cooling_additional,
             heating_additional,
             heat_leak

@@ -68,8 +68,10 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
         
+        hout = self.enthalpy_out_calc(prop_dict, p, T, time)
+        
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * prop_dict["hf"] + \
+        b2 = ndotin * hin - ndotout * hout + \
             heating_additional -\
                cooling_additional\
                 + heat_leak
@@ -80,7 +82,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                          [ndotin,
                          ndotin * hin,
                          ndotout,
-                         ndotout * prop_dict["hf"],
+                         ndotout * hout,
                          cooling_additional,
                          heating_additional,
                          heat_leak ])
@@ -252,11 +254,14 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         if phase != "Saturated":
             prop_dict = stored_fluid.fluid_property_dict(p, T)  
         else: 
-            prop_dict = stored_fluid.saturation_property_dict(T, qinit)        
+            prop_dict = stored_fluid.saturation_property_dict(T, qinit)     
+        
+        hout = self.enthalpy_out_calc(prop_dict, p, T, time)
+        
         m11 = self._dn_dT(prop_dict)
         m12 = 1
         m21 = self._du_dT(T, prop_dict)
-        m22 = prop_dict["hf"]
+        m22 = hout
         
         A = np.array([[m11, m12],
                       [m21, m22]])
@@ -275,7 +280,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         soln = np.linalg.solve(A, b)
         
         return np.append(soln,
-                         [ soln[-1] * prop_dict["hf"],
+                         [ soln[-1] * hout,
                          ndotin,
                          ndotin * hin,
                          cooling_additional,
@@ -427,13 +432,13 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         
         ndotout = flux.mass_flow_out(p, T, time) / MW
         ##Get the thermodynamic properties of the bulk fluid for later calculations
-        hf = prop_dict["hf"]      
+        hout = self.enthalpy_out_calc(prop_dict, p, T, time) 
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
         
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * hf + \
+        b2 = ndotin * hin - ndotout * hout + \
             heating_additional - cooling_additional \
                 + heat_leak
                 
@@ -445,7 +450,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * hf,
+            ndotout * hout,
             cooling_additional,
             heating_additional,
             heat_leak
@@ -598,10 +603,10 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         heat_leak = self.heat_leak_in(T)
-        hf = prop_dict["hf"]
+        hout = self.enthalpy_out_calc(prop_dict, p, T, time)
         
         b1 = ndotin - ndotout
-        b2 = ndotin * hin - ndotout * hf + \
+        b2 = ndotin * hin - ndotout * hout + \
              - cooling_additional + heating_additional\
                 + heat_leak
                 
@@ -613,7 +618,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             ndotin,
             ndotin * hin,
             ndotout,
-            ndotout * hf,
+            ndotout * hout,
             cooling_additional,
             heating_additional,
             heat_leak])
