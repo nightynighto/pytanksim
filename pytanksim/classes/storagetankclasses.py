@@ -87,7 +87,7 @@ class StorageTank:
             
         self.surface_area = surface_area
         self.heat_transfer_coefficient = heat_transfer_coefficient
-        if (self.surface_area and self.heat_transfer_coefficient) >= 0 \
+        if (self.surface_area and self.heat_transfer_coefficient) > 0 \
             and thermal_resistance == 0:
             self.thermal_resistance = 1/\
                 (self.surface_area * self.heat_transfer_coefficient)
