@@ -12,7 +12,7 @@ __all__ = ["SimParams", "BoundaryFlux", "BaseSimulation"]
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Dict, Union
 import CoolProp as CP
 import numpy as np
 
@@ -284,52 +284,52 @@ class BoundaryFlux:
     """
     
     def __init__(self,
-                 mass_flow_in:  Callable[[float, float, float], float] | float = 0.0,
-                 mass_flow_out: Callable[[float, float, float], float] | float  = 0.0,                 
-                 heating_power: Callable[[float, float, float], float] | float  = 0.0,
-                 cooling_power: Callable[[float, float, float], float] | float  = 0.0, 
-                 pressure_in: Callable[[float, float, float], float] | float = None,
-                 temperature_in: Callable[[float, float, float], float] | float = None,
+                 mass_flow_in:  Union[Callable[[float, float, float], float], float] = 0.0,
+                 mass_flow_out: Union[Callable[[float, float, float], float], float]  = 0.0,                 
+                 heating_power: Union[Callable[[float, float, float], float], float]  = 0.0,
+                 cooling_power: Union[Callable[[float, float, float], float], float]  = 0.0, 
+                 pressure_in: Union[Callable[[float, float, float], float], float] = None,
+                 temperature_in: Union[Callable[[float, float, float], float], float] = None,
                  environment_temp: float = 0,
-                 enthalpy_in: Callable[[float, float, float], float] | float = None,
-                 enthalpy_out: Callable[[float, float, float], float] | float = None) -> \
+                 enthalpy_in: Union[Callable[[float, float, float], float], float] = None,
+                 enthalpy_out: Union[Callable[[float, float, float], float], float] = None) -> \
         "BoundaryFlux":
         """
         Initialize a BoundaryFlux object.
 
         Parameters
         ----------
-        mass_flow_in : Callable[[float, float, float], float] | float, optional
+        mass_flow_in : Union[Callable[[float, float, float], float], float], optional
             A function which returns mass flow into the tank (kg/s) as a function
             of tank pressure (Pa), tank temperature (K), and time (s). The default
             is a function which returns 0 everywhere. If a float is provided,
             it will be converted to a function which returns that value 
             everywhere.
-        mass_flow_out : Callable[[float, float, float], float] | float, optional
+        mass_flow_out : Union[Callable[[float, float, float], float], float], optional
             A function which returns mass flow exiting the tank (kg/s) as a 
             function of tank pressure (Pa), tank temperature (K), and time (s). 
             The default is a function which returns 0 everywhere. If a float is 
             provided it will be converted to a function which returns that value 
             everywhere.
-        heating_power : Callable[[float, float, float], float] | float, optional
+        heating_power : Union[Callable[[float, float, float], float], float], optional
             A function which returns heating power added to the tank (W) as a 
             function of tank pressure (Pa), tank temperature (K), and time (s). 
             The default is a function which returns 0 everywhere. If a float is
             provided, it will be converted to a function which returns that value 
             everywhere.
-        cooling_power : Callable[[float, float, float], float] | float, optional
+        cooling_power : Union[Callable[[float, float, float], float], float], optional
             A function which returns cooling power added to the tank (W) as a 
             function of tank pressure (Pa), tank temperature (K), and time (s). 
             The default is a function which returns 0 everywhere. If a float is 
             provided,it will be converted to a function which returns that value 
             everywhere.
-        pressure_in : Callable[[float, float, float], float] | float, optional
+        pressure_in : Union[Callable[[float, float, float], float], float], optional
             A function which returns the pressure (Pa) of the fluid being inserted
             into the tank as a  function of tank pressure (Pa), tank temperature 
             (K), and time (s). The default is None. If a float is provided,it
             will be converted to a function which returns that value 
             everywhere.
-        temperature_in : Callable[[float, float, float], float] | float, optional
+        temperature_in : Union[Callable[[float, float, float], float], float], optional
             A function which returns the temperature (K) of the fluid being 
             inserted into the tank as a  function of tank pressure (Pa), tank 
             temperature (K), and time (s). The default is None. If a float is 
@@ -340,13 +340,13 @@ class BoundaryFlux:
             This value is used in the dynamic simulation to calculate heat leakage
             into the tank. The default is 0, in which case heat leakage into the
             tank is not considered.
-        enthalpy_in : Callable[[float, float, float], float] | float, optional
+        enthalpy_in : Union[Callable[[float, float, float], float], float], optional
             A function which returns the enthalpy (J/mol) of the fluid being 
             inserted into the tank as a  function of tank pressure (Pa), tank 
             temperature (K), and time (s). The default is None. If a float is 
             provided,it will be converted to a function which returns that value 
             everywhere.
-        enthalpy_out : Callable[[float, float, float], float] | float, optional
+        enthalpy_out : Union[Callable[[float, float, float], float], float], optional
             A function which returns the enthalpy (J/mol) of the fluid exiting
             the tank as a  function of tank pressure (Pa), tank temperature (K), 
             and time (s). The default is None. If a float is 
@@ -372,7 +372,11 @@ class BoundaryFlux:
                 return float(floatingvalue)
             return float_function
         
-        
+        if mass_flow_in != 0.0 and ((pressure_in == None or \
+                                  temperature_in == None) and \
+                                      enthalpy_in == None):
+            raise ValueError("Please specify the pressure and temperature of the flow going in")
+
         
         if isinstance(pressure_in, (float,int)):
             pressure_in = float_function_generator(pressure_in)
@@ -409,11 +413,7 @@ class BoundaryFlux:
         self.enthalpy_out = enthalpy_out
         
         
-        if mass_flow_in != 0 and ((pressure_in == None or \
-                                  temperature_in == None) and \
-                                      enthalpy_in == None):
-            raise ValueError("Please specify the pressure and temperature of the flow going in")
-
+        
         
 
     
@@ -548,17 +548,18 @@ class BaseSimulation:
         else:
             return self.boundary_flux.enthalpy_in(p, T, time)
     
-    def enthalpy_out_calc(self, fluid_property_dict : dict,
+    def enthalpy_out_calc(self, fluid_property_dict : Dict[str,float],
                           p : float, T : float, time : float) -> float:
         """
         Calculate the enthalpy (J/mol) of fluid going out of the tank.
 
         Parameters
         ----------
-        fluid_property_dict : dict
+        fluid_property_dict : Dict[str,float]
             A dictionary of properties of the fluid being stored inside of the
             tank. In the case of the two phase simulation, it is the properties
-            of the gas and not the liquid.
+            of the gas and not the liquid. For this function, this dictionary
+            must return an enthalpy (J/mol) value given the key "hf".
         p : float
             Pressure inside of the tank (Pa)
         T : float

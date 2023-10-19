@@ -12,45 +12,70 @@ from typing import List
 
 
 class ExcessIsotherm:
+    """
+    Stores experimental excess isotherm measurement results.
+    
+    This class can be provided values directly in Python or it can import
+    the values from a csv file.
+    
+    Attributes
+    ----------
+    adsorbate : str
+        Name of the adsorbate gas.
+    sorbent : str
+        Name of the sorbent material.
+    temperature : float
+        Temperature (K) at which the isotherm was measured. 
+    loading : List[float]
+        A list of excess adsorption values (mol/kg).
+    pressure : list[float]
+        A list of pressures (Pa) corresponding to points at which the excess 
+        adsorption values were measured. 
+    
+    """
+    
     def __init__(self,
                  adsorbate : str,
                  sorbent : str,
                  temperature : float,
-                 loading: List[float] = None,
-                 pressure: List[float] = None):
+                 loading: List[float],
+                 pressure: List[float]) -> "ExcessIsotherm":
         """
-        Initializes the ExcessIsotherm class.
-        This class stores excess isotherm measurement results,
-        and can import it from files.
+        Initialize the ExcessIsotherm class.
 
         Parameters
         ----------
         adsorbate : str
-            Name of adsorbate fluid.
+            Name of the adsorbate gas.
         sorbent : str
-            Name of sorbent sample.
+            Name of the sorbent material.
         temperature : float
-            Temperature of isotherm measurement in K.
-        loading : List[float] | np.ndarray[float], optional
-            Array of amount adsorbed on the adsorbate in mol/kg. The default is None.
-        pressure : List[float] | np.ndarray[float], optional
-            Array of measurement pressure in Pa. The default is None.
+            Temperature (K) at which the isotherm was measured. 
+        loading : List[float]
+            A list of excess adsorption values (mol/kg).
+        pressure : list[float]
+            A list of pressures (Pa) corresponding to points at which the excess 
+            adsorption values were measured. 
+        
+        Raises
+        ------
+        ValueError
+            If the lengths of the loading and pressure data don't match.
 
         Returns
         -------
-        None.
+        ExcessIsotherm
+            A class which stores experimental excess adsorption data.
 
         """
-        
-    
-        
         self.adsorbate = adsorbate
         self.sorbent = sorbent
         self.temperature = temperature
         self.loading = loading
         self.pressure = pressure
         
-        assert len(loading) == len(pressure)
+        if not(len(loading) == len(pressure)):
+            raise ValueError("The lengths of loading data and pressure data don't match!")
         
     
     @classmethod
@@ -58,8 +83,27 @@ class ExcessIsotherm:
                  filename : str,
                  adsorbate : str,
                  sorbent : str, 
-                 temperature : float):
-        
+                 temperature : float) -> "ExcessIsotherm":
+        """
+        Import loading and pressure data from a csv file.
+
+        Parameters
+        ----------
+        filename : str
+            Path leading to the file from which the data is to be imported.
+        adsorbate : str
+            Name of adsorbate gas.
+        sorbent : str
+            Name of sorbent material.
+        temperature : float
+            Temperature (K) at which the data was measured.
+
+        Returns
+        -------
+        ExcessIsotherm
+            A class which stores experimental excess adsorption data.
+
+        """
         dataP = np.loadtxt(filename,dtype="float",usecols=[0],skiprows=1,delimiter=",",encoding="utf-8")
         dataAds = np.loadtxt(filename,dtype="float",usecols=[1],skiprows=1,delimiter=",",encoding="utf-8")
         return cls(adsorbate, sorbent, temperature,

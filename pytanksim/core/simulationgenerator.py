@@ -9,7 +9,7 @@ __all__ = ["generate_simulation"]
 
 from pytanksim.classes.excessisothermclass import ExcessIsotherm
 from pytanksim.classes.basesimclass import BoundaryFlux, SimParams
-from pytanksim.classes.fluidsorbentclasses import StoredFluid, MPTAModel, SorbentMaterial, MDAModel, DAModel
+from pytanksim.classes.fluidsorbentclasses import StoredFluid, SorbentMaterial, MDAModel, DAModel
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.onephasesorbentsimclasses import *
 from pytanksim.classes.twophasesorbentsimclasses import *
