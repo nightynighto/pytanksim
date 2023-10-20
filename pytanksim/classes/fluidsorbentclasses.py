@@ -45,8 +45,8 @@ class StoredFluid:
         ----------
         fluid_name : str, optional
             Name of the fluid. Valid fluid names that work with CoolProp can be
-            found 'here <http://www.coolprop.org/fluid_properties/
-            PurePseudoPure.html#list-of-fluids>'_.
+            found 'here
+            <http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids>'_.
 
         EOS : str, optional
             Name of the equation of state to be used for calculations.

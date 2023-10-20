@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jan 27 20:42:02 2023
+"""Contains classes which store the properties of the storage tanks.
 
-@author: nextf
+The StorageTank and SorbentTank classes are part of this module.
 """
 
 __all__ = ["StorageTank", "SorbentTank"]
@@ -13,100 +12,224 @@ import CoolProp as CP
 import numpy as np
 import scipy as sp
 import pandas as pd
+from scipy.optimize import OptimizeResult
+
 
 class StorageTank:
+    """Stores the properties of the storage tank.
+
+    It also has methods to calculate useful quantities such as tank dormancy
+    given a constant heat leakage rate, the internal energy of the fluid being
+    stored at various conditions, etc.
+
+    Attributes
+    ----------
+    volume : float
+        Internal volume of the storage tank (m^3).
+
+    stored_fluid : StoredFluid
+        Object to calculate the thermophysical properties of the fluid
+        being stored.
+
+    aluminum_mass : float, optional
+        The mass of aluminum making up the tank walls (kg). The default is
+        0.
+
+    carbon_fiber_mass : float, optional
+        The mass of carbon fiber making up the tank walls (kg). The default
+        is 0.
+
+    steel_mass : float, optional
+        The mass of steel making up the tank walls (kg). The default is 0.
+
+    vent_pressure : float, optional
+        The pressure (Pa) at which the fluid being stored must be vented.
+        The default is None. If None, the value will be taken as the
+        maximum value where the CoolProp backend can calculate the
+        properties of the fluid being stored.
+
+    min_supply_pressure : float, optional
+        The minimum supply pressure (Pa) for discharging simulations.The
+        default is 1E5.
+
+    thermal_resistance : float, optional
+        The thermal resistance of the tank walls (K/W). The default is 0.
+        If 0, the value will not be considered in simulations. If the
+        arguments 'surface_area' and 'heat_transfer' are passed,
+        'thermal_resistance' will be calculated based on those two arguments
+        as long as the user does not pass a value to 'thermal_resistance'.
+
+    surface_area : float, optional
+        The surface area of the tank that is in contact with the
+        environment (m^2). The default is 0.
+
+    heat_transfer_coefficient : float, optional
+        The heat transfer coefficient of the tank surface (W/(m^2 K)).
+        The default is 0.
+    """
+
     def __init__(self,
-                 volume : float,  
-                 stored_fluid : StoredFluid,
-                 aluminum_mass : float = 0, 
+                 volume: float,
+                 stored_fluid: StoredFluid,
+                 aluminum_mass: float = 0,
                  carbon_fiber_mass: float = 0,
                  steel_mass: float = 0,
-                 vent_pressure : float = None,
-                 min_supply_pressure : float = 1E5,
-                 thermal_resistance : float = 0,
-                 surface_area : float = 0,
-                 heat_transfer_coefficient : float = 0
-                 ):
-        """
-        This class represents a tank for storing fluids.
+                 vent_pressure: float = None,
+                 min_supply_pressure: float = 1E5,
+                 thermal_resistance: float = 0,
+                 surface_area: float = 0,
+                 heat_transfer_coefficient: float = 0
+                 ) -> "StorageTank":
+        """Initialize a StorageTank object.
 
         Parameters
         ----------
         volume : float
-            Volume of the storage tank in m^3.
-        aluminum_mass : float
-           Mass of aluminum in the tank structure in kg.
+            Internal volume of the storage tank (m^3).
+
+        stored_fluid : StoredFluid
+            Object to calculate the thermophysical properties of the fluid
+            being stored.
+
+        aluminum_mass : float, optional
+            The mass of aluminum making up the tank walls (kg). The default is
+            0.
+
         carbon_fiber_mass : float, optional
-            Mass of carbon fiber used in tank structure in kg.
-            The default is 0.
-        stored_fluid : StoredFluid,
-            An instance of the StoredFluid class which stores the properties
-            of the fluid being stored in the tank.
-        max_pressure : float, optional
-            Maximum pressure (Pa) that can be stored inside of a tank.
-            The default is None.
+            The mass of carbon fiber making up the tank walls (kg). The default
+            is 0.
+
+        steel_mass : float, optional
+            The mass of steel making up the tank walls (kg). The default is 0.
+
         vent_pressure : float, optional
-            Pressure at which the tank is designed to start to vent. Pa.
-            The default is None.
-        min_supply_pressure: float, optional
-            Minimum supply pressure of the tank when discharging in Pa.
-            The default is 100000 Pa (Atmospheric Pressure).
-        backend : CP.AbstractState, optional
-            Coolprop backend to do thermophysical fluid property calculations.
-            The default is None.
-        
+            The pressure (Pa) at which the fluid being stored must be vented.
+            The default is None. If None, the value will be taken as the
+            maximum value where the CoolProp backend can calculate the
+            properties of the fluid being stored.
+
+        min_supply_pressure : float, optional
+            The minimum supply pressure (Pa) for discharging simulations.The
+            default is 1E5.
+
+        thermal_resistance : float, optional
+            The thermal resistance of the tank walls (K/W). The default is 0.
+            If 0, the value will not be considered in simulations. If the
+            arguments 'surface_area' and 'heat_transfer' are passed,
+            'thermal_resistance' will be calculated based on those two
+            arguments as long as the user does not pass a value to
+            'thermal_resistance'.
+
+        surface_area : float, optional
+            The surface area of the tank that is in contact with the
+            environment (m^2). The default is 0.
+
+        heat_transfer_coefficient : float, optional
+            The heat transfer coefficient of the tank surface (W/(m^2 K)).
+            The default is 0.
+
+        Raises
+        ------
+        ValueError
+            If any of the mass values provided are less than 0.
+
+        ValueError
+            If the vent pressure set is higher than what can be calculated by
+            'CoolProp'.
+
+        Returns
+        -------
+        StorageTank
+            A storage tank object which can be passed as arguments to dynamic
+            simulations and can calculate certain properties on its own.
 
         """
         if (aluminum_mass or carbon_fiber_mass or steel_mass or volume) < 0:
-            raise ValueError("Please input valid values for the mass and volume (>=0)")
-        
-        
+            raise ValueError("Please input valid values for the mass and"
+                             " volume (>=0)")
+
         self.volume = volume
         self.aluminum_mass = aluminum_mass
         self.carbon_fiber_mass = carbon_fiber_mass
         self.steel_mass = steel_mass
-        self.heat_capacity =  Cs_gen(mads = 0, 
-                                     mcarbon = self.carbon_fiber_mass,
-                                     malum = self.aluminum_mass,
-                                     msteel = self.steel_mass)
-        
+        self.heat_capacity = Cs_gen(mads=0,
+                                    mcarbon=self.carbon_fiber_mass,
+                                    malum=self.aluminum_mass,
+                                    msteel=self.steel_mass)
+
         self.stored_fluid = stored_fluid
         self.min_supply_pressure = min_supply_pressure
-        
+
         backend = self.stored_fluid.backend
         self.max_pressure = backend.pmax()/10
-        
-        if vent_pressure == None:
+
+        if vent_pressure is None:
             self.vent_pressure = self.max_pressure
-        else: self.vent_pressure = vent_pressure
-        
+        else:
+            self.vent_pressure = vent_pressure
+
         if self.max_pressure < self.vent_pressure:
             raise ValueError(
-                "You set the venting pressure to be larger than the valid  \n" +
+                "You set the venting pressure to be larger than the valid \n" +
                 "pressure range input for CoolProp.")
-            
+
         self.surface_area = surface_area
         self.heat_transfer_coefficient = heat_transfer_coefficient
         if (self.surface_area and self.heat_transfer_coefficient) > 0 \
-            and thermal_resistance == 0:
-            self.thermal_resistance = 1/\
+                and thermal_resistance == 0:
+            self.thermal_resistance = 1 / \
                 (self.surface_area * self.heat_transfer_coefficient)
         else:
             self.thermal_resistance = thermal_resistance
-            
-            
-    
-    def capacity(self, p, T, q = 0):
+
+    def capacity(self, p: float, T: float, q: float = 0) -> float:
+        """Return the amount of fluid stored in the tank at given conditions.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. Can vary between 0 and 1.
+            The default is 0.
+
+        Returns
+        -------
+        float
+            Amount of fluid stored (moles).
+
+        """
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
             fluid.update(CP.QT_INPUTS, q, T)
         else:
             fluid.update(CP.PT_INPUTS, p, T)
-        
         return fluid.rhomolar() * self.volume
-                
-    def find_quality_at_saturation_capacity(self, T, capacity):
+
+    def find_quality_at_saturation_capacity(self, T: float,
+                                            capacity: float) -> float:
+        """Find vapor quality at the given temperature and capacity.
+
+        Parameters
+        ----------
+        T : float
+            Temperature (K)
+
+        capacity : float
+            Amount of fluid in the tank (moles).
+
+        Returns
+        -------
+        float
+            Vapor quality of the fluid being stored. This is assuming that the
+            fluid is on the saturation line.
+
+        """
         fluid = self.stored_fluid.backend
         fluid.update(CP.QT_INPUTS, 0, T)
         rhol = fluid.rhomolar()
@@ -118,7 +241,27 @@ class StorageTank:
         res = np.linalg.solve(A, b)
         return res[0]/(res[0]+res[1])
 
-    def internal_energy(self, p, T, q = 1):
+    def internal_energy(self, p: float, T: float,
+                        q: float = 1) -> float:
+        """Calculate the internal energy of the fluid inside of the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. The default is 1.
+
+        Returns
+        -------
+        float
+            Internal energy of the fluid being stored (J).
+
+        """
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -127,13 +270,42 @@ class StorageTank:
             fluid.update(CP.PT_INPUTS, p, T)
         ufluid = fluid.umolar()
         bulk_fluid_moles = fluid.rhomolar() * self.volume
-        return ufluid * bulk_fluid_moles 
-        
-    def conditions_at_capacity_temperature(self, cap, T, p_guess, q_guess):
-        bnds = ((10, 20E6),(0,1))
+        return ufluid * bulk_fluid_moles
+
+    def conditions_at_capacity_temperature(self, cap: float,
+                                           T: float, p_guess: float,
+                                           q_guess: float) -> OptimizeResult:
+        """Find conditions corresponding to a given capacity and temperature.
+
+        Parameters
+        ----------
+        cap : float
+            Amount of fluid inside the tank (moles).
+
+        T : float
+            Temperature (K).
+
+        p_guess : float
+            Initial guess for pressure value (Pa) to be optimized.
+
+        q_guess : float
+            Initial guess for vaport quality value to be optimized.
+
+        Returns
+        -------
+        OptimizeResult
+            The optimization result represented as a OptimizeResult object.
+            The relevant attribute for this method is x, the solution array.
+            x[0] contains the pressure value and x[1] contains the vapor
+            quality value.
+
+        """
+        pmax = self.stored_fluid.backend.pmax()
+        bnds = ((1E-16, pmax), (0, 1))
+
         def optim(x):
             return (self.capacity(x[0], T, x[1]) - cap)**2
-        res = sp.optimize.minimize(optim,(p_guess, q_guess), bounds = bnds)
+        res = sp.optimize.minimize(optim, (p_guess, q_guess), bounds=bnds)
         if res.fun > 1:
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
             psat = self.stored_fluid.backend.p()
@@ -141,12 +313,44 @@ class StorageTank:
             res.x[0] = psat
             res.x[1] = q
         return res
-    
-    def conditions_at_capacity_pressure(self, cap, p, T_guess, q_guess):
-        bnds = ((15, 1500),(0,1))
+
+    def conditions_at_capacity_pressure(self, cap: float, p: float,
+                                        T_guess: float,
+                                        q_guess: float) -> OptimizeResult:
+        """Find conditions corresponding to a given capacity and temperature.
+
+        Parameters
+        ----------
+        cap : float
+            Amount of fluid inside the tank (moles).
+
+        P : float
+            Pressure (Pa).
+
+        T_guess : float
+            Initial guess for temperature value (K) to be optimized.
+
+        q_guess : float
+            Initial guess for vaport quality value to be optimized.
+
+        Returns
+        -------
+        scipy.optimize.OptimizeResult
+            The optimization result represented as a OptimizeResult object.
+            The relevant attribute for this package is x, the solution array.
+            x[0] contains the temperature value and x[1] contains the vapor
+            quality value.
+
+        """
+        fluid = self.stored_fluid.backend
+        Tmin = fluid.Tmin()
+        Tmax = fluid.Tmax()
+        bnds = ((Tmin, Tmax), (0, 1))
+
         def optim(x):
             return (self.capacity(p, x[0], x[1]) - cap)**2
-        res = sp.optimize.minimize(optim,(T_guess, q_guess), bounds = bnds)
+
+        res = sp.optimize.minimize(optim, (T_guess, q_guess), bounds=bnds)
         if res.fun > 1:
             self.stored_fluid.backend.update(CP.PQ_INPUTS, p, 0)
             Tsat = self.stored_fluid.backend.T()
@@ -154,100 +358,215 @@ class StorageTank:
             res.x[0] = Tsat
             res.x[1] = q
         return res
-           
-    def calculate_dormancy(self, p, T, q, heating_power):
+
+    def calculate_dormancy(self, p: float, T: float,
+                           heating_power: float, q: float = 0) -> pd.DataFrame:
+        """Calculate dormancy time given a constant heating rate.
+
+        Parameters
+        ----------
+        p : float
+            Initial tank pressure (Pa).
+
+        T : float
+            Initial tank temperature (K).
+
+        heating_power : float
+            The heating power going into the tank during parking (W).
+
+        q : float, optional
+            Initial vapor quality of the tank. The default is 0 (pure liquid).
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas dataframe containing calculation conditions and results.
+            Each key stores a floating point number.
+            The dictionary keys and their respective values are:
+
+            - "init pressure": initial pressure
+            - "init temperature": initial temperature
+            - "init quality": initial vapor quality
+            - "dormancy time": time until tank needs to be vented in seconds
+            - "final temperature": temperature of the tank as venting begins
+            - "final quality": vapor quality at the time of venting
+            - "final pressure": pressure at the time of venting
+            - "capacity error": error between final and initial capacity
+            - "total energy change": difference in internal energy between the
+              initial and final conditions
+            - "solid heat capacity contribution": the amount of heat absorbed
+              by the tank walls
+
+        """
         init_cap = self.capacity(p, T, q)
-        init_heat = self.internal_energy(p, T, q )
-        vent_cond = self.conditions_at_capacity_pressure(init_cap, self.vent_pressure, T, q).x
-        final_heat = self.internal_energy(self.vent_pressure, vent_cond[0], vent_cond[1])
-        final_cap = self.capacity(self.vent_pressure, vent_cond[0], vent_cond[1])
+        init_heat = self.internal_energy(p, T, q)
+        vent_cond = self.conditions_at_capacity_pressure(init_cap,
+                                                         self.vent_pressure,
+                                                         T, q).x
+        final_heat = self.internal_energy(self.vent_pressure,
+                                          vent_cond[0], vent_cond[1])
+        final_cap = self.capacity(self.vent_pressure,
+                                  vent_cond[0], vent_cond[1])
+
         def heat_capacity_change(T1, T2):
             xgrid = np.linspace(T1, T2, 100)
             heatcapgrid = [self.heat_capacity(temper) for temper in xgrid]
             return sp.integrate.simps(heatcapgrid, xgrid)
-                
+
         final_heat = final_heat + heat_capacity_change(T, vent_cond[0])
-        
-        return pd.DataFrame({"dormancy time" : (final_heat - init_heat)/heating_power,
-                "final temperature" : vent_cond[0],
-                "final quality" : vent_cond[1],
-                "final pressure": self.vent_pressure,
-                "capacity error": final_cap - init_cap,
-                "total energy change" : final_heat - init_heat,
-                "solid heat capacity contribution": heat_capacity_change(T, vent_cond[0])}, index = [0])
-    
-    
-    
-       
-        
-        
+
+        return pd.DataFrame({"init pressure": p,
+                             "init temperature": T,
+                             "init quality": q,
+                             "dormancy time": (final_heat -
+                                               init_heat)/heating_power,
+                             "final temperature": vent_cond[0],
+                             "final quality": vent_cond[1],
+                             "final pressure": self.vent_pressure,
+                             "capacity error": final_cap - init_cap,
+                             "total energy change": final_heat - init_heat,
+                             "solid heat capacity contribution":
+                                 heat_capacity_change(T, vent_cond[0])},
+                            index=[0])
+
+
 class SorbentTank(StorageTank):
+    """Stores properties of a fluid storage tank filled with sorbents.
+
+    Attributes
+    ----------
+    volume : float
+        Internal volume of the storage tank (m^3).
+    sorbent_material : SorbentMaterial
+        An object storing the properties of the sorbent material used in
+        the tank.
+
+    aluminum_mass : float, optional
+        The mass of aluminum making up the tank walls (kg). The default is
+        0.
+
+    carbon_fiber_mass : float, optional
+        The mass of carbon fiber making up the tank walls (kg). The default
+        is 0.
+
+    steel_mass : float, optional
+        The mass of steel making up the tank walls (kg). The default is 0.
+
+    vent_pressure : float, optional
+        Maximum pressure at which the tank has to be vented (Pa). The
+        default is None.
+
+    min_supply_pressure : float, optional
+        The minimum supply pressure (Pa) for discharging simulations. The
+        default is 1E5.
+
+    thermal_resistance : float, optional
+        The thermal resistance of the tank walls (K/W). The default is 0.
+        If 0, the value will not be considered in simulations. If the
+        arguments 'surface_area' and 'heat_transfer' are passed,
+        'thermal_resistance' will be calculated based on those two
+        arguments as long as the user does not pass a value to
+        'thermal_resistance'.
+
+    surface_area : float, optional
+        Outer surface area of the tank in contact with the environment
+        (m^2). The default is 0.
+
+    heat_transfer_coefficient : float, optional
+        The heat transfer coefficient of the tank surface (W/(m^2 K)).
+        The default is 0.
+
+    """
+
     def __init__(self,
-                 volume : float,  
-                 sorbent_material : SorbentMaterial,
-                 aluminum_mass : float = 0, 
+                 volume: float,
+                 sorbent_material: SorbentMaterial,
+                 aluminum_mass: float = 0,
                  carbon_fiber_mass: float = 0,
                  steel_mass: float = 0,
-                 vent_pressure : float = None,
-                 min_supply_pressure : float = 1E5,
-                 thermal_resistance : float = 0,
-                 surface_area : float = 0,
-                 heat_transfer_coefficient : float = 0
-                 ):
-        """
-        Init for the class SorbentTank.
-        This class represents a fluid storage tank which contains sorbents.
+                 vent_pressure: float = None,
+                 min_supply_pressure: float = 1E5,
+                 thermal_resistance: float = 0,
+                 surface_area: float = 0,
+                 heat_transfer_coefficient: float = 0
+                 ) -> "SorbentTank":
+        """Initialize a SorbentTank object.
 
         Parameters
         ----------
         volume : float
-            The volume of the tank in m^3.
-        aluminum_mass : float
-            The mass of the aluminum that makes up the tank structure (kg).
-        sorbent_material : SorbentMaterial,
-            An object which contains all of the sorbent material properties.
+            Internal volume of the storage tank (m^3).
+        sorbent_material : SorbentMaterial
+            An object storing the properties of the sorbent material used in
+            the tank.
+
+        aluminum_mass : float, optional
+            The mass of aluminum making up the tank walls (kg). The default is
+            0.
+
         carbon_fiber_mass : float, optional
-            Mass of the structural carbon fiber in the tank. The default is 0.
-        max_pressure : float, optional
-            Maximum pressure (Pa) that can be stored inside of a tank.
-            The default is None.
+            The mass of carbon fiber making up the tank walls (kg). The default
+            is 0.
+
+        steel_mass : float, optional
+            The mass of steel making up the tank walls (kg). The default is 0.
+
         vent_pressure : float, optional
-            Pressure at which the tank is designed to start to vent. Pa.
-            The default is None.
-        min_supply_pressure: float, optional
-            Minimum supply pressure of the tank when discharging in Pa.
-            The default is 100000 Pa (Atmospheric Pressure).
-        overwrite_backend : bool, optional
-            Switch to overwrite the model isotherm backend with one
-            supplied from the fluid name and EOS name.
-            The overwrite will be done if this switch is True.
-            The default is False.
+            Maximum pressure at which the tank has to be vented (Pa). The
+            default is None.
+
+        min_supply_pressure : float, optional
+            The minimum supply pressure (Pa) for discharging simulations. The
+            default is 1E5.
+
+        thermal_resistance : float, optional
+            The thermal resistance of the tank walls (K/W). The default is 0.
+            If 0, the value will not be considered in simulations. If the
+            arguments 'surface_area' and 'heat_transfer' are passed,
+            'thermal_resistance' will be calculated based on those two
+            arguments as long as the user does not pass a value to
+            'thermal_resistance'.
+
+        surface_area : float, optional
+            Outer surface area of the tank in contact with the environment
+            (m^2). The default is 0.
+
+        heat_transfer_coefficient : float, optional
+            The heat transfer coefficient of the tank surface (W/(m^2 K)).
+            The default is 0.
+
+        Returns
+        -------
+        SorbentTank
+            Object which stores various properties of a storage tank containing
+            sorbents. It also has some useful methods related to the tank, most
+            notably dormancy calculation.
 
         """
         stored_fluid = sorbent_material.model_isotherm.stored_fluid
-        super().__init__(volume = volume,
-                         aluminum_mass = aluminum_mass,
-                         stored_fluid = stored_fluid,
-                         carbon_fiber_mass = carbon_fiber_mass,
-                         min_supply_pressure = min_supply_pressure,
-                         vent_pressure = vent_pressure,
-                         thermal_resistance = thermal_resistance,
-                         surface_area = surface_area,
-                         steel_mass = steel_mass,
-                         heat_transfer_coefficient = heat_transfer_coefficient)
+        super().__init__(volume=volume,
+                         aluminum_mass=aluminum_mass,
+                         stored_fluid=stored_fluid,
+                         carbon_fiber_mass=carbon_fiber_mass,
+                         min_supply_pressure=min_supply_pressure,
+                         vent_pressure=vent_pressure,
+                         thermal_resistance=thermal_resistance,
+                         surface_area=surface_area,
+                         steel_mass=steel_mass,
+                         heat_transfer_coefficient=heat_transfer_coefficient)
         self.sorbent_material = sorbent_material
-        self.heat_capacity =  Cs_gen(mads = self.sorbent_material.mass, 
-                                     mcarbon = self.carbon_fiber_mass, 
-                                     malum = self.aluminum_mass,
-                                     msteel = self.steel_mass,
-                                     Tads = self.sorbent_material.Debye_temperature,
-                                     MWads = self.sorbent_material.molar_mass)
-        
-    
+        self.heat_capacity = Cs_gen(mads=self.sorbent_material.mass,
+                                    mcarbon=self.carbon_fiber_mass,
+                                    malum=self.aluminum_mass,
+                                    msteel=self.steel_mass,
+                                    Tads=self.sorbent_material.
+                                    Debye_temperature,
+                                    MWads=self.sorbent_material.molar_mass)
+
     def bulk_fluid_volume(self,
-                          p : float,
-                          T : float):
-        """
+                          p: float,
+                          T: float) -> float:
+        """Calculate the volume of bulk fluid inside of the tank.
 
         Parameters
         ----------
@@ -262,16 +581,35 @@ class SorbentTank(StorageTank):
             Bulk fluid volume within the tank (m^3).
 
         """
-        
         tankvol = self.volume
         mads = self.sorbent_material.mass
         rhoskel = self.sorbent_material.skeletal_density
         vads = self.sorbent_material.model_isotherm.v_ads
-        outputraw = tankvol - mads/rhoskel - vads(p,T) * mads
-        output =  outputraw if outputraw >= 0 else 0
+        outputraw = tankvol - mads/rhoskel - vads(p, T) * mads
+        output = outputraw if outputraw >= 0 else 0
         return output
-    
-    def capacity(self, p, T, q = 0):
+
+    def capacity(self, p: float, T: float, q: float = 0) -> float:
+        """Return the amount of fluid stored in the tank at given conditions.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. Can vary between 0 and 1.
+            The default is 0.
+
+        Returns
+        -------
+        float
+            Amount of fluid stored (moles).
+
+        """
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -282,19 +620,58 @@ class SorbentTank(StorageTank):
         adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
             self.sorbent_material.mass
         return bulk_fluid_moles + adsorbed_moles
-    
-    def capacity_bulk(self, p, T, q = 0):
+
+    def capacity_bulk(self, p: float, T: float, q: float = 0) -> float:
+        """Calculate the amount of bulk fluid in the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. Can vary between 0 and 1.
+            The default is 0.
+
+        Returns
+        -------
+        float
+            Amount of bulk fluid stored (moles).
+
+        """
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
             fluid.update(CP.QT_INPUTS, q, T)
         else:
             fluid.update(CP.PT_INPUTS, p, T)
-        
+
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
         return bulk_fluid_moles
-    
-    def internal_energy(self, p, T, q = 1):
+
+    def internal_energy(self, p: float, T: float, q: float = 1) -> float:
+        """Calculate the internal energy of the fluid inside of the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. The default is 1.
+
+        Returns
+        -------
+        float
+            Internal energy of the fluid being stored (J).
+
+        """
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -305,16 +682,57 @@ class SorbentTank(StorageTank):
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
         adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
             self.sorbent_material.mass
-        uadsorbed = self.sorbent_material.model_isotherm.internal_energy_adsorbed(p, T)
+        uadsorbed = self.sorbent_material.model_isotherm.\
+            internal_energy_adsorbed(p, T)
         return ufluid * bulk_fluid_moles + adsorbed_moles * (uadsorbed)
-    
-    def internal_energy_sorbent(self, p, T, q = 1):
+
+    def internal_energy_sorbent(self, p: float,
+                                T: float, q: float = 1) -> float:
+        """Calculate the internal energy of the adsorbed fluid in the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. The default is 1.
+
+        Returns
+        -------
+        float
+            Internal energy of the adsorbed fluid in the tank (J).
+
+        """
         adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
             self.sorbent_material.mass
-        uadsorbed = self.sorbent_material.model_isotherm.internal_energy_adsorbed(p, T)
+        uadsorbed = self.sorbent_material.model_isotherm.\
+            internal_energy_adsorbed(p, T)
         return adsorbed_moles * (uadsorbed)
-    
-    def internal_energy_bulk(self, p, T, q = 1):
+
+    def internal_energy_bulk(self, p: float, T: float, q: float = 1) -> float:
+        """Calculate the internal energy of the bulk fluid in the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. The default is 1.
+
+        Returns
+        -------
+        float
+            Internal energy of the bulk fluid in the tank (J).
+
+        """
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -324,8 +742,26 @@ class SorbentTank(StorageTank):
         ufluid = fluid.umolar()
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
         return ufluid * bulk_fluid_moles
-    
-    def find_quality_at_saturation_capacity(self, T, capacity):
+
+    def find_quality_at_saturation_capacity(self, T: float,
+                                            capacity: float) -> float:
+        """Find vapor quality at the given temperature and capacity.
+
+        Parameters
+        ----------
+        T : float
+            Temperature (K)
+
+        capacity : float
+            Amount of fluid in the tank (moles).
+
+        Returns
+        -------
+        float
+            Vapor quality of the fluid being stored. This is assuming that the
+            fluid is on the saturation line.
+
+        """
         fluid = self.stored_fluid.backend
         fluid.update(CP.QT_INPUTS, 0, T)
         rhol = fluid.rhomolar()
@@ -338,42 +774,116 @@ class SorbentTank(StorageTank):
                       [1/rhog, 1/rhol]])
         b = [bulk_capacity, self.bulk_fluid_volume(p, T)]
         res = np.linalg.solve(A, b)
-        q =  res[0]/(res[0]+res[1])
+        q = res[0]/(res[0]+res[1])
         return q
-    
-    def find_temperature_at_saturation_quality(self, q, cap):
+
+    def find_temperature_at_saturation_quality(self, q: float,
+                                               cap: float) -> OptimizeResult:
+        """Find temperature at a given capacity and vapor quality value.
+
+        Parameters
+        ----------
+        q : float
+            Vapor quality. Can vary between 0 and 1.
+        cap : float
+            Amount of fluid stored in the tank (moles).
+
+        Returns
+        -------
+        scipy.optimize.OptimizeResult
+            The optimization result represented as a OptimizeResult object.
+            The relevant attribute for this function is x, the optimized
+            temperature value.
+
+        """
+
         def optim(x):
             self.stored_fluid.backend.update(CP.QT_INPUTS, q, x)
             p = self.stored_fluid.backend.p()
             return (self.capacity(p, x, q) - cap)**2
-        res = sp.optimize.minimize_scalar(optim, method = "bounded", bounds = (15, 33.145))
+
+        fluid = self.stored_fluid.backend
+        Tmin = fluid.Tmin()
+        Tmax = fluid.T_critical()
+        res = sp.optimize.minimize_scalar(optim, method="bounded",
+                                          bounds=(Tmin, Tmax))
         return res
-    
-    def calculate_dormancy(self, p, T, q, heating_power, init_time = 0):
-        if init_time != 0:
-            print("Warning: energy breakdown not accurate for non-zero initial time.")
+
+    def calculate_dormancy(self, p: float, T: float,
+                           q: float, heating_power: float) -> pd.DataFrame:
+        """Calculate dormancy time given a constant heating rate.
+
+        Parameters
+        ----------
+        p : float
+            Initial tank pressure (Pa).
+
+        T : float
+            Initial tank temperature (K).
+
+        heating_power : float
+            The heating power going into the tank during parking (W).
+
+        q : float, optional
+            Initial vapor quality of the tank. The default is 0 (pure liquid).
+
+        Returns
+        -------
+        pd.DataFrame
+            Pandas dataframe containing calculation conditions and results.
+            Each key stores a floating point number.
+            The dictionary keys and their respective values are:
+
+            - "init pressure": initial pressure
+            - "init temperature": initial temperature
+            - "init quality": initial vapor quality
+            - "dormancy time": time until tank needs to be vented in seconds
+            - "final temperature": temperature of the tank as venting begins
+            - "final quality": vapor quality at the time of venting
+            - "final pressure": pressure at the time of venting
+            - "capacity error": error between final and initial capacity
+            - "total energy change": difference in internal energy between the
+              initial and final conditions
+            - "sorbent energy contribution": the amount of heat taken by
+              the adsorbed phase via desorption
+            - "bulk energy contribution": the amount of heat absorbed by the
+              bulk phase
+            - "immersion heat contribution": how much heat has been absorbed
+              by un-immersing the sorbent material in the fluid
+            - "solid heat capacity contribution": the amount of heat absorbed
+              by the tank walls
+
+        """
         init_cap = self.capacity(p, T, q)
-        init_ene = self.internal_energy(p, T, q )
+        init_ene = self.internal_energy(p, T, q)
         init_ene_ads = self.internal_energy_sorbent(p, T, q)
         init_ene_bulk = self.internal_energy_bulk(p, T, q)
-        vent_cond = self.conditions_at_capacity_pressure(init_cap, self.vent_pressure, T, q).x
-        final_ene = self.internal_energy(self.vent_pressure, vent_cond[0], vent_cond[1])
-        final_cap = self.capacity(self.vent_pressure, vent_cond[0], vent_cond[1])
-        final_ene_ads = self.internal_energy_sorbent(self.vent_pressure, vent_cond[0], vent_cond[1])
-        final_ene_bulk = self.internal_energy_bulk(self.vent_pressure, vent_cond[0], vent_cond[1])
-        
+        vent_cond = self.conditions_at_capacity_pressure(init_cap,
+                                                         self.vent_pressure,
+                                                         T, q).x
+        final_ene = self.internal_energy(self.vent_pressure,
+                                         vent_cond[0], vent_cond[1])
+        final_cap = self.capacity(self.vent_pressure,
+                                  vent_cond[0], vent_cond[1])
+        final_ene_ads = self.internal_energy_sorbent(self.vent_pressure,
+                                                     vent_cond[0],
+                                                     vent_cond[1])
+        final_ene_bulk = self.internal_energy_bulk(self.vent_pressure,
+                                                   vent_cond[0], vent_cond[1])
+
         def heat_capacity_change(T1, T2):
             xgrid = np.linspace(T1, T2, 100)
             heatcapgrid = [self.heat_capacity(temper) for temper in xgrid]
             return sp.integrate.simps(heatcapgrid, xgrid)
-        
+
         final_ene += heat_capacity_change(T, vent_cond[0])
-        
-        res1 = self.find_temperature_at_saturation_quality(1,init_cap)
-        res2 = self.find_temperature_at_saturation_quality(0,init_cap)
-        if (res1.x > T and res1.fun < 1) or (res2.x > T and res2.fun < 1) or (vent_cond[1] != q):
+
+        res1 = self.find_temperature_at_saturation_quality(1, init_cap)
+        res2 = self.find_temperature_at_saturation_quality(0, init_cap)
+        if (res1.x > T and res1.fun < 1) or (res2.x > T and res2.fun < 1)\
+                or (vent_cond[1] != q):
             resfinal = res1.x if res1.fun < res2.fun else res2.x
-            
+
             if vent_cond[1] != q:
                 lower_bound = max(q, vent_cond[1])
                 upper_bound = min(q, vent_cond[1])
@@ -386,28 +896,36 @@ class SorbentTank(StorageTank):
             Agrid = np.zeros_like(qgrid)
             ygrid = np.zeros_like(qgrid)
             for i, qual in enumerate(qgrid):
-                temper = self.find_temperature_at_saturation_quality(qual,init_cap).x
+                temper = self.find_temperature_at_saturation_quality(qual,
+                                                                     init_cap)\
+                    .x
                 self.stored_fluid.backend.update(CP.QT_INPUTS, 0, temper)
                 p = self.stored_fluid.backend.p()
                 rhol = self.stored_fluid.backend.rhomolar()
                 nl = (1 - qual) * self.capacity_bulk(p, temper, qual)
                 vbulk = self.bulk_fluid_volume(p, temper)
                 Agrid[i] = total_surface_area * (nl/(rhol * vbulk))
-                ygrid[i] = self.sorbent_material.model_isotherm.areal_immersion_energy(temper)
+                ygrid[i] = self.sorbent_material.model_isotherm.\
+                    areal_immersion_energy(temper)
             integ_res = sp.integrate.simps(ygrid, Agrid)
-            integ_res = integ_res if lower_bound == q else  - integ_res
+            integ_res = integ_res if lower_bound == q else - integ_res
             final_ene = final_ene + integ_res
         else:
             integ_res = 0
-        return pd.DataFrame({"dormancy time" : init_time + (final_ene - init_ene)/heating_power,
-                "final temperature" : vent_cond[0],
-                "final quality" : vent_cond[1],
-                "final pressure": self.vent_pressure,
-                "capacity error": final_cap - init_cap,
-                "total energy change" : final_ene - init_ene,
-                "sorbent energy contribution" : final_ene_ads - init_ene_ads,
-                "bulk energy contribution" : final_ene_bulk - init_ene_bulk,
-                "immersion heat contribution" : integ_res,
-                "solid heat capacity contribution": heat_capacity_change(T, vent_cond[0]) }, index = [0],
-                )
-    
+        return pd.DataFrame(
+            {"init pressure": p,
+             "init temperature": T,
+             "init quality": q,
+             "dormancy time": (final_ene - init_ene)/heating_power,
+             "final temperature": vent_cond[0],
+             "final quality": vent_cond[1],
+             "final pressure": self.vent_pressure,
+             "capacity error": final_cap - init_cap,
+             "total energy change": final_ene - init_ene,
+             "sorbent energy contribution": final_ene_ads - init_ene_ads,
+             "bulk energy contribution": final_ene_bulk - init_ene_bulk,
+             "immersion heat contribution": integ_res,
+             "solid heat capacity contribution": heat_capacity_change(
+                                                                T,
+                                                                vent_cond[0])},
+            index=[0])
