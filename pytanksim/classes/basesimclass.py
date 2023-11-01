@@ -79,6 +79,10 @@ class SimParams:
         The initial amount of liquid (moles) stored in the tank at the
         beginning of the simulation. The default value is 0.
 
+    init_q : float, optional
+        The initial quality of the fluid being stored. It can vary between 0
+        and 1. The default is None.
+
     Other Parameters
     ----------------
     inserted_amount : float, optional
@@ -141,6 +145,7 @@ class SimParams:
     target_capacity: float = 0
     init_ng: float = 0
     init_nl: float = 0
+    init_q: float = None
     inserted_amount: float = 0
     vented_amount: float = 0
     cooling_required: float = 0
@@ -592,6 +597,18 @@ class BaseSimulation:
             Object containing information on the mass and energy going in
             and out of the tank during the simulation.
 
+        Raises
+        ------
+        ValueError
+            If the simulation is set to begin on the saturation line but the
+            initial values for liquid and gas in the tank, or, alternatively,
+            the initial vapor quality, was not specified.
+
+        ValueError
+            If both the initial values for liquid and gas in the tank is
+            specified as well as the initial vapor quality, but the values
+            don't match each other.
+
         Returns
         -------
         BaseSimulation
@@ -604,6 +621,42 @@ class BaseSimulation:
         self.has_sorbent = False
         if isinstance(self.storage_tank, SorbentTank):
             self.has_sorbent = True
+        spr = self.simulation_params
+        init_p = spr.init_pressure
+        init_T = spr.init_temperature
+        Tcrit = self.storage_tank.stored_fluid.backend.T_critical()
+        init_phase = self.stored_fluid.determine_phase(init_p, init_T)
+        if spr.init_q is None:
+            if init_phase == "Saturated":
+                if spr.init_ng == spr.init_nl == 0:
+                    raise ValueError("Starting point is saturated,"
+                                     " must input the initial amount of liquid"
+                                     " and gas in the tank or the vapor "
+                                     "quality.")
+                else:
+                    spr.init_q = spr.init_ng/(spr.init_ng + spr.init_nl)
+            elif init_phase == "Gas":
+                spr.init_q = 1
+            elif init_phase == "Liquid":
+                spr.init_q = 0
+            elif init_phase == "Supercritical":
+                spr.init_q = 1 if init_T > Tcrit else 0
+        else:
+            if init_phase == "Saturated":
+                if spr.init_ng == spr.init_nl == 0:
+                    amount = self.storage_tank.capacity_bulk(init_p, init_T,
+                                                             spr.init_q)
+                    spr.init_ng = amount * spr.init_q
+                    spr.init_nl = amount * (1-spr.init_q)
+                else:
+                    qfrominitvals = spr.init_ng/(spr.init_ng + spr.init_nl)
+                    if qfrominitvals != spr.init_q:
+                        raise ValueError("Vapor quality does not match "
+                                         "inputted initial amounts for gas and"
+                                         " liquid! \n"
+                                         "Try inputting either only the "
+                                         "initial amounts or only the"
+                                         " quality.")
 
     def heat_leak_in(self, T: float) -> float:
         """Calculate the heat leakage rate from the environment into the tank.
