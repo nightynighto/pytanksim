@@ -217,34 +217,42 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0:
+                self.stop_reason = "CritTempReached"
                 print("\n The simulation has reached critical temperature, \n please switch to one phase simulation.")
                 raise TerminateSimulation
             
             if state_info[1] != 0:
+                self.stop_reason = "MinPresReached"
                 print("\n The simulation has hit the minimum supply pressure. \n Switch to heated discharge.")
                 raise TerminateSimulation
                 
             if state_info[2] != 0:
+                self.stop_reason = "MaxPresReached"
                 print("\n The simulation has hit maximum pressure! Switch to cooling or venting simulation")
                 raise TerminateSimulation
                 
             if state_info[3] != 0 or state_info[4] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
             
             if state_info[5] != 0 and solver.sw[0]:
+                self.stop_reason = "TargetPresReached"
                 print("\n Target pressure reached")
                 raise TerminateSimulation
             
             if state_info[6] != 0 and solver.sw[1]:
+                self.stop_reason = "TargetTempReached"
                 print("\n Target temperature reached")
                 raise TerminateSimulation
             
             if state_info[5] != 0 and state_info[6] != 0:
+                self.stop_reason = "TargetCondsReached"
                 print("\n Target conditions has been reached.")
                 raise TerminateSimulation
                 
             if state_info[6] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("Target capacity has been reached.")
                 raise TerminateSimulation
             
@@ -287,7 +295,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             pres[i] = fluid.p()
             nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(pres[i], y[i, 2]) *\
                 self.storage_tank.sorbent_material.mass
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = pres,
                           temperature = y[:,2],
@@ -306,7 +315,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
     sim_type = "Cooled"
@@ -392,10 +402,12 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             state_info = event_info[0]
         
             if state_info[0] != 0 or state_info[1] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation   
                 
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("Target capacity reached.")
                 raise TerminateSimulation
 
@@ -430,7 +442,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         nads = self.storage_tank.sorbent_material.model_isotherm.n_absolute(
             self.simulation_params.init_pressure, self.simulation_params.init_temperature) *\
                 self.storage_tank.sorbent_material.mass
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
@@ -449,7 +462,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
     sim_type = "Venting"
@@ -543,10 +557,12 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
                 
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
      
@@ -581,7 +597,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         nads = self.storage_tank.sorbent_material.model_isotherm.n_absolute(
            self.simulation_params.init_pressure, self.simulation_params.init_temperature) *\
                self.storage_tank.sorbent_material.mass
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
@@ -600,7 +617,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
     sim_type = "Heated"
@@ -684,10 +702,12 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
             
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
 
@@ -720,7 +740,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         nads = self.storage_tank.sorbent_material.model_isotherm.n_absolute(
             self.simulation_params.init_pressure, self.simulation_params.init_temperature) *\
                 self.storage_tank.sorbent_material.mass
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
@@ -739,7 +760,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
                           cooling_required = self.simulation_params.cooling_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
 
 class TwoPhaseSorbentControlledInlet(TwoPhaseSorbentDefault):
     def solve_differentials(self, ng, nl, T, time):

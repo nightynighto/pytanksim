@@ -563,10 +563,15 @@ class BaseSimulation:
     boundary_flux: BoundaryFlux
         Object which stores the amount of energy entering and exiting the tank.
 
+    stop_reason : str
+        A string stating the reason for the simulation to have stopped.
+        It will be passed to the SimResults object once the simulation
+        finishes.
     """
 
     sim_type = None
     sim_phase = None
+    stop_reason = None
 
     def __init__(self,
                  simulation_params: SimParams,

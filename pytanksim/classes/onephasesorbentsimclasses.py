@@ -171,30 +171,37 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0:
+                self.stop_reason = "MaxPresReached"
                 print("\n The simulation has hit maximum pressure! Switch to venting or cooling simulation")
                 raise TerminateSimulation
                 
             if state_info[1] != 0 and solver.y[1] <= Tcrit - 0.01:
+                self.stop_reason = "SaturLineReached"
                 print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
                 raise TerminateSimulation
                 
             if state_info[2] != 0:
+                self.stop_reason = "MinPresReached"
                 print("\n The simulation has hit minimum supply pressure! Switch to heated discharge simulation")
                 raise TerminateSimulation
                 
             if state_info[3] != 0 and solver.sw[0]:
+                self.stop_reason = "TargetTempReached"
                 print("\n Target temperature reached")
                 raise TerminateSimulation
                 
             if state_info[4] != 0 and solver.sw[1]:
+                self.stop_reason = "TargetPresReached"
                 print("\n Target pressure reached")
                 raise TerminateSimulation
             
             if state_info[3] != 0 and state_info[4] != 0:
+                self.stop_reason = "TargetCondsReached"
                 print("\n The simulation target condition has been reached.")
                 raise TerminateSimulation
                           
             if state_info[5] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
         
@@ -251,7 +258,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             n_phase[phase][i] = nfluid 
             nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(y[i,0], y[i,1]) *\
                 self.storage_tank.sorbent_material.mass
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = y[:,0],
                           temperature = y[:,1],
@@ -270,7 +278,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                           vented_energy = y[:, 8],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class OnePhaseSorbentVenting(OnePhaseSorbentSim):
     sim_type = "Venting"
@@ -354,14 +363,17 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] !=0 and solver.y[0] <= Tcrit:
+                self.stop_reason = "SaturLineReached"
                 print("\n Saturation condition reached, switch to two-phase solver!")
                 raise TerminateSimulation
                 
             if state_info[1] != 0:
+                self.stop_reason = "TargetTempReached"
                 print("\n Target temperature reached, exiting simulation.")
                 raise TerminateSimulation
                 
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("Target capacity reached.")
                 raise TerminateSimulation
                 
@@ -419,7 +431,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
             nads[i] =self.storage_tank.sorbent_material.model_isotherm.n_absolute(p0, y[i,0])\
                 * self.storage_tank.sorbent_material.mass
             
-        
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = p0,
                           temperature = y[:,0],
@@ -438,7 +451,8 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
 
     
 class OnePhaseSorbentCooled(OnePhaseSorbentSim):
@@ -521,14 +535,17 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             state_info = event_info[0]
             
             if state_info[0] !=0 and solver.y[0] <= Tcrit:
+                self.stop_reason = "SaturLineReached"
                 print("\n Saturation condition reached, switch to two-phase solver!")
                 raise TerminateSimulation
 
             if state_info[1] !=0 and p == self.simulation_params.target_pres:
+                self.stop_reason = "TargetCondsReached"
                 print("\n Target condition achieved, exiting simulation.")
                 raise TerminateSimulation
             
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
                 
@@ -578,7 +595,8 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
             n_phase[phase][i] = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(p, y[i,0]) 
             nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(p, y[i,0]) *\
             self.storage_tank.sorbent_material.mass
-        
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = np.repeat(p, len(t)),
                           temperature = y[:,0],
@@ -597,7 +615,8 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
 
 class OnePhaseSorbentControlledInlet(OnePhaseSorbentDefault):
     sim_type = "Controlled Inlet"
@@ -718,14 +737,17 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] !=0 and solver.y[0] <= Tcrit:
+                self.stop_reason = "SaturLineReached"
                 print("\n Saturation condition reached, switch to two-phase solver!")
                 raise TerminateSimulation
 
             if state_info[1] !=0:
+                self.stop_reason = "TargetTempReached"
                 print("\n Final temperature achieved, exiting simulation.")
                 raise TerminateSimulation
             
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Reached target capacity.")
                 raise TerminateSimulation
         
@@ -774,6 +796,8 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
             n_phase[phase][i] = fluid.rhomolar() * self.storage_tank.bulk_fluid_volume(p, y[i,0]) 
             nads[i] = self.storage_tank.sorbent_material.model_isotherm.n_absolute(p, y[i,0]) *\
             self.storage_tank.sorbent_material.mass
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = np.repeat(p, len(t)),
                           temperature = y[:,0],
@@ -792,6 +816,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
                           cooling_required = self.simulation_params.cooling_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
     

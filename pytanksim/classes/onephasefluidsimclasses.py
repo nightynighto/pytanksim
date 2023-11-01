@@ -131,31 +131,38 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0:
+                self.stop_reason = "MaxPresReached"
                 print("\n The simulation has hit maximum pressure!") 
                 print("\n Switch to venting or cooling simulation")
                 raise TerminateSimulation
             if state_info[1] != 0 and solver.y[1] <= Tcrit:
+                self.stop_reason = "SaturLineReached"
                 print("\n The simulation has hit the saturation line!")
                 print("\n Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[2] != 0:
+                self.stop_reason = "MinPresReached"
                 print("\n The simulation has hit minimum supply pressure!")
                 print("/n Switch to heated discharge simulation")
                 raise TerminateSimulation
                 
             if state_info[3] != 0 and solver.sw[0]:
+                self.stop_reason = "TargetPresReached"
                 print("Target pressure reached")
                 raise TerminateSimulation
             
             if state_info[4] != 0 and solver.sw[1]:
+                self.stop_reason = "TargetTempReached"
                 print("Target temperature reached")
                 raise TerminateSimulation
             
             if state_info[3] != 0 and state_info[4] !=0:
+                self.stop_reason = "TargetCondsReached"
                 print("\n Target conditions reached.")
                 raise TerminateSimulation
             
             if state_info[5] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
                 
@@ -211,7 +218,9 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                 fluid.update(CP.PT_INPUTS, y[i,0], y[i,1])
             nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
-            
+        
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         
         return SimResults(time = t, 
                           pressure = y[:,0],
@@ -231,7 +240,8 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason = self.stop_reason)
     
 
 class OnePhaseFluidVenting(OnePhaseFluidSim):
@@ -329,12 +339,15 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
+                self.stop_reason = "SaturLineReached"
                 print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
+                self.stop_reason = "TargetTempReached"
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
             
@@ -382,6 +395,9 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
         
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
+        
         return SimResults(time = t, 
                           pressure = p0,
                           temperature = y[:,0],
@@ -400,7 +416,8 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                           vented_energy = y[:,2],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason = self.stop_reason)
     
 class OnePhaseFluidCooled(OnePhaseFluidSim):
     sim_type = "Cooled"
@@ -499,13 +516,19 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
-                print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
+                self.stop_reason = "SaturLineReached"
+                print("\n The simulation has hit the saturation line!\n"
+                      "Switch to two-phase simulation")
                 raise TerminateSimulation
-            if state_info[1] != 0 or state_info[2] != 0:
-                print("\n The simulation has hit the target temperature/capacity.")
+            if state_info[1] != 0:
+                self.stop_reason = "TargetTempReached"
+                print("\n The simulation has hit the target temperature.")
+                raise TerminateSimulation
+            if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
+                print("\n The simulation has hit the target capacity.")
                 raise TerminateSimulation
 
-            
      
         w0 = np.array([self.simulation_params.init_temperature,
                        self.simulation_params.cooling_required,
@@ -550,7 +573,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
             
-        
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = p0,
                           temperature = y[:,0],
@@ -569,7 +593,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason = self.stop_reason)
         
 class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
     sim_type = "Heated"
@@ -662,12 +687,15 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         def handle_event(solver, event_info):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
+                self.stop_reason = "SaturLineReached"
                 print("\n The simulation has hit the saturation line! Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
+                self.stop_reason = "TargetTempReached"
                 print("\n The simulation has hit the target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
      
@@ -718,7 +746,8 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             nfluid = fluid.rhomolar() * self.storage_tank.volume
             n_phase[phase][i] = nfluid
             
-        
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = p0,
                           temperature = y[:,0],
@@ -737,7 +766,8 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                           heating_required = y[:,1],
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason = self.stop_reason)
     
 class OnePhaseFluidControlledInlet(OnePhaseFluidDefault):
     def solve_differentials(self, time, p, T):

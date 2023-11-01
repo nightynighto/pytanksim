@@ -140,34 +140,42 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0:
+                self.stop_reason = "MinPresReached"
                 print("\n Minimum pressure has been reached. \n Switch to heated discharge simulation.")
                 raise TerminateSimulation
                 
             if state_info[1] != 0:
+                self.stop_reason = "MaxPresReached"
                 print("\n Maximum pressure has been reached. \n Either begin venting or cooling.")
                 raise TerminateSimulation
                         
             if state_info[2] != 0 or state_info[3] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[4] != 0 and solver.sw[0]:
+                self.stop_reason = "TargetTempReached"
                 print("\n Target temperature reached.")
                 raise TerminateSimulation
 
             if state_info[5] != 0 and solver.sw[1]:
+                self.stop_reason = "TargetPresReached"
                 print("\n Target pressure reached.")
                 raise TerminateSimulation
 
             if state_info[4] != 0 and state_info[5] != 0:
+                self.stop_reason = "TargetCondsReached"
                 print("\n Target conditions reached.")
                 raise TerminateSimulation
                 
             if state_info[6] != 0:
+                self.stop_reason = "CritTempReached"
                 print("\n Reached critical temperature. Switch to one phase simulation.")
                 raise TerminateSimulation
             
             if state_info[7] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Reached target capacity.")
                 raise TerminateSimulation
             
@@ -212,7 +220,8 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             pres[i] = fluid.p()
             
 
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = pres,
                           temperature = y[:, 2],
@@ -231,7 +240,8 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason = self.stop_reason)
     
 class TwoPhaseFluidVenting(TwoPhaseFluidSim):
     def solve_differentials(self, time):
@@ -324,10 +334,12 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation        
                 
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Reached target capacity.")
                 raise TerminateSimulation
             
@@ -362,7 +374,8 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         
             
 
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
@@ -381,7 +394,8 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class TwoPhaseFluidCooled(TwoPhaseFluidSim):
     def solve_differentials(self, time):
@@ -475,10 +489,12 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
                 
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Reached target capacity.")
                 raise TerminateSimulation
                             
@@ -512,7 +528,8 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         
         print("Saving results...")
         
-            
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
@@ -531,7 +548,8 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
                           heating_required = self.simulation_params.heating_required,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params = self.simulation_params)
+                          sim_params = self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
     def solve_differentials(self, time):
@@ -622,10 +640,12 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
             state_info = event_info[0]
             
             if state_info[0] != 0 or state_info[1] != 0:
+                self.stop_reason = "PhaseChangeEnded"
                 print("\n Phase change has ended. Switch to one phase simulation.")
                 raise TerminateSimulation
             
             if state_info[2] != 0:
+                self.stop_reason = "TargetCapReached"
                 print("\n Reached target capacity.")
                 raise TerminateSimulation
                              
@@ -656,7 +676,8 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
             pass
         
         print("Saving results...")
-        
+        if self.stop_reason is None:
+            self.stop_reason = "FinishedNormally"
         return SimResults(time = t, 
                           pressure = self.simulation_params.init_pressure,
                           temperature = self.simulation_params.init_temperature,
@@ -675,7 +696,8 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
                           heating_required = y[:,2] ,
                           sim_type= self.sim_type,
                           tank_params = self.storage_tank,
-                          sim_params =self.simulation_params)
+                          sim_params =self.simulation_params,
+                          stop_reason=self.stop_reason)
     
 class TwoPhaseFluidControlledInlet(TwoPhaseFluidDefault):
     def solve_differentials(self, time, ng, nl, T):
