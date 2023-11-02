@@ -245,7 +245,10 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                     phase = self.storage_tank.stored_fluid.\
                         determine_phase(y[iterable, 0],
                                         y[iterable, 1])
-                q = 0 if phase == "Liquid" else 1
+                if phase == "Supercritical":
+                    q = 0 if y[iterable, 1] < Tcrit else 1
+                else:
+                    q = 0 if phase == "Liquid" else 1
                 fluid.update(CP.QT_INPUTS, q, y[i, 1])
             else:
                 fluid.update(CP.PT_INPUTS, y[i, 0], y[i, 1])
@@ -455,7 +458,10 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.\
                         determine_phase(p0, y[iterable, 0])
-                q = 0 if phase == "Liquid" else 1
+                if phase == "Supercritical":
+                    q = 0 if y[iterable, 0] < Tcrit else 1
+                else:
+                    q = 0 if phase == "Liquid" else 1
                 fluid.update(CP.QT_INPUTS, q, y[i, 0])
             else:
                 fluid.update(CP.PT_INPUTS, p0, y[i, 0])
@@ -666,7 +672,10 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.\
                         determine_phase(p0, y[iterable, 0])
-                q = 0 if phase == "Liquid" else 1
+                if phase == "Supercritical":
+                    q = 0 if y[iterable, 0] < Tcrit else 1
+                else:
+                    q = 0 if phase == "Liquid" else 1
                 fluid.update(CP.QT_INPUTS, q, y[i, 0])
             else:
                 fluid.update(CP.PT_INPUTS, p0, y[i, 0])
@@ -874,7 +883,10 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.\
                         determine_phase(p0, y[iterable, 0])
-                q = 0 if phase == "Liquid" else 1
+                if phase == "Supercritical":
+                    q = 0 if y[iterable, 0] < Tcrit else 1
+                else:
+                    q = 0 if phase == "Liquid" else 1
                 fluid.update(CP.QT_INPUTS, q, y[i, 0])
             else:
                 fluid.update(CP.PT_INPUTS, p0, y[i, 0])

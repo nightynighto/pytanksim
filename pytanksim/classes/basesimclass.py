@@ -625,7 +625,8 @@ class BaseSimulation:
         init_p = spr.init_pressure
         init_T = spr.init_temperature
         Tcrit = self.storage_tank.stored_fluid.backend.T_critical()
-        init_phase = self.stored_fluid.determine_phase(init_p, init_T)
+        init_phase = self.storage_tank.\
+            stored_fluid.determine_phase(init_p, init_T)
         if spr.init_q is None:
             if init_phase == "Saturated":
                 if spr.init_ng == spr.init_nl == 0:

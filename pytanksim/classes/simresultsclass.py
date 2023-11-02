@@ -55,7 +55,7 @@ class SimResults:
         - ``mout``: cumulative mass of fluid vented (kg)
         - ``min``: cumulative mass of fluid inserted (kg)
         - ``na_dot``: the amount of fluid (moles) being adsorbed per
-        second.
+          second.
         - ``ng_dot``: the first derivative of the amount of fluid in
           gaseous form w.r.t. time. Its unit is mol/s.
         - ``nl_dot``: the first derivative of the amount of fluid in

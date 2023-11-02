@@ -211,6 +211,29 @@ class StorageTank:
             fluid.update(CP.PT_INPUTS, p, T)
         return fluid.rhomolar() * self.volume
 
+    def capacity_bulk(self, p: float, T: float, q: float = 0) -> float:
+        """Calculate the amount of bulk fluid in the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the fluid being stored. Can vary between 0 and 1.
+            The default is 0.
+
+        Returns
+        -------
+        float
+            Amount of bulk fluid stored (moles).
+
+        """
+        return self.capacity(p, T, q)
+
     def find_quality_at_saturation_capacity(self, T: float,
                                             capacity: float) -> float:
         """Find vapor quality at the given temperature and capacity.
