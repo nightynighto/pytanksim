@@ -7,12 +7,72 @@ The StorageTank and SorbentTank classes are part of this module.
 __all__ = ["StorageTank", "SorbentTank"]
 
 from pytanksim.classes.fluidsorbentclasses import StoredFluid, SorbentMaterial
-from pytanksim.utils.tanksimutils import Cs_gen
 import CoolProp as CP
 import numpy as np
 import scipy as sp
 import pandas as pd
 from scipy.optimize import OptimizeResult
+from typing import Callable
+
+
+def Cs_gen(mads: float, mcarbon: float, malum: float,
+           msteel: float, Tads: float = 1500,
+           MWads: float = 12.01E-3) -> Callable[[float, float], float]:
+    """Generate a function to find the heat capacity at a given temperature.
+
+    Based on Debye's model. Combines contributions from the various materials
+    making up the storage tank.
+
+    Parameters
+    ----------
+    mads : float
+        Mass of sorbent (kg).
+
+    mcarbon : float
+        Carbon fiber mass (kg).
+
+    malum : float
+        Aluminum mass (kg).
+
+    msteel : float
+        Steel mass (kg).
+
+    Tads : float, optional
+        Debye temperature of the sorbent material (K). The default is 1500,
+        which is the value for carbon.
+
+    MWads : float, optional
+        The molecular weight of the sorbent material (mol/kg). The default is
+        12.01E-3, which is the value for carbon.
+
+    Returns
+    -------
+    (Callable[[float, float], float])
+        DESCRIPTION.
+
+    """
+    R = sp.constants.R
+
+    def Cdebye(T, theta):
+        N = 50
+        grid = np.linspace(0, theta/T, N)
+        y = np.zeros_like(grid)
+
+        def integrand(x):
+            return(x**4) * np.exp(x) / ((np.exp(x)-1)**2)
+
+        for i in range(1, N):
+            y[i] = integrand(grid[i])
+        return 9 * R * ((T/theta)**3) * sp.integrate.simps(y, grid)
+    carbon_molar_mass = 12.01E-3
+    alum_molar_mass = 26.98E-3
+    iron_molar_mass = 55.845E-3
+
+    def Cs(T):
+        return (mads/MWads)*Cdebye(T, Tads) + (mcarbon / carbon_molar_mass) *\
+            Cdebye(T, 1500) + (malum/alum_molar_mass) * Cdebye(T, 389.4) +\
+            (msteel/iron_molar_mass) * Cdebye(T, 500)
+    return Cs
 
 
 class StorageTank:
