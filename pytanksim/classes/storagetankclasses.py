@@ -496,8 +496,7 @@ class StorageTank:
             heatcapgrid = [self.heat_capacity(temper) for temper in xgrid]
             return sp.integrate.simps(heatcapgrid, xgrid)
 
-        final_heat = final_heat + heat_capacity_change(T, vent_cond[0])
-
+        final_heat += heat_capacity_change(T, vent_cond[0])
         return pd.DataFrame({"init pressure": p,
                              "init temperature": T,
                              "init quality": q,
@@ -893,7 +892,8 @@ class SorbentTank(StorageTank):
         return res
 
     def calculate_dormancy(self, p: float, T: float,
-                           q: float, heating_power: float) -> pd.DataFrame:
+                           heating_power: float,
+                           q: float = 0) -> pd.DataFrame:
         """Calculate dormancy time given a constant heating rate.
 
         Parameters
