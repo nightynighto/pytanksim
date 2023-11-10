@@ -973,23 +973,27 @@ class SorbentTank(StorageTank):
                 lower_bound = max(q, vent_cond[1])
                 upper_bound = min(q, vent_cond[1])
             else:
-                if res1.fun < 1 and T < res1.x < vent_cond[0]:
-                    consider_res1 = True
-                else:
-                    consider_res1 = False
-                if res2.fun < 1 and T < res2.x < vent_cond[0]:
-                    consider_res2 = True
-                else:
-                    consider_res2 = False
+                consider_res1 = True if res1.fun < 1 and \
+                    T < res1.x < vent_cond[0] else False
+                consider_res2 = True if res2.fun < 1 and \
+                    T < res2.x < vent_cond[0] else False
                 if consider_res1 and consider_res2:
+                    Tcheck = max(res1.x, res2.x)
                     resfinal = 1 if res1.x > res2.x else 0
                 elif consider_res2 and (not consider_res1):
+                    Tcheck = res2.x
                     resfinal = 0
                 elif consider_res1 and (not consider_res2):
+                    Tcheck = res1.x
                     resfinal = 1
+                vent_cond[1] = resfinal
+                if Tcheck > 0.998 * self.stored_fluid.backend.T_critical():
+                    Tcheck = 0.998 * self.stored_fluid.backend.T_critical()
+                    resfinal = self.find_quality_at_saturation_capacity(
+                        Tcheck,
+                        init_cap)
                 lower_bound = max(q, resfinal)
                 upper_bound = min(q, resfinal)
-                vent_cond[1] = resfinal
             total_surface_area = self.sorbent_material.mass *\
                 self.sorbent_material.specific_surface_area * 1000
             qgrid = np.linspace(lower_bound, upper_bound, 100)
@@ -1008,7 +1012,7 @@ class SorbentTank(StorageTank):
                 ygrid[i] = self.sorbent_material.model_isotherm.\
                     areal_immersion_energy(temper)
             integ_res = sp.integrate.simps(ygrid, Agrid)
-            integ_res = integ_res if lower_bound == q else - integ_res
+            integ_res = -integ_res if q < resfinal else integ_res
             final_ene = final_ene + integ_res
         else:
             integ_res = 0

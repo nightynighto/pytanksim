@@ -630,12 +630,12 @@ class ModelIsotherm:
         Parameters
         ----------
         T : float
-            DESCRIPTION.
+            Temperature (K).
 
         Returns
         -------
         float
-            DESCRIPTION.
+            Areal energy of immersion (J/m^2)
 
         """
         fluid = self.stored_fluid.backend
@@ -645,9 +645,9 @@ class ModelIsotherm:
             sur_ten = self.stored_fluid.backend.surface_tension()
             return sur_ten
 
-        diff = fd.partial_derivative(sur_tension, 0, [T], 0.001) \
-            if T < fluid.T_critical() - 0.001  \
-            else fd.backward_partial_derivative(sur_tension, 0, [T], 0.001)
+        diff = fd.partial_derivative(sur_tension, 0, [T], 0.0001) \
+            if T < fluid.T_critical() - 0.0001  \
+            else fd.backward_partial_derivative(sur_tension, 0, [T], 0.0001)
         return T * diff - sur_tension(T)
 
 
