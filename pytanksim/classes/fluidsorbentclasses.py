@@ -232,13 +232,14 @@ class ModelIsotherm:
             return 0
 
         def optimum_pressure(p):
-            return (self.n_absolute(p, T) - n_abs)**2
+            return self.n_absolute(p, T) - n_abs
 
-        root = sp.optimize.minimize_scalar(
-                                fun=optimum_pressure,
-                                bounds=(1, p_max_guess),
-                                method="bounded")
-        return root.x
+        root, success = sp.optimize.toms748(
+                                f=optimum_pressure,
+                                a=1E-16,
+                                b=p_max_guess,
+                                full_output=True)
+        return root
 
     def isosteric_enthalpy(self, p: float, T: float,
                            q: float = 1) -> float:

@@ -345,6 +345,8 @@ class SimResults:
         column_names_new = [sub.replace("amount", "kg").replace("moles", "kg")
                             for sub in column_names]
         overwrite_df.columns = column_names_new
+        self.results_df = pd.merge(df_export, overwrite_df, left_index=True,
+                                   right_index=True)
         self.df = self.results_df.copy().\
             rename(columns=self.short_colnames_inv)
 
