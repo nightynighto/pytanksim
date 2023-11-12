@@ -645,9 +645,9 @@ class ModelIsotherm:
             sur_ten = self.stored_fluid.backend.surface_tension()
             return sur_ten
 
-        diff = fd.partial_derivative(sur_tension, 0, [T], 0.0001) \
-            if T < fluid.T_critical() - 0.0001  \
-            else fd.backward_partial_derivative(sur_tension, 0, [T], 0.0001)
+        diff = fd.partial_derivative(sur_tension, 0, [T], 1E-3) \
+            if T < fluid.T_critical() - 1E-3  \
+            else fd.backward_partial_derivative(sur_tension, 0, [T], 1E-3)
         return T * diff - sur_tension(T)
 
 

@@ -937,6 +937,7 @@ class SorbentTank(StorageTank):
               by the tank walls
 
         """
+        init_pres = p
         init_cap = self.capacity(p, T, q)
         init_ene = self.internal_energy(p, T, q)
         init_ene_ads = self.internal_energy_sorbent(p, T, q)
@@ -1017,7 +1018,7 @@ class SorbentTank(StorageTank):
         else:
             integ_res = 0
         return pd.DataFrame(
-            {"init pressure": p,
+            {"init pressure": init_pres,
              "init temperature": T,
              "init quality": q,
              "dormancy time": (final_ene - init_ene)/heating_power,

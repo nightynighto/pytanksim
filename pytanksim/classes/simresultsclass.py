@@ -314,6 +314,7 @@ class SimResults:
         self.sim_type = sim_type
         self.results_df = pd.DataFrame.from_dict(self.results_dict)
         self.results_df = self.results_df.drop_duplicates(subset=["time"])
+        self.results_dict = self.results_df.to_dict('series')
         self.stop_reason = stop_reason
 
         df_diff = self.results_df.diff()
@@ -368,10 +369,7 @@ class SimResults:
         """
         final_dict = {}
         for key, value in self.results_dict.items():
-            if isinstance(value, (str, list, tuple, np.ndarray)):
-                final_dict[key] = value[idx]
-            else:
-                final_dict[key] = value
+            final_dict[key] = value.iloc[idx]
         return final_dict
 
     def to_csv(self, filename: str, convert_moles_to_kg: bool = True):

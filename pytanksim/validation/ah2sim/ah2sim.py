@@ -79,7 +79,6 @@ storage_tank = pts.SorbentTank(
                     aluminum_mass = 0,
                     carbon_fiber_mass = 0,
                     steel_mass = 3.714,
-                    max_pressure = float(35E6),
                     vent_pressure = 10E6,
                     min_supply_pressure = 0,
                     sorbent_material = sorbent_material,
@@ -131,8 +130,7 @@ simulation_params = pts.SimParams(
 
 simulation = pts.generate_simulation(storage_tank = storage_tank, 
                                       boundary_flux = boundary_flux,
-                                      simulation_params = simulation_params,
-                                      simulation_type = "Controlled Inlet")
+                                      simulation_params = simulation_params)
 
 results = simulation.run()
 results.to_csv("AH2sim.csv")
