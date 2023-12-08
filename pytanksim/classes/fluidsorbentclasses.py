@@ -203,7 +203,7 @@ class ModelIsotherm:
     """
 
     def pressure_from_absolute_adsorption(self, n_abs: float, T: float,
-                                          p_max_guess: float = 20E6) -> float:
+                                          p_max_guess: float = 35E6) -> float:
         """Calculate a pressure value corresponding to an adsorbed amount.
 
         Parameters
@@ -886,6 +886,8 @@ class DAModel(ModelIsotherm):
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
         fug = self.stored_fluid.backend.fugacity(0)
         f0 = self.f0_calc(T)
+        if fug > f0:
+            fug = f0
         vfilled = self.w0 * np.exp(-((sp.constants.R * T /
                                      (self.eps))**self.m)
                                    * ((np.log(f0/fug))**self.m))
@@ -916,6 +918,8 @@ class DAModel(ModelIsotherm):
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
         fug = self.stored_fluid.backend.fugacity(0)
         f0 = self.f0_calc(T)
+        if fug > f0:
+            fug = f0
         return rhoa * self.w0 * np.exp(-((sp.constants.R * T /
                                          (self.eps))**self.m)
                                        * ((np.log(f0/fug))**self.m))
@@ -1330,7 +1334,6 @@ class MDAModel(ModelIsotherm):
         else:
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
         fug = self.stored_fluid.backend.fugacity(0)
-
         if self.f0_mode == "Constant":
             f0 = self.f0
         if self.f0_mode == "Dubinin":
@@ -1343,7 +1346,8 @@ class MDAModel(ModelIsotherm):
                 p0 = ((T/Tc)**self.k) * pc
                 self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
                 f0 = self.stored_fluid.backend.fugacity(0)
-
+        if fug > f0:
+            fug = f0
         return self.nmax * np.exp(-((sp.constants.R * T /
                                      (self.alpha + self.beta * T))**self.m)
                                   * ((np.log(f0/fug))**self.m))

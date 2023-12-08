@@ -58,7 +58,7 @@ excesslist = [pts.ExcessIsotherm(adsorbate = "Methane",
 
 
 
-model_isotherm_mda = pts.classes.DAModel.from_ExcessIsotherms(excesslist, 
+model_isotherm_da = pts.classes.DAModel.from_ExcessIsotherms(excesslist, 
                                                               sorbent = "RGM1",
                                                               va_mode = "Excess",
                                                               k_mode = "Constant",
@@ -77,21 +77,20 @@ model_isotherm_mda = pts.classes.DAModel.from_ExcessIsotherms(excesslist,
 #                                     rhoa_mode = "Ozawa",
 #                                     f0_mode = "Dubinin")
 
-for i, temper in enumerate(temperatures):
+
     # pressure = excesslist[i].pressure
-    pressure = np.linspace(100, 35E5, 50)
-    mda_result = []
-    da_result = []
-    for index, pres in enumerate(pressure):
-        mda_result.append(model_isotherm_mda.n_excess(pres, temper))
-    plt.figure(figsize = (3.543, 2 * 3.543 /3))
-    plt.xlabel("P (MPa)")
-    plt.ylabel("Excess CH$_4$ (mol/kg)")
-    plt.plot(pressure * 1E-6, mda_result, color = "#b96f74", label = "DA Fit")
-    plt.scatter(excesslist[i].pressure * 1E-6, excesslist[i].loading, 
+pressure = np.linspace(100, 35E5, 50)
+da_result = []
+for index, pres in enumerate(pressure):
+    da_result.append(model_isotherm_da.n_excess(pres, 303))
+plt.figure(figsize = (3.543, 2 * 3.543 /3))
+plt.xlabel("P (MPa)")
+plt.ylabel("Excess CH$_4$ (mol/kg)")
+plt.plot(pressure * 1E-6, da_result, color = "#b96f74", label = "DA Fit")
+plt.scatter(excesslist[0].pressure * 1E-6, excesslist[0].loading, 
                 label ="Experimental", color = "#b96f74")
-    plt.legend()
-    plt.savefig("DAFit.jpeg", format = "jpeg", dpi = 1000, bbox_inches = "tight")
+plt.legend()
+plt.savefig("DAFit.jpeg", format = "jpeg", dpi = 1000, bbox_inches = "tight")
 
 tankvol = 1.82 * 1E-3
 surface_area =  np.pi * 0.1116 * 0.202 + 2 * np.pi * ((0.1116/2)**2)  - \
@@ -108,7 +107,7 @@ rhopack = 500
 mads = rhopack * tankvol
 rhoskel =  mads / (0.35 * tankvol)
 
-sorbent_material = pts.SorbentMaterial(model_isotherm = model_isotherm_mda,
+sorbent_material = pts.SorbentMaterial(model_isotherm = model_isotherm_da,
                                         skeletal_density = rhoskel,
                                         bulk_density = rhopack,
                                         mass = mads,
@@ -117,7 +116,6 @@ sorbent_material = pts.SorbentMaterial(model_isotherm = model_isotherm_mda,
 
 storage_tank = pts.SorbentTank(
                     volume = tankvol,
-                    max_pressure = float(50E5),
                     vent_pressure = 50E5,
                     min_supply_pressure = 1E5,
                     sorbent_material = sorbent_material,
