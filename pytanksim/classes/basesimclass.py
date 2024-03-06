@@ -159,7 +159,7 @@ class SimParams:
     @classmethod
     def from_SimResults(cls,
                         sim_results: SimResults,
-                        displayed_points: float = 200,
+                        displayed_points: float = None,
                         final_time: float = None,
                         target_pres: float = None,
                         target_temp:  float = None,
@@ -240,6 +240,15 @@ class SimParams:
             else:
                 final_conditions["moles_liquid"] = \
                     final_conditions["moles_supercritical"]
+        if displayed_points is None:
+            prev_finish_time = sim_results.sim_params.final_time
+            prev_init_time = sim_results.sim_params.init_time
+            actual_finish_time = final_conditions["time"]
+            prev_displayed_points = sim_results.sim_params.displayed_points
+            displayed_points = prev_displayed_points * (prev_finish_time -
+                                                        actual_finish_time) /\
+                (prev_finish_time - prev_init_time)
+            displayed_points = int(displayed_points)
         return cls(
             init_pressure=final_conditions["pressure"],
             init_temperature=final_conditions["temperature"],
