@@ -21,19 +21,19 @@ sim_class_dict = {
     "One Phase Sorbent Default": OnePhaseSorbentDefault,
     "One Phase Sorbent Venting": OnePhaseSorbentVenting,
     "One Phase Sorbent Cooled": OnePhaseSorbentCooled,
-    "One Phase Sorbent Heated Discharge": OnePhaseSorbentHeatedDischarge,
+    "One Phase Sorbent Heated": OnePhaseSorbentHeatedDischarge,
     "Two Phase Sorbent Default": TwoPhaseSorbentDefault,
     "Two Phase Sorbent Venting": TwoPhaseSorbentVenting,
     "Two Phase Sorbent Cooled": TwoPhaseSorbentCooled,
-    "Two Phase Sorbent Heated Discharge": TwoPhaseSorbentHeatedDischarge,
+    "Two Phase Sorbent Heated": TwoPhaseSorbentHeatedDischarge,
     "One Phase Fluid Default": OnePhaseFluidDefault,
     "One Phase Fluid Venting": OnePhaseFluidVenting,
     "One Phase Fluid Cooled": OnePhaseFluidCooled,
-    "One Phase Fluid Heated Discharge": OnePhaseFluidHeatedDischarge,
+    "One Phase Fluid Heated": OnePhaseFluidHeatedDischarge,
     "Two Phase Fluid Default": TwoPhaseFluidDefault,
     "Two Phase Fluid Venting": TwoPhaseFluidVenting,
     "Two Phase Fluid Cooled": TwoPhaseFluidCooled,
-    "Two Phase Fluid Heated Discharge": TwoPhaseFluidHeatedDischarge
+    "Two Phase Fluid Heated": TwoPhaseFluidHeatedDischarge
     }
 
 
