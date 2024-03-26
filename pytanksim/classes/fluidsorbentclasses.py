@@ -1232,6 +1232,11 @@ class MDAModel(ModelIsotherm):
     temperature instead of treating it as a constant.
     """
 
+    key_attr = ["sorbent", "nmax", "f0", "alpha", "beta", "va", "m",
+                "k", "va_mode", "f0_mode"]
+
+    model_name = "Modified Dubinin-Astakhov Model"
+
     def __init__(self,
                  sorbent: str,
                  stored_fluid: StoredFluid,
@@ -1679,11 +1684,11 @@ class SorbentMaterial:
         Model of fluid adsorption on the sorbent.
 
     molar_mass : float, optional
-        Molar mass of the sorbent material. The default is 12.01E-3 which
-        corresponds to carbon materials.
+        Molar mass of the sorbent material in kg/mol. The default is 12.01E-3
+        which corresponds to carbon materials.
 
     Debye_temperature : float, optional
-        The Debye temperature determining the specific heat of the sorbent
+        The Debye temperature (K) determining the specific heat of the sorbent
         at various temperatures. The default is 1500, the value for carbon.
 
     """

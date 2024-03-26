@@ -228,7 +228,8 @@ class StorageTank:
         else:
             self.vent_pressure = vent_pressure
 
-        if self.max_pressure < self.vent_pressure:
+        if self.max_pressure < self.vent_pressure and\
+                stored_fluid.EOS == "HEOS":
             raise ValueError(
                 "You set the venting pressure to be larger than the valid \n" +
                 "pressure range input for CoolProp.")

@@ -11,6 +11,8 @@ import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
+from pytanksim.classes.fluidsorbentclasses import MDAModel, StoredFluid,\
+    SorbentMaterial
 if TYPE_CHECKING:
     from pytanksim.classes.basesimclass import SimParams
 
@@ -190,9 +192,9 @@ class SimResults:
                  moles_liquid: Union[List[float], np.ndarray],
                  moles_supercritical: Union[List[float], np.ndarray],
                  tank_params: Union[StorageTank, SorbentTank],
-                 sim_type: str,
                  sim_params: "SimParams",
                  stop_reason: str,
+                 sim_type: str = None,
                  inserted_amount: Union[List[float], np.ndarray] = 0,
                  flow_energy_in: Union[List[float], np.ndarray] = 0,
                  cooling_required: Union[List[float], np.ndarray] = 0,
@@ -372,7 +374,7 @@ class SimResults:
             final_dict[key] = value.iloc[idx]
         return final_dict
 
-    def to_csv(self, filename: str, convert_moles_to_kg: bool = True):
+    def to_csv(self, filename: str):
         """Export simulation results to a csv file.
 
         Parameters
@@ -380,35 +382,221 @@ class SimResults:
         filename : str
             The desired filepath for the csv file to be created.
 
-        convert_moles_to_kg : bool, optional
-            If 'True', the fluid amounts and their derivative values will be
-            reported on a mass basis using kg as the unit. If 'False', the
-            amounts will be reported in moles. The default is True.
-
         """
         df_export = self.results_df.copy()
         new_colnames = [SimResults.fancy_colnames_dict[colname] for
                         colname in list(df_export.columns)]
         df_export.columns = new_colnames
         print(df_export)
+        sparams = self.sim_params
         header_info = [
-            ["Has Sorbent?", isinstance(self.tank_params, SorbentTank)],
-            ["Sorbent Name", self.tank_params.
-             sorbent_material.model_isotherm.sorbent
-             if isinstance(self.tank_params, SorbentTank) else "NA"],
             ["Fluid Name", self.tank_params.stored_fluid.fluid_name],
+            ["EOS", self.tank_params.stored_fluid.EOS],
             ["Aluminum Mass (kg)", self.tank_params.aluminum_mass],
             ["Carbon Fiber Mass (kg)", self.tank_params.carbon_fiber_mass],
             ["Steel Mass (kg)", self.tank_params.steel_mass],
+            ["Tank Volume (m^3)", self.tank_params.volume],
             ["Minimum Supply Pressure (Pa)", self.tank_params.
              min_supply_pressure],
             ["Venting Pressure (Pa)", self.tank_params.vent_pressure],
-            ["Stoppage Reason", self.stop_reason]
+            ["Thermal Resistance (K/W)", self.tank_params.thermal_resistance],
+            ["Surface Area (m^2)", self.tank_params.surface_area],
+            ["Heat Transfer Coefficient (W/(m^2 K))",
+             self.tank_params.heat_transfer_coefficient],
+            ["Stoppage Reason", self.stop_reason],
+            ["Set Initial Time (s)", sparams.init_time],
+            ["Set Final Time (s)", sparams.final_time],
+            ["Set Displayed Points", sparams.displayed_points],
+            ["Target Pressure (Pa)", sparams.target_pres],
+            ["Target Temperature (K)", sparams.target_temp],
+            ["Target Capacity", sparams.target_capacity],
+            ["Stop at Target Pressure", sparams.stop_at_target_pressure],
+            ["Stop at Target Temperature", sparams.stop_at_target_temp],
+            ["Simulation Type", self.sim_type]
             ]
+        if isinstance(self.tank_params, SorbentTank):
+            sorbent = self.tank_params.sorbent_material
+            isotherm = sorbent.model_isotherm
+            header_extra = [["Sorbent Name", isotherm.sorbent],
+                            ["Sorbent Mass (kg)", sorbent.mass],
+                            ["Sorbent Debye Temperature (K)",
+                             sorbent.Debye_temperature],
+                            ["Skeletal Density (kg/m^3)",
+                             sorbent.skeletal_density],
+                            ["Bulk Density (kg/m^3)", sorbent.bulk_density],
+                            ["SSA (m^2/g)", sorbent.specific_surface_area],
+                            ["Molar Mass (kg/mol)", sorbent.molar_mass],
+                            ["Isotherm Model", isotherm.model_name]
+                            ]
+            keyattrlist = isotherm.key_attr
+            for attr in keyattrlist:
+                header_extra.append([attr, getattr(isotherm, attr)])
+            header_info.extend(header_extra)
+
         with open(filename, "w", newline="") as f:
             data = csv.writer(f)
             data.writerows(header_info)
         df_export.to_csv(filename, header=True, mode="a")
+
+    @classmethod
+    def from_csv(cls, filename: str, import_components: bool = False):
+        """Import simulation results from a csv file.
+
+        Parameters
+        ----------
+        filename : str
+            Path to a csv file which was exported by pytanksim.
+
+        import_components : bool
+            If True, this function will return a tuple with contents as
+            follows: SimResults, StorageTank, SimParams.
+            If False, this function will only return the SimResults object.
+            The default option is False.
+
+        Returns
+        -------
+        SimResults|Tuple
+            A single object containing the simulation results, or a tuple
+            with SimResults, StorageTank, and SimParams objects.
+        """
+        iso_class_dict = {"Modified Dubinin-Astakhov Model": MDAModel}
+
+        with open(filename) as f:
+            csvreader = csv.reader(f)
+            rows = []
+            for i, row in enumerate(csvreader):
+                if row[1] == "Time (s)":
+                    startdatarow = i
+                    break
+                elif row[0] == "Simulation Type":
+                    finishmainheadrow = i
+                elif row[0] == "Isotherm Model":
+                    startisorow = i
+                rows.append(row)
+        fluid_name = rows[0][1]
+        EOS = rows[1][1]
+        stored_fluid = StoredFluid(EOS=EOS, fluid_name=fluid_name)
+        
+        def conv(data):
+            if data == "TRUE" or data == "FALSE":
+                return bool(data)
+            elif data == "":
+                return None
+            else:
+                try:
+                    data = float(data)
+                except ValueError:
+                    pass
+            return data
+
+        def get_row(index):
+            return conv(rows[index][1])
+
+        if startdatarow > finishmainheadrow + 1:
+            sorbentname = rows[finishmainheadrow+1]
+            sorbentmass = rows[finishmainheadrow+2]
+            debyetemp = rows[finishmainheadrow+3]
+            skeletaldensity = rows[finishmainheadrow+4]
+            bulkdensity = rows[finishmainheadrow+5]
+            ssa = rows[finishmainheadrow+6]
+            mw = rows[finishmainheadrow+7]
+            modelname = rows[startisorow][1]
+            iso_rows = rows[startisorow+1:startdatarow]
+            attr_key = [row[0] for row in iso_rows]
+            attr_val = [conv(row[1]) for row in iso_rows]
+            key_val_pairs = zip(attr_key, attr_val)
+            attr_dict = dict(key_val_pairs)
+            modeliso = iso_class_dict.get(modelname)(**attr_dict,
+                                                     sorbent=sorbentname,
+                                                     stored_fluid=\
+                                                         stored_fluid)
+            sorbent_mat = SorbentMaterial(mass=sorbentmass,
+                                          skeletal_density=skeletaldensity,
+                                          bulk_density=bulkdensity,
+                                          specific_surface_area=ssa,
+                                          model_isotherm=modeliso,
+                                          molar_mass=mw,
+                                          Debye_temperature=debyetemp)
+
+            tank = SorbentTank(aluminum_mass=get_row(2),
+                               carbon_fiber_mass=get_row(3),
+                               steel_mass=get_row(4),
+                               volume=get_row(5),
+                               min_supply_pressure=get_row(6),
+                               vent_pressure=get_row(7),
+                               thermal_resistance=get_row(8),
+                               surface_area=get_row(9),
+                               heat_transfer_coefficient=get_row(10),
+                               sorbent_material=sorbent_mat)
+
+        else:
+            tank = StorageTank(aluminum_mass=get_row(2),
+                               carbon_fiber_mass=get_row(3),
+                               steel_mass=get_row(4),
+                               volume=get_row(5),
+                               min_supply_pressure=get_row(6),
+                               vent_pressure=get_row(7),
+                               thermal_resistance=get_row(8),
+                               surface_area=get_row(9),
+                               heat_transfer_coefficient=get_row(10),
+                               stored_fluid=stored_fluid)
+
+        df = pd.read_csv(filename, skiprows=startdatarow)
+        from pytanksim.classes.basesimclass import SimParams
+        simparams = SimParams(init_time=get_row(12),
+                              final_time=get_row(13),
+                              init_ng=df.iloc[0, 4],
+                              init_nl=df.iloc[0, 5],
+                              init_pressure=df.iloc[0, 1],
+                              init_temperature=df.iloc[0, 2],
+                              displayed_points=get_row(14),
+                              target_pres=get_row(15),
+                              target_temp=get_row(16),
+                              target_capacity=get_row(17),
+                              stop_at_target_pressure=get_row(18),
+                              stop_at_target_temp=get_row(19))
+        if import_components:
+            return cls(time=df.iloc[:, 0].to_numpy(),
+                       pressure=df.iloc[:, 1].to_numpy(),
+                       temperature=df.iloc[:, 2].to_numpy(),
+                       moles_adsorbed=df.iloc[:, 3].to_numpy(),
+                       moles_gas=df.iloc[:, 4].to_numpy(),
+                       moles_liquid=df.iloc[:, 5].to_numpy(),
+                       moles_supercritical=df.iloc[:, 6].to_numpy(),
+                       cooling_required=df.iloc[:, 7].to_numpy(),
+                       heating_required=df.iloc[:, 8].to_numpy(),
+                       vented_amount=df.iloc[:, 9].to_numpy(),
+                       vented_energy=df.iloc[:, 10].to_numpy(),
+                       inserted_amount=df.iloc[:, 11].to_numpy(),
+                       flow_energy_in=df.iloc[:, 12].to_numpy(),
+                       cooling_additional=df.iloc[:, 13].to_numpy(),
+                       heating_additional=df.iloc[:, 14].to_numpy(),
+                       heat_leak_in=df.iloc[:, 15].to_numpy(),
+                       tank_params=tank,
+                       sim_type=get_row(20),
+                       stop_reason=get_row(11),
+                       sim_params=simparams), tank, simparams
+        else:
+            return cls(time=df.iloc[:, 0].to_numpy(),
+                       pressure=df.iloc[:, 1].to_numpy(),
+                       temperature=df.iloc[:, 2].to_numpy(),
+                       moles_adsorbed=df.iloc[:, 3].to_numpy(),
+                       moles_gas=df.iloc[:, 4].to_numpy(),
+                       moles_liquid=df.iloc[:, 5].to_numpy(),
+                       moles_supercritical=df.iloc[:, 6].to_numpy(),
+                       cooling_required=df.iloc[:, 7].to_numpy(),
+                       heating_required=df.iloc[:, 8].to_numpy(),
+                       vented_amount=df.iloc[:, 9].to_numpy(),
+                       vented_energy=df.iloc[:, 10].to_numpy(),
+                       inserted_amount=df.iloc[:, 11].to_numpy(),
+                       flow_energy_in=df.iloc[:, 12].to_numpy(),
+                       cooling_additional=df.iloc[:, 13].to_numpy(),
+                       heating_additional=df.iloc[:, 14].to_numpy(),
+                       heat_leak_in=df.iloc[:, 15].to_numpy(),
+                       tank_params=tank,
+                       sim_type=get_row(20),
+                       stop_reason=get_row(11),
+                       sim_params=simparams)
 
     def plot(self, x_axis: str, y_axes: Union[str, List[str]],
              colors: Union[str, List[str]] =

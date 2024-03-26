@@ -133,8 +133,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
-        fluid.update(CP.QT_INPUTS, 0, Tcrit)
-        pcrit = fluid.p()
+        pcrit = fluid.p_critical()
 
         def rhs(t, w, sw):
             last_t, dt = state
