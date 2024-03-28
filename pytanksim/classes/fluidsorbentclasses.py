@@ -38,7 +38,8 @@ class StoredFluid:
 
     def __init__(self,
                  fluid_name: str,
-                 EOS: str) -> "StoredFluid":
+                 EOS: str = "HEOS",
+                 mole_fractions : List = None) -> "StoredFluid":
         """Initialize a StoredFluid object.
 
         Parameters
@@ -50,6 +51,10 @@ class StoredFluid:
 
         EOS : str, optional
             Name of the equation of state to be used for calculations.
+            Default is the Helmholtz Equation of State (HEOS).
+        
+        mole_fraction : List
+            List of mole fractions of components in a mixture.
 
         Returns
         -------
@@ -60,6 +65,10 @@ class StoredFluid:
         self.fluid_name = fluid_name
         self.EOS = EOS
         self.backend = CP.AbstractState(EOS, fluid_name)
+        self.mole_fractions = mole_fractions
+        if mole_fractions is not None:
+            self.backend.set_mole_fractions(mole_fractions)
+            
 
     def fluid_property_dict(self, p: float, T: float) -> Dict[str, float]:
         """Generate a dictionary of fluid properties using CoolProp.

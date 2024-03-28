@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.fluidsorbentclasses import MDAModel, StoredFluid,\
     SorbentMaterial
+from ast import literal_eval
 if TYPE_CHECKING:
     from pytanksim.classes.basesimclass import SimParams
 
@@ -414,6 +415,9 @@ class SimResults:
             ["Stop at Target Temperature", sparams.stop_at_target_temp],
             ["Simulation Type", self.sim_type]
             ]
+        if self.tank_params.stored_fluid.mole_fractions is not None:
+            fracs = self.tank_params.stored_fluid.mole_fractions
+            header_info.append(["Fluid Mole Fractions", fracs])
         if isinstance(self.tank_params, SorbentTank):
             sorbent = self.tank_params.sorbent_material
             isotherm = sorbent.model_isotherm
@@ -465,6 +469,7 @@ class SimResults:
             csvreader = csv.reader(f)
             rows = []
             for i, row in enumerate(csvreader):
+                rows.append(row)
                 if row[1] == "Time (s)":
                     startdatarow = i
                     break
@@ -472,11 +477,19 @@ class SimResults:
                     finishmainheadrow = i
                 elif row[0] == "Isotherm Model":
                     startisorow = i
-                rows.append(row)
+
         fluid_name = rows[0][1]
         EOS = rows[1][1]
-        stored_fluid = StoredFluid(EOS=EOS, fluid_name=fluid_name)
-        
+
+        if rows[finishmainheadrow+1][0] == "Fluid Mole Fractions":
+            fracs = literal_eval(rows[finishmainheadrow+1][1])
+            finishmainheadrow += 1
+        else:
+            fracs = None
+
+        stored_fluid = StoredFluid(EOS=EOS, fluid_name=fluid_name,
+                                   mole_fractions=fracs)
+
         def conv(data):
             if data == "TRUE" or data == "FALSE":
                 return bool(data)
@@ -507,7 +520,6 @@ class SimResults:
             key_val_pairs = zip(attr_key, attr_val)
             attr_dict = dict(key_val_pairs)
             modeliso = iso_class_dict.get(modelname)(**attr_dict,
-                                                     sorbent=sorbentname,
                                                      stored_fluid=\
                                                          stored_fluid)
             sorbent_mat = SorbentMaterial(mass=sorbentmass,
@@ -541,7 +553,7 @@ class SimResults:
                                heat_transfer_coefficient=get_row(10),
                                stored_fluid=stored_fluid)
 
-        df = pd.read_csv(filename, skiprows=startdatarow)
+        df = pd.read_csv(filename, skiprows=startdatarow, index_col=0)
         from pytanksim.classes.basesimclass import SimParams
         simparams = SimParams(init_time=get_row(12),
                               final_time=get_row(13),
@@ -758,6 +770,13 @@ class SimResults:
 
         """
         list_of_df = [result.results_df for result in sim_results_list]
+        final_time = 0
+        latest_df = 0
+        for i, df in enumerate(list_of_df):
+            if df.iloc[0, -1] > final_time:
+                final_time = df["t"][-1]
+                latest_df = i
+        sp = sim_results_list[latest_df].sim_params
         concat_df = pd.concat(list_of_df, ignore_index=True)
         concat_df = concat_df.drop_duplicates(subset="time")
         concat_df = concat_df.sort_values("time")
@@ -772,7 +791,7 @@ class SimResults:
                     .to_numpy(),
                     tank_params=sim_results_list[-1].tank_params,
                     sim_type="Combined",
-                    sim_params=None,
+                    sim_params=sp,
                     stop_reason=sim_results_list[-1].stop_reason,
                     inserted_amount=concat_df["inserted_amount"].to_numpy(),
                     flow_energy_in=concat_df["flow_energy_in"].to_numpy(),
