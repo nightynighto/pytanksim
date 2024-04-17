@@ -521,8 +521,7 @@ class SimResults:
             key_val_pairs = zip(attr_key, attr_val)
             attr_dict = dict(key_val_pairs)
             modeliso = iso_class_dict.get(modelname)(**attr_dict,
-                                                     stored_fluid=\
-                                                         stored_fluid)
+                                                     stored_fluid=stored_fluid)
             sorbent_mat = SorbentMaterial(mass=sorbentmass,
                                           skeletal_density=skeletaldensity,
                                           bulk_density=bulkdensity,
