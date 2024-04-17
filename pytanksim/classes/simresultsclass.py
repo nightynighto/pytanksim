@@ -12,7 +12,7 @@ import csv
 import matplotlib.pyplot as plt
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.fluidsorbentclasses import MDAModel, StoredFluid,\
-    SorbentMaterial
+    SorbentMaterial, DAModel
 from ast import literal_eval
 if TYPE_CHECKING:
     from pytanksim.classes.basesimclass import SimParams
@@ -463,7 +463,8 @@ class SimResults:
             A single object containing the simulation results, or a tuple
             with SimResults, StorageTank, and SimParams objects.
         """
-        iso_class_dict = {"Modified Dubinin-Astakhov Model": MDAModel}
+        iso_class_dict = {"Modified Dubinin-Astakhov Model": MDAModel,
+                          "Dubinin-Astakhov Model": DAModel}
 
         with open(filename) as f:
             csvreader = csv.reader(f)

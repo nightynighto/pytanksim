@@ -720,6 +720,10 @@ class DAModel(ModelIsotherm):
         for the fugacity at saturation. The default is "Dubinin".
 
     """
+    model_name = "Dubinin-Astakhov Model"
+    
+    key_attr = ["sorbent", "w0", "f0", "eps", "m", "k", "rhoa",
+                "va", "va_mode", "rhoa_mode", "f0_mode"]
 
     def __init__(self,
                  sorbent: str,
@@ -1162,7 +1166,7 @@ class DAModel(ModelIsotherm):
         if rhoa_mode == "Fit":
             params.add("rhoa", rhoaguess, min=0)
         if m_mode == "Fit":
-            params.add("m", mguess, min=1, max=6)
+            params.add("m", mguess, min=1, max=20)
         if k_mode == "Fit" and f0_mode == "Dubinin":
             params.add("k", kguess, min=0, max=6)
         if va_mode == "Fit":
@@ -1612,7 +1616,7 @@ class MDAModel(ModelIsotherm):
         if va_mode == "Fit":
             params.add("va", vaguess, min=0, max=pore_volume)
         if m_mode == "Fit":
-            params.add("m", mguess, min=1, max=6)
+            params.add("m", mguess, min=1, max=20)
         if k_mode == "Fit" and f0_mode == "Dubinin":
             params.add("k", kguess, min=0, max=6)
 
@@ -1700,6 +1704,12 @@ class SorbentMaterial:
         The Debye temperature (K) determining the specific heat of the sorbent
         at various temperatures. The default is 1500, the value for carbon.
 
+    heat_capacity_function : Callable, optional
+        A function which takes in the temperature (K) of the sorbent and
+        returns its specific heat capacity (J/(kg K)). If specified, this
+        function will override the Debye model for specific heat calculation.
+        The default is None.
+
     """
 
     def __init__(self,
@@ -1709,7 +1719,9 @@ class SorbentMaterial:
                  specific_surface_area: float,
                  model_isotherm: ModelIsotherm,
                  molar_mass: float = 12.01E-3,
-                 Debye_temperature: float = 1500) -> "SorbentMaterial":
+                 Debye_temperature: float = 1500,
+                 heat_capacity_function: Callable[float, float] = None
+                 ) -> "SorbentMaterial":
         """Initialize the SorbentMaterial class.
 
         Parameters
@@ -1737,6 +1749,12 @@ class SorbentMaterial:
             The Debye temperature determining the specific heat of the sorbent
             at various temperatures. The default is 1500, the value for carbon.
 
+        heat_capacity_function : Callable, optional
+            A function which takes in the temperature (K) of the sorbent and
+            returns its specific heat capacity (J/(kg K)). If specified, this
+            function will override the Debye model for specific heat
+            calculation. The default is None.
+
         Returns
         -------
         SorbentMaterial
@@ -1750,3 +1768,4 @@ class SorbentMaterial:
         self.specific_surface_area = specific_surface_area
         self.molar_mass = molar_mass
         self.Debye_temperature = Debye_temperature
+        self.heat_capacity_function = heat_capacity_function

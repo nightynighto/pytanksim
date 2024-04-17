@@ -17,7 +17,8 @@ from typing import Callable
 
 def Cs_gen(mads: float, mcarbon: float, malum: float,
            msteel: float, Tads: float = 1500,
-           MWads: float = 12.01E-3) -> Callable[[float, float], float]:
+           MWads: float = 12.01E-3, func: Callable[float, float] = None
+           ) -> Callable[[float, float], float]:
     """Generate a function to find the heat capacity at a given temperature.
 
     Based on Debye's model. Combines contributions from the various materials
@@ -45,10 +46,15 @@ def Cs_gen(mads: float, mcarbon: float, malum: float,
         The molecular weight of the sorbent material (mol/kg). The default is
         12.01E-3, which is the value for carbon.
 
+    func : Callable[float,float], optional
+        Custom function that returns the specific heat capacity (J/(kg K)) of
+        the sorbent material given its temperature.
+
     Returns
     -------
     (Callable[[float, float], float])
-        DESCRIPTION.
+        A function which takes the tank's temperature as an input and returns
+        the heat capacity of the tank (J/K)
 
     """
     R = sp.constants.R
@@ -68,8 +74,14 @@ def Cs_gen(mads: float, mcarbon: float, malum: float,
     alum_molar_mass = 26.98E-3
     iron_molar_mass = 55.845E-3
 
+    if func is not None:
+        Cads = func
+    else:
+        def Cads(T):
+            return (mads/MWads)*Cdebye(T, Tads)
+
     def Cs(T):
-        return (mads/MWads)*Cdebye(T, Tads) + (mcarbon / carbon_molar_mass) *\
+        return Cads(T) + (mcarbon / carbon_molar_mass) *\
             Cdebye(T, 1500) + (malum/alum_molar_mass) * Cdebye(T, 389.4) +\
             (msteel/iron_molar_mass) * Cdebye(T, 500)
     return Cs
@@ -264,6 +276,8 @@ class StorageTank:
             Amount of fluid stored (moles).
 
         """
+        if p == 0:
+            return 0
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
@@ -385,11 +399,14 @@ class StorageTank:
 
         """
         pmax = self.stored_fluid.backend.pmax()
-        bnds = ((1E-16, pmax), (0, 1))
 
-        def optim(x):
-            return (self.capacity(x[0], T, x[1]) - cap)**2
-        res = sp.optimize.minimize(optim, (p_guess, q_guess), bounds=bnds)
+        def optim(pres):
+            return (self.capacity(pres, T, q_guess) - cap)**2
+        res = sp.optimize.minimize_scalar(optim, bounds=(1E-16, pmax),
+                                          method='bounded')
+
+        x = [res.x, q_guess]
+        res.x = x
         if res.fun > 1:
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
             psat = self.stored_fluid.backend.p()
@@ -429,12 +446,14 @@ class StorageTank:
         fluid = self.stored_fluid.backend
         Tmin = fluid.Tmin()
         Tmax = fluid.Tmax()
-        bnds = ((Tmin, Tmax), (0, 1))
 
-        def optim(x):
-            return (self.capacity(p, x[0], x[1]) - cap)**2
+        def optim(temper):
+            return (self.capacity(p, temper, q_guess) - cap)**2
 
-        res = sp.optimize.minimize(optim, (T_guess, q_guess), bounds=bnds)
+        res = sp.optimize.minimize_scalar(optim, bounds=(Tmin, Tmax),
+                                          method='bounded')
+        x = [res.x, q_guess]
+        res.x = x
         if res.fun > 1:
             self.stored_fluid.backend.update(CP.PQ_INPUTS, p, 0)
             Tsat = self.stored_fluid.backend.T()
@@ -520,6 +539,7 @@ class SorbentTank(StorageTank):
     ----------
     volume : float
         Internal volume of the storage tank (m^3).
+
     sorbent_material : SorbentMaterial
         An object storing the properties of the sorbent material used in
         the tank.
@@ -644,7 +664,8 @@ class SorbentTank(StorageTank):
                                     msteel=self.steel_mass,
                                     Tads=self.sorbent_material.
                                     Debye_temperature,
-                                    MWads=self.sorbent_material.molar_mass)
+                                    MWads=self.sorbent_material.molar_mass,
+                                    func=self.sorbent.heat_capacity_function)
 
     def bulk_fluid_volume(self,
                           p: float,
@@ -693,6 +714,8 @@ class SorbentTank(StorageTank):
             Amount of fluid stored (moles).
 
         """
+        if p == 0:
+            return 0
         fluid = self.stored_fluid.backend
         phase = self.stored_fluid.determine_phase(p, T)
         if phase == "Saturated":
