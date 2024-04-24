@@ -17,7 +17,7 @@ from typing import Callable
 
 def Cs_gen(mads: float, mcarbon: float, malum: float,
            msteel: float, Tads: float = 1500,
-           MWads: float = 12.01E-3, func: Callable[float, float] = None
+           MWads: float = 12.01E-3, func: Callable[[float], float] = None
            ) -> Callable[[float, float], float]:
     """Generate a function to find the heat capacity at a given temperature.
 
@@ -46,7 +46,7 @@ def Cs_gen(mads: float, mcarbon: float, malum: float,
         The molecular weight of the sorbent material (mol/kg). The default is
         12.01E-3, which is the value for carbon.
 
-    func : Callable[float,float], optional
+    func : Callable[[float],float], optional
         Custom function that returns the specific heat capacity (J/(kg K)) of
         the sorbent material given its temperature.
 
@@ -75,7 +75,8 @@ def Cs_gen(mads: float, mcarbon: float, malum: float,
     iron_molar_mass = 55.845E-3
 
     if func is not None:
-        Cads = func
+        def Cads(T):
+            return func(T) * mads
     else:
         def Cads(T):
             return (mads/MWads)*Cdebye(T, Tads)
@@ -141,7 +142,6 @@ class StorageTank:
     """
 
     def __init__(self,
-                 volume: float,
                  stored_fluid: StoredFluid,
                  aluminum_mass: float = 0,
                  carbon_fiber_mass: float = 0,
@@ -150,15 +150,20 @@ class StorageTank:
                  min_supply_pressure: float = 1E5,
                  thermal_resistance: float = 0,
                  surface_area: float = 0,
-                 heat_transfer_coefficient: float = 0
+                 heat_transfer_coefficient: float = 0,
+                 volume: float = None,
+                 set_capacity: float = None,
+                 full_pressure: float = None,
+                 empty_pressure: float = None,
+                 full_temperature: float = None,
+                 empty_temperature: float = None,
+                 full_quality: float = 1,
+                 empty_quality: float = 1
                  ) -> "StorageTank":
         """Initialize a StorageTank object.
 
         Parameters
         ----------
-        volume : float
-            Internal volume of the storage tank (m^3).
-
         stored_fluid : StoredFluid
             Object to calculate the thermophysical properties of the fluid
             being stored.
@@ -200,6 +205,41 @@ class StorageTank:
             The heat transfer coefficient of the tank surface (W/(m^2 K)).
             The default is 0.
 
+        volume : float, optional
+            Internal volume of the storage tank (m^3). The default is None.
+            This value is required unless the set capacity and operating
+            conditions are defined, in which case the volume is calculated from
+            the capacity and operating conditions.
+
+        set_capacity : float, optional
+            Set internal capacity of the storage tank (mol). The default is
+            None. If specified, this will override the user-specified tank
+            volume.
+
+        full_pressure : float, optional
+            Pressure (Pa) of the tank when it is considered full. The default
+            is None.
+
+        empty_pressure : float, optional
+            Pressure (Pa) of the tank when it is considered empty. The default
+            is None.
+
+        full_temperature : float, optional
+            Temperature (K) of the tank when it is considered full. The
+            default is None.
+
+        empty_temperature : float, optional
+            Temperature (K) of the tank when it is considered empty. The
+            default is None.
+
+        full_quality : float, optional
+            Vapor quality of the tank when it is considered full. The default
+            is 1 (Gas).
+
+        empty_quality : float, optional
+            Vapor quality of the tank when it is considered empty. The default
+            is 1 (Gas).
+
         Raises
         ------
         ValueError
@@ -209,6 +249,10 @@ class StorageTank:
             If the vent pressure set is higher than what can be calculated by
             'CoolProp'.
 
+        ValueError
+            If neither the volume nor the complete capacity and the pressure
+            and temperature swing conditions were provided.
+
         Returns
         -------
         StorageTank
@@ -216,9 +260,14 @@ class StorageTank:
             simulations and can calculate certain properties on its own.
 
         """
-        if (aluminum_mass or carbon_fiber_mass or steel_mass or volume) < 0:
-            raise ValueError("Please input valid values for the mass and"
-                             " volume (>=0)")
+        if (aluminum_mass or carbon_fiber_mass or steel_mass) < 0:
+            raise ValueError("Please input valid values for the mass")
+        if volume is None and (set_capacity or full_pressure or
+                               full_temperature or empty_pressure or
+                               empty_temperature) is None:
+            raise ValueError("Please input the complete capacity + pressure "
+                             "and temperature swing information, or input "
+                             "the tank volume")
 
         self.volume = volume
         self.aluminum_mass = aluminum_mass
@@ -254,6 +303,17 @@ class StorageTank:
                 (self.surface_area * self.heat_transfer_coefficient)
         else:
             self.thermal_resistance = thermal_resistance
+        if set_capacity is not None:
+            def min_func(vol):
+                self.volume = vol
+                cap_full = self.capacity(full_pressure, full_temperature,
+                                         full_quality)
+                cap_empty = self.capacity(empty_pressure, empty_temperature,
+                                          empty_quality)
+                return ((cap_full-cap_empty)-set_capacity)**2
+            vol = sp.optimize.minimize_scalar(min_func, bounds=(0, 1E10),
+                                     method="Bounded")
+            self.volume = vol.x
 
     def capacity(self, p: float, T: float, q: float = 0) -> float:
         """Return the amount of fluid stored in the tank at given conditions.
@@ -582,7 +642,6 @@ class SorbentTank(StorageTank):
     """
 
     def __init__(self,
-                 volume: float,
                  sorbent_material: SorbentMaterial,
                  aluminum_mass: float = 0,
                  carbon_fiber_mass: float = 0,
@@ -591,14 +650,21 @@ class SorbentTank(StorageTank):
                  min_supply_pressure: float = 1E5,
                  thermal_resistance: float = 0,
                  surface_area: float = 0,
-                 heat_transfer_coefficient: float = 0
+                 heat_transfer_coefficient: float = 0,
+                 volume: float = None,
+                 set_capacity: float = None,
+                 full_pressure: float = None,
+                 empty_pressure: float = None,
+                 full_temperature: float = None,
+                 empty_temperature: float = None,
+                 full_quality: float = 1,
+                 empty_quality: float = 1,
+                 set_sorbent_fill: float = 1
                  ) -> "SorbentTank":
         """Initialize a SorbentTank object.
 
         Parameters
         ----------
-        volume : float
-            Internal volume of the storage tank (m^3).
         sorbent_material : SorbentMaterial
             An object storing the properties of the sorbent material used in
             the tank.
@@ -638,6 +704,46 @@ class SorbentTank(StorageTank):
             The heat transfer coefficient of the tank surface (W/(m^2 K)).
             The default is 0.
 
+        volume : float, optional
+            Internal volume of the storage tank (m^3). The default is None.
+            This value is required unless the set capacity and operating
+            conditions are defined, in which case the volume is calculated from
+            the capacity and operating conditions.
+
+        set_capacity : float, optional
+            Set internal capacity of the storage tank (mol). The default is
+            None. If specified, this will override the user-specified tank
+            volume.
+
+        full_pressure : float, optional
+            Pressure (Pa) of the tank when it is considered full. The default
+            is None.
+
+        empty_pressure : float, optional
+            Pressure (Pa) of the tank when it is considered empty. The default
+            is None.
+
+        full_temperature : float, optional
+            Temperature (K) of the tank when it is considered full. The
+            default is None.
+
+        empty_temperature : float, optional
+            Temperature (K) of the tank when it is considered empty. The
+            default is None.
+
+        full_quality : float, optional
+            Vapor quality of the tank when it is considered full. The default
+            is 1 (Gas).
+
+        empty_quality : float, optional
+            Vapor quality of the tank when it is considered empty. The default
+            is 1 (Gas).
+
+        set_sorbent_fill : float, optional
+            Ratio of tank volume filled with sorbent. The default is 1
+            (completely filled with sorbent).
+
+
         Returns
         -------
         SorbentTank
@@ -647,6 +753,7 @@ class SorbentTank(StorageTank):
 
         """
         stored_fluid = sorbent_material.model_isotherm.stored_fluid
+        self.sorbent_material = sorbent_material
         super().__init__(volume=volume,
                          aluminum_mass=aluminum_mass,
                          stored_fluid=stored_fluid,
@@ -656,8 +763,14 @@ class SorbentTank(StorageTank):
                          thermal_resistance=thermal_resistance,
                          surface_area=surface_area,
                          steel_mass=steel_mass,
-                         heat_transfer_coefficient=heat_transfer_coefficient)
-        self.sorbent_material = sorbent_material
+                         heat_transfer_coefficient=heat_transfer_coefficient,
+                         set_capacity=set_capacity,
+                         full_pressure=full_pressure,
+                         empty_pressure=empty_pressure,
+                         full_temperature=full_temperature,
+                         empty_temperature=empty_temperature,
+                         full_quality=full_quality,
+                         empty_quality=empty_quality)
         self.heat_capacity = Cs_gen(mads=self.sorbent_material.mass,
                                     mcarbon=self.carbon_fiber_mass,
                                     malum=self.aluminum_mass,
@@ -665,7 +778,25 @@ class SorbentTank(StorageTank):
                                     Tads=self.sorbent_material.
                                     Debye_temperature,
                                     MWads=self.sorbent_material.molar_mass,
-                                    func=self.sorbent.heat_capacity_function)
+                                    func=self.sorbent_material.
+                                    heat_capacity_function)
+        if set_capacity is not None:
+            def min_func(v):
+                self.volume = v
+                sorbent_vol = set_sorbent_fill * v
+                self.sorbent_material.mass = sorbent_vol *\
+                    self.sorbent_material.bulk_density
+                cap_full = self.capacity(full_pressure, full_temperature,
+                                         full_quality)
+                cap_empty = self.capacity(empty_pressure, empty_temperature,
+                                          empty_quality)
+                return ((cap_full-cap_empty)-set_capacity)**2
+            vol = sp.optimize.minimize_scalar(min_func, bounds=(0, 1E10),
+                                     method="Bounded")
+            self.volume = vol.x
+            sorbent_vol = set_sorbent_fill * self.volume
+            self.sorbent_material.mass = sorbent_vol *\
+                self.sorbent_material.bulk_density
 
     def bulk_fluid_volume(self,
                           p: float,

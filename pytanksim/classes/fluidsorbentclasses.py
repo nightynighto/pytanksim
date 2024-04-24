@@ -865,7 +865,16 @@ class DAModel(ModelIsotherm):
         if self.rhoa_mode == "Constant":
             rhoa = self.rhoa
         if self.rhoa_mode == "Ozawa":
-            self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            try:
+                self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            except:
+                Ttrip = self.stored_fluid.backend.Ttriple()
+                Tcrit = self.stored_fluid.backend.T_critical()
+                if Ttrip < 298 and 298 < Tcrit:  
+                    self.stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
+                else:
+                    self.stored_fluid.backend.update(CP.QT_INPUTS,
+                                                     Ttrip+Tcrit/2)
             Tb = self.stored_fluid.backend.T()
             vb = 1/self.stored_fluid.backend.rhomolar()
             ads_specific_volume = vb * np.exp((T-Tb)/T)
@@ -1086,7 +1095,15 @@ class DAModel(ModelIsotherm):
                 fluid_name=excess_isotherms[0].adsorbate, EOS="HEOS")
         if rhoaguess is None and \
                 (rhoa_mode == "Constant" or rhoa_mode == "Fit"):
-            stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            try:
+                stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            except:
+                Ttrip = stored_fluid.backend.Ttriple()
+                Tcrit = stored_fluid.backend.T_critical()
+                if Ttrip < 298 and 298 < Tcrit:  
+                    stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
+                else:
+                    stored_fluid.backend.update(CP.QT_INPUTS, Ttrip+Tcrit/2)
             rhoaguess = stored_fluid.backend.rhomolar()
 
         # Switcher functions depending on whether or not a variable is to be
@@ -1098,7 +1115,15 @@ class DAModel(ModelIsotherm):
             if rhoa_mode == "Constant":
                 return rhoaguess
             elif rhoa_mode == "Ozawa":
-                stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+                try:
+                    stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+                except:
+                    Ttrip = stored_fluid.backend.Ttriple()
+                    Tcrit = stored_fluid.backend.T_critical()
+                    if Ttrip < 298 and 298 < Tcrit:  
+                        stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
+                    else:
+                        stored_fluid.backend.update(CP.QT_INPUTS, Ttrip+Tcrit/2)
                 Tb = stored_fluid.backend.T()
                 vb = 1/stored_fluid.backend.rhomolar()
                 ads_specific_volume = vb * np.exp((T-Tb)/T)
@@ -1390,7 +1415,16 @@ class MDAModel(ModelIsotherm):
         if self.va_mode == "Constant":
             return self.va
         if self.va_mode == "Ozawa":
-            self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            try:
+                self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            except:
+                Ttrip = self.stored_fluid.backend.Ttriple()
+                Tcrit = self.stored_fluid.backend.T_critical()
+                if Ttrip < 298 and 298 < Tcrit:
+                    self.stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
+                else:
+                    self.stored_fluid.backend.update(CP.QT_INPUTS,
+                                                     Ttrip+Tcrit/2)
             Tb = self.stored_fluid.backend.T()
             vb = 1/self.stored_fluid.backend.rhomolar()
             ads_specific_volume = vb * np.exp((T-Tb)/T)
@@ -1557,7 +1591,16 @@ class MDAModel(ModelIsotherm):
             elif va_mode == "Constant":
                 return vaguess
             elif va_mode == "Ozawa":
-                stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+                try:
+                    stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+                except:
+                    Ttrip = stored_fluid.backend.Ttriple()
+                    Tcrit = stored_fluid.backend.T_critical()
+                    if Ttrip < 298 and 298 < Tcrit:
+                        stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
+                    else:
+                        stored_fluid.backend.update(CP.QT_INPUTS,
+                                                    Ttrip+Tcrit/2)
                 Tb = stored_fluid.backend.T()
                 vb = 1/stored_fluid.backend.rhomolar()
                 ads_specific_volume = vb * np.exp((T-Tb)/T)
@@ -1704,7 +1747,7 @@ class SorbentMaterial:
         The Debye temperature (K) determining the specific heat of the sorbent
         at various temperatures. The default is 1500, the value for carbon.
 
-    heat_capacity_function : Callable, optional
+    heat_capacity_function : Callable[[float], float], optional
         A function which takes in the temperature (K) of the sorbent and
         returns its specific heat capacity (J/(kg K)). If specified, this
         function will override the Debye model for specific heat calculation.
@@ -1713,22 +1756,19 @@ class SorbentMaterial:
     """
 
     def __init__(self,
-                 mass: float,
                  skeletal_density: float,
                  bulk_density: float,
                  specific_surface_area: float,
                  model_isotherm: ModelIsotherm,
+                 mass: float = 0,
                  molar_mass: float = 12.01E-3,
                  Debye_temperature: float = 1500,
-                 heat_capacity_function: Callable[float, float] = None
+                 heat_capacity_function: Callable[[float], float] = None
                  ) -> "SorbentMaterial":
         """Initialize the SorbentMaterial class.
 
         Parameters
         ----------
-        mass : float
-            Mass of sorbent (kg).
-
         skeletal_density : float
             Skeletal density of the sorbent (kg/m^3).
 
@@ -1740,6 +1780,9 @@ class SorbentMaterial:
 
         model_isotherm : ModelIsotherm
             Model of fluid adsorption on the sorbent.
+
+        mass : float, optional
+            Mass of sorbent (kg). The default is None.
 
         molar_mass : float, optional
             Molar mass of the sorbent material. The default is 12.01E-3 which
