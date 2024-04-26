@@ -239,11 +239,13 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
             phase = self.storage_tank.stored_fluid.\
                 determine_phase(y[i, 0], y[i, 1])
             if phase == "Saturated":
-                while phase == "Saturated":
+                while phase == "Saturated" and iterable > -len(y[:, 0]):
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.\
                         determine_phase(y[iterable, 0],
                                         y[iterable, 1])
+                if phase == "Saturated":
+                    q = self.simulation_params.init_q
                 if phase == "Supercritical":
                     q = 0 if y[iterable, 1] < Tcrit else 1
                 else:
@@ -807,6 +809,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             Tsat = fluid.T()
         else:
             Tsat = 0
+        Tsat -= 1E-5*Tsat
 
         def rhs(t, w, sw):
             last_t, dt = state
@@ -878,10 +881,14 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             iterable = i
             phase = self.storage_tank.stored_fluid.determine_phase(p0, y[i, 0])
             if phase == "Saturated":
-                while phase == "Saturated":
+                while phase == "Saturated" and iterable > -len(y[:, 0]):
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.\
-                        determine_phase(p0, y[iterable, 0])
+                        determine_phase(p0,
+                                        y[iterable, 0])
+                if phase == "Saturated":
+                    q = self.simulation_params.init_q
+                    phase = "Liquid" if q == 0 else "Gas"
                 if phase == "Supercritical":
                     q = 0 if y[iterable, 0] < Tcrit else 1
                 else:

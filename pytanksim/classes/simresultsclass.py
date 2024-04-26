@@ -6,13 +6,14 @@ It is used for storing and post-processing the results of dynamic simulations.
 __all__ = ["SimResults"]
 
 import numpy as np
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Union, TYPE_CHECKING, Callable
 import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.fluidsorbentclasses import MDAModel, StoredFluid,\
     SorbentMaterial, DAModel
+from scipy.interpolate import make_interp_spline
 from ast import literal_eval
 if TYPE_CHECKING:
     from pytanksim.classes.basesimclass import SimParams
@@ -351,6 +352,10 @@ class SimResults:
         overwrite_df.columns = column_names_new
         self.results_df = pd.merge(df_export, overwrite_df, left_index=True,
                                    right_index=True)
+        self.results_df.set_index("time", inplace=True)
+        self.results_df.interpolate(method="index", limit_direction="both",
+                                    inplace=True)
+        self.results_df.reset_index(inplace=True)
         self.df = self.results_df.copy().\
             rename(columns=self.short_colnames_inv)
 
@@ -507,7 +512,6 @@ class SimResults:
             return conv(rows[index][1])
 
         if startdatarow > finishmainheadrow + 1:
-            sorbentname = rows[finishmainheadrow+1]
             sorbentmass = rows[finishmainheadrow+2]
             debyetemp = rows[finishmainheadrow+3]
             skeletaldensity = rows[finishmainheadrow+4]
@@ -609,6 +613,19 @@ class SimResults:
                        sim_type=get_row(20),
                        stop_reason=get_row(11),
                        sim_params=simparams)
+
+    def interpolate(self, x_var: str = "t"
+                    ) -> "dict[Callable[[float], float]]":
+
+        df = self.df
+        x = df.loc[:, x_var]
+        interp_dict = {}
+        for column in df:
+            if column != x_var:
+                y = df.loc[:, column]
+                interpolator = make_interp_spline(x, y)
+                interp_dict[column] = interpolator
+        return interp_dict
 
     def plot(self, x_axis: str, y_axes: Union[str, List[str]],
              colors: Union[str, List[str]] =
@@ -774,7 +791,7 @@ class SimResults:
         latest_df = 0
         for i, df in enumerate(list_of_df):
             if df.iloc[0, -1] > final_time:
-                final_time = df["t"][-1]
+                final_time = df.iloc[0, -1]
                 latest_df = i
         sp = sim_results_list[latest_df].sim_params
         concat_df = pd.concat(list_of_df, ignore_index=True)

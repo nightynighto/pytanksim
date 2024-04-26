@@ -311,8 +311,13 @@ class StorageTank:
                 cap_empty = self.capacity(empty_pressure, empty_temperature,
                                           empty_quality)
                 return ((cap_full-cap_empty)-set_capacity)**2
-            vol = sp.optimize.minimize_scalar(min_func, bounds=(0, 1E10),
-                                     method="Bounded")
+            vol = sp.optimize.minimize_scalar(min_func, bounds=(0, 1E16),
+                                              method="bounded")
+            if self.capacity(full_pressure, full_temperature, full_quality) <\
+                set_capacity:
+                    raise ValueError("Difference between full and empty"
+                                     " conditions too small. Tank volume not"
+                                     " converged (i.e. solution >1E16).")
             self.volume = vol.x
 
     def capacity(self, p: float, T: float, q: float = 0) -> float:

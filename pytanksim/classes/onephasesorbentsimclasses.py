@@ -262,7 +262,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.atol = [1000, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
+        # sim.atol = [1000, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
+        sim.rtol = 1e-5
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
@@ -281,11 +282,13 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             phase = self.storage_tank.\
                 stored_fluid.determine_phase(y[i, 0], y[i, 1])
             if phase == "Saturated":
-                while phase == "Saturated":
+                while phase == "Saturated" and iterable > -len(y[:,0]):
                     iterable = iterable - 1
                     phase = self.storage_tank.stored_fluid.\
                         determine_phase(y[iterable, 0],
                                         y[iterable, 1])
+                if phase == "Saturated":
+                    q = self.simulation_params.init_q
                 if phase == "Supercritical":
                     q = 0 if y[iterable, 1] < Tcrit else 1
                 else:
@@ -884,6 +887,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.atol = [0.01, 100, 1, 1, 1, 1, 1, 1, 1]
+        sim.rtol = 1e-4
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:

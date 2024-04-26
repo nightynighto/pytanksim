@@ -382,6 +382,7 @@ class ModelIsotherm:
             pT[var] = x
             return self.stored_fluid.determine_phase(pT[0], pT[1])
 
+        Tcrit = self.stored_fluid.backend.T_critical()
         x0 = point[var]
         x1 = x0 + stepsize
         x2 = x0 - stepsize
@@ -389,7 +390,14 @@ class ModelIsotherm:
         phase2 = phase_func(x1)
         phase3 = phase_func(x2)
         if phase1 == phase2 == phase3 != "Saturated":
-            return fd.partial_derivative(func, var, point, stepsize)
+            if (x1 < Tcrit and x2 < Tcrit) or (x1 > Tcrit and x2 > Tcrit):
+                return fd.partial_derivative(func, var, point, stepsize)
+            elif x0 <= Tcrit:
+                return fd.backward_partial_derivative(func, var, point,
+                                                      stepsize)
+            else:
+                return fd.forward_partial_derivative(func, var, point,
+                                                     stepsize)
         elif phase1 == "Saturated":
             if (qinit == 0 and var == 1) or (qinit == 1 and var == 0):
                 return fd.backward_partial_derivative(func, var, point,
@@ -421,6 +429,7 @@ class ModelIsotherm:
             pT[1] = x
             return self.stored_fluid.determine_phase(pT[0], pT[1])
 
+        Tcrit = self.stored_fluid.backend.T_critical()
         x0 = point[1]
         x1 = x0 + stepsize
         x2 = x0 - stepsize
@@ -428,7 +437,12 @@ class ModelIsotherm:
         phase2 = phase_func(x1)
         phase3 = phase_func(x2)
         if phase1 == phase2 == phase3 != "Saturated":
-            return fd.secder(func, x0, stepsize)
+            if (x1 < Tcrit and x2 < Tcrit) or (x1 > Tcrit and x2 > Tcrit):
+                return fd.secder(func, x0, stepsize)
+            elif x0 <= Tcrit:
+                return fd.secbackder(func, x0, stepsize)
+            else:
+                return fd.secforder(func, x0, stepsize)
         elif phase1 == "Saturated":
             if qinit == 0:
                 return fd.secbackder(func, x0, stepsize)
@@ -529,7 +543,7 @@ class ModelIsotherm:
         nabs = self.n_absolute(p, T)
         fluid = self.stored_fluid.backend
 
-        def diff_function(Temper):
+        def diff_function(pres, Temper):
             pres = self.pressure_from_absolute_adsorption(nabs, Temper)
             phase = self.stored_fluid.determine_phase(pres, Temper)
             if phase != "Saturated":
@@ -538,7 +552,6 @@ class ModelIsotherm:
                 fluid.update(CP.QT_INPUTS, q, Temper)
             return fluid.chemical_potential(0)
 
-        x_loc = T
         step = 1E-2
         phase = self.stored_fluid.determine_phase(p, T)
         if phase != "Saturated":
@@ -546,7 +559,7 @@ class ModelIsotherm:
         else:
             fluid.update(CP.QT_INPUTS, q, T)
         chempot = fluid.chemical_potential(0)
-        hadsorbed = fd.pardev(diff_function, x_loc, step)
+        hadsorbed = self._derivfunc(diff_function, 1, [p, T], q, step)
         uadsorbed = chempot - T * hadsorbed
         return uadsorbed
 

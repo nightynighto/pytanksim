@@ -160,6 +160,7 @@ class SimParams:
     def from_SimResults(cls,
                         sim_results: SimResults,
                         displayed_points: float = None,
+                        init_time: float = None,
                         final_time: float = None,
                         target_pres: float = None,
                         target_temp:  float = None,
@@ -177,6 +178,10 @@ class SimParams:
         displayed_points : float, optional
             The number of data points to be reported at the end of the
             simulation. The default is 200.
+
+        init_time : float, optional
+            The time (seconds) at which the beginning of the simulation is set.
+            The default value is None.
 
         final_time : float, optional
             The time (seconds) at which the simulation is to be stopped. If
@@ -249,10 +254,12 @@ class SimParams:
                                                         actual_finish_time) /\
                 (prev_finish_time - prev_init_time)
             displayed_points = int(displayed_points)
+        if init_time is None:
+            init_time = final_conditions["time"]
         return cls(
             init_pressure=final_conditions["pressure"],
             init_temperature=final_conditions["temperature"],
-            init_time=final_conditions["time"],
+            init_time=init_time,
             init_ng=final_conditions["moles_gas"],
             init_nl=final_conditions["moles_liquid"],
             inserted_amount=final_conditions["inserted_amount"],
@@ -638,6 +645,10 @@ class BaseSimulation:
             stored_fluid.determine_phase(init_p, init_T)
         spr.init_ng = spr.init_ng if spr.init_ng >= 0 else 0
         spr.init_nl = spr.init_nl if spr.init_nl >= 0 else 0
+        if init_phase=="Saturated":
+            psat = self.storage_tank.stored_fluid.saturation_property_dict(
+                init_T, 0)
+            init_p = psat
         if spr.init_q is None:
             if init_phase == "Saturated":
                 if spr.init_ng == spr.init_nl == 0:
