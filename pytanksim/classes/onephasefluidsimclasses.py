@@ -246,6 +246,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
                                         y[iterable, 1])
                 if phase == "Saturated":
                     q = self.simulation_params.init_q
+                    phase = "Gas" if q == 1 else "Liquid"
                 if phase == "Supercritical":
                     q = 0 if y[iterable, 1] < Tcrit else 1
                 else:

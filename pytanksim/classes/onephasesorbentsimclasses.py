@@ -180,7 +180,8 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
             pbar.update(n)
             state[0] = last_t + dt * n
             p, T = w[:2]
-            return self.solve_differentials(p, T, t)
+            res = self.solve_differentials(p, T, t)
+            return res 
 
         def events(t, w, sw):
             if w[1] > (Tcrit - 0.01):
@@ -194,12 +195,15 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                     satstatus = 0
             capacity_event = self.storage_tank.capacity(w[0], w[1], q) - \
                 self.simulation_params.target_capacity
+            critical_event = ((w[0]-pcrit)**2)/((0.01*pcrit)**2) +\
+                ((w[1]-Tcrit)**2)/((0.01*Tcrit)**2) - 1 
             return np.array([self.storage_tank.vent_pressure - w[0],
                              satstatus,
                              w[0] - self.storage_tank.min_supply_pressure,
                              w[1] - self.simulation_params.target_temp,
                              w[0] - self.simulation_params.target_pres,
-                             capacity_event])
+                             capacity_event,
+                             critical_event])
 
         def handle_event(solver, event_info):
             state_info = event_info[0]
@@ -240,6 +244,11 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                 self.stop_reason = "TargetCapReached"
                 print("\n Target capacity reached.")
                 raise TerminateSimulation
+            
+            if state_info[6] != 0:
+                self.stop_reason = "CritPointReached"
+                print("\n Reached critical point, ODE too stiff to simulate.")
+                raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_pressure,
                        self.simulation_params.init_temperature,
@@ -262,7 +271,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
         model.name = "1 Phase Dynamics"
         sim = CVode(model)
         sim.discr = "BDF"
-        # sim.atol = [1000, 1E-2,  1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2, 1E-2]
+        # sim.atol = [1000, 1E-3,  1E2, 1E3, 1E3, 1E3, 1E3, 1E2, 1E3]
         sim.rtol = 1e-5
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
@@ -289,6 +298,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
                                         y[iterable, 1])
                 if phase == "Saturated":
                     q = self.simulation_params.init_q
+                    phase = "Gas" if q == 1 else "Liquid"
                 if phase == "Supercritical":
                     q = 0 if y[iterable, 1] < Tcrit else 1
                 else:
@@ -502,7 +512,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
                 fluid.update(CP.PT_INPUTS, p0, y[i, 0])
             nfluid = fluid.rhomolar() * self.storage_tank.\
                 bulk_fluid_volume(p0, y[i, 0])
-
+            
             n_phase[phase][i] = nfluid
             nads[i] = self.storage_tank.sorbent_material.\
                 model_isotherm.n_absolute(p0, y[i, 0])\
@@ -684,7 +694,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         model.name = "1 Phase dynamics of constant P refuel w/ Cooling"
         sim = CVode(model)
         sim.discr = "BDF"
-        sim.rtol = 1E-6
+        sim.atol = [0.001, 100, 1, 100, 1, 100, 100, 100, 100]
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
@@ -887,7 +897,6 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.atol = [0.01, 100, 1, 1, 1, 1, 1, 1, 1]
-        sim.rtol = 1e-4
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:

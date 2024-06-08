@@ -583,7 +583,7 @@ class ModelIsotherm:
         Returns
         -------
         float
-            The differential energy of adsorption (J/mol).
+            The differential heat of adsorption (J/mol).
 
         Notes
         -----
@@ -636,8 +636,7 @@ class ModelIsotherm:
 
         """
         n_abs = self.n_absolute(p, T)
-        n_grid = np.linspace(1, n_abs, 50) if n_abs > 1\
-            else np.linspace(n_abs/50, n_abs, 50)
+        n_grid = np.linspace(1E-6, n_abs, 50)
         p_grid = np.array([self.pressure_from_absolute_adsorption(n, T)
                            if n != 0 else 0 for n in n_grid])
         heat_grid = np.array([self.differential_energy(pres, T, q)
@@ -986,6 +985,49 @@ class DAModel(ModelIsotherm):
             self.stored_fluid.backend.update(CP.QT_INPUTS, q, T)
         rhomolar = fluid.rhomolar()
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p, T)
+
+    def internal_energy_adsorbed(self, p: float, T: float,
+                                 q: float = 1) -> float:
+        """Calculate the molar integral internal energy of adsorption (J/mol).
+
+        The calculation is based on Myers & Monson [1]_.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the bulk fluid. Can vary between 0 to 1.
+            The default is 1.
+
+        Returns
+        -------
+        float
+            The differential energy of adsorption (J/mol).
+
+        Notes
+        -----
+        .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
+           the case for absolute adsorption as the basis for thermodynamic
+           analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
+           doi: 10.1007/s10450-014-9604-1.
+
+        """
+        n_abs = self.n_absolute(p, T)
+        f0 = self.f0_calc(T)
+        n_max = self.n_absolute(f0, T)
+        if n_abs < n_max*1E-3:
+            n_abs = n_max*1E-3
+        n_grid = np.linspace(n_max*1E-4, n_abs, 50)
+        p_grid = np.array([self.pressure_from_absolute_adsorption(n, T)
+                           if n != 0 else 0 for n in n_grid])
+        heat_grid = np.array([self.differential_energy(pres, T, q)
+                              for pres in p_grid])
+        return sp.integrate.simps(heat_grid, n_grid) / n_abs
 
     @classmethod
     def from_ExcessIsotherms(cls,
@@ -1474,6 +1516,99 @@ class MDAModel(ModelIsotherm):
             fluid.update(CP.QT_INPUTS, q, T)
         rhomolar = fluid.rhomolar()
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p, T)
+    
+    def internal_energy_adsorbed(self, p: float, T: float,
+                                 q: float = 1) -> float:
+        """Calculate the molar integral internal energy of adsorption (J/mol).
+
+        The calculation is based on Myers & Monson [1]_.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+
+        T : float
+            Temperature (K).
+
+        q : float, optional
+            Vapor quality of the bulk fluid. Can vary between 0 to 1.
+            The default is 1.
+
+        Returns
+        -------
+        float
+            The molar integral energy of adsorption (J/mol).
+
+        Notes
+        -----
+        .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
+           the case for absolute adsorption as the basis for thermodynamic
+           analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
+           doi: 10.1007/s10450-014-9604-1.
+
+        """
+        n_abs = self.n_absolute(p, T)
+        if self.f0_mode == "Constant":
+            f0 = self.f0
+        if self.f0_mode == "Dubinin":
+            pc = self.stored_fluid.backend.p_critical()
+            Tc = self.stored_fluid.backend.T_critical()
+            if T < Tc:
+                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+                f0 = self.stored_fluid.backend.fugacity(0)
+            else:
+                p0 = ((T/Tc)**self.k) * pc
+                self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
+                f0 = self.stored_fluid.backend.fugacity(0)
+        n_max = self.nmax
+        if n_abs < n_max*1E-3:
+            n_abs = n_max*1E-3
+        n_grid = np.linspace(n_max*1E-4, n_abs, 50)
+        heat_grid = np.array([self.differential_energy_na(na, T)
+                              for na in n_grid])
+        try:
+            self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
+        except(ValueError):
+            self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
+        u0_real = self.stored_fluid.backend.umolar()
+        u0_excess = self.stored_fluid.backend.umolar_excess()
+        u0_ideal = u0_real - u0_excess
+        return u0_ideal + sp.integrate.simps(heat_grid, n_grid) / n_abs
+
+    def differential_energy_na(self, na, T):
+        try:
+            self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
+        except(ValueError):
+            self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
+        h0_real = self.stored_fluid.backend.hmolar()
+        h0_excess = self.stored_fluid.backend.hmolar_excess()
+        h0_ideal = h0_real - h0_excess
+        return h0_ideal - self.alpha * \
+                (-np.log(na/self.nmax))**(1/self.m)
+    
+    def differential_energy(self, p, T, q):
+        na = self.n_absolute(p, T)
+        return self.differential_energy_na(na, T)
+        
+    # def pressure_from_absolute_adsorption(self, n_abs: float, T: float,
+    #                                        p_max_guess: float = 35E6) -> float:
+    #     if self.f0_mode == "Constant":
+    #         f0 = self.f0
+    #     if self.f0_mode == "Dubinin":
+    #         pc = self.stored_fluid.backend.p_critical()
+    #         Tc = self.stored_fluid.backend.T_critical()
+    #         if T < Tc:
+    #             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+    #             f0 = self.stored_fluid.backend.fugacity(0)
+    #         else:
+    #             p0 = ((T/Tc)**self.k) * pc
+    #             self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
+    #             f0 = self.stored_fluid.backend.fugacity(0)
+    #     f = f0 * np.exp(-(self.alpha + self.beta * T) *
+    #                     np.sqrt(- np.log(n_abs / self.nmax))
+    #                     / (sp.constants.R * T))
+        
 
     @classmethod
     def from_ExcessIsotherms(cls,
