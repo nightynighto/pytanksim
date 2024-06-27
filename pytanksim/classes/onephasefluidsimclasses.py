@@ -12,6 +12,8 @@ from assimulo.solvers import CVode
 from assimulo.exception import TerminateSimulation
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.basesimclass import BaseSimulation
+from pytanksim.utils import logger
+import textwrap
 
 
 class OnePhaseFluidSim(BaseSimulation):
@@ -166,38 +168,45 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0:
                 self.stop_reason = "MaxPresReached"
-                print("\n The simulation has hit maximum pressure!")
-                print("\n Switch to venting or cooling simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit maximum pressure!"
+                                "\n Switch to venting or cooling simulation")
                 raise TerminateSimulation
             if state_info[1] != 0 and solver.y[1] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
-                print("\n The simulation has hit the saturation line!")
-                print("\n Switch to two-phase simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit the saturation line!"
+                                "\n Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "MinPresReached"
-                print("\n The simulation has hit minimum supply pressure!")
-                print("/n Switch to heated discharge simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit min. supply pressure!"
+                                "\n Switch to heated discharge simulation")
                 raise TerminateSimulation
 
             if state_info[3] != 0 and solver.sw[0]:
                 self.stop_reason = "TargetPresReached"
-                print("Target pressure reached")
+                if self.simulation_params.verbose:
+                    logger.warn("Target pressure reached")
                 raise TerminateSimulation
 
             if state_info[4] != 0 and solver.sw[1]:
                 self.stop_reason = "TargetTempReached"
-                print("Target temperature reached")
+                if self.simulation_params.verbose:
+                    logger.warn("Target temperature reached")
                 raise TerminateSimulation
 
             if state_info[3] != 0 and state_info[4] != 0:
                 self.stop_reason = "TargetCondsReached"
-                print("\n Target conditions reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("Target conditions reached")
                 raise TerminateSimulation
 
             if state_info[5] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Target capacity reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("Target capacity reached")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_pressure,
@@ -229,7 +238,9 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         except Exception:
             pass
 
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
+
         n_phase = {"Gas": np.zeros_like(t),
                    "Supercritical": np.zeros_like(t),
                    "Liquid": np.zeros_like(t)}
@@ -409,16 +420,19 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
-                print("\n The simulation has hit the saturation line!\n"
-                      " Switch to two-phase simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit the saturation line!\n"
+                                " Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
                 self.stop_reason = "TargetTempReached"
-                print("\n The simulation has hit the target temperature.")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Target capacity reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("Target capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_temperature,
@@ -447,7 +461,9 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         except Exception:
             pass
 
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
+
         n_phase = {"Gas": np.zeros_like(t),
                    "Supercritical": np.zeros_like(t),
                    "Liquid": np.zeros_like(t)}
@@ -623,16 +639,19 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
-                print("\n The simulation has hit the saturation line!\n"
-                      "Switch to two-phase simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit the saturation line!\n"
+                                "Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
                 self.stop_reason = "TargetTempReached"
-                print("\n The simulation has hit the target temperature.")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n The simulation has hit the target capacity.")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit target capacity.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_temperature,
@@ -660,8 +679,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             tqdm._instances.clear()
         except Exception:
             pass
-
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
         n_phase = {"Gas": np.zeros_like(t),
                    "Supercritical": np.zeros_like(t),
                    "Liquid": np.zeros_like(t)}
@@ -685,6 +704,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             n_phase[phase][i] = nfluid
 
         if self.stop_reason is None:
+            if self.simulation_params.verbose:
+                logger.info("Simulation finished normally.")
             self.stop_reason = "FinishedNormally"
         return SimResults(time=t,
                           pressure=p0,
@@ -833,16 +854,19 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
-                print("\n The simulation has hit the saturation line!\n"
-                      "Switch to two-phase simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation has hit the saturation line!\n"
+                                "Switch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
                 self.stop_reason = "TargetTempReached"
-                print("\n The simulation has hit the target temperature.")
+                if self.simulation_params.verbose:
+                    logger.warn("The simulation hit target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Target capacity reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("Target capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_temperature,
@@ -873,7 +897,9 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         except Exception:
             pass
 
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
+
         n_phase = {"Gas": np.zeros_like(t),
                    "Supercritical": np.zeros_like(t),
                    "Liquid": np.zeros_like(t)}

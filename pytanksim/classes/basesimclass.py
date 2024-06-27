@@ -155,6 +155,7 @@ class SimParams:
     cooling_additional: float = 0
     heating_additional: float = 0
     heat_leak_in: float = 0
+    verbose: bool = True
 
     @classmethod
     def from_SimResults(cls,
@@ -166,7 +167,8 @@ class SimParams:
                         target_temp:  float = None,
                         stop_at_target_pressure: bool = None,
                         stop_at_target_temp: bool = None,
-                        target_capacity: float = None
+                        target_capacity: float = None,
+                        verbose:  bool = None
                         ) -> "SimParams":
         """Take final conditions from a previous simulation as new parameters.
 
@@ -234,6 +236,8 @@ class SimParams:
             target_capacity = sim_results.sim_params.target_capacity
         if final_time is None:
             final_time = sim_results.sim_params.final_time
+        if verbose is None:
+            verbose = sim_results.sim_params.verbose
         if final_conditions["moles_gas"]\
                 == final_conditions["moles_liquid"] == 0:
             fluid = sim_results.tank_params.stored_fluid.backend
@@ -277,7 +281,8 @@ class SimParams:
             stop_at_target_pressure=stop_at_target_pressure,
             stop_at_target_temp=stop_at_target_temp,
             target_capacity=target_capacity,
-            displayed_points=displayed_points)
+            displayed_points=displayed_points,
+            verbose=verbose)
 
 
 class BoundaryFlux:

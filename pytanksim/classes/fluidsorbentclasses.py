@@ -15,6 +15,7 @@ from copy import deepcopy
 import pytanksim.utils.finitedifferences as fd
 from typing import List, Dict, Callable
 import scipy as sp
+from pytanksim.utils import logger
 
 
 class StoredFluid:
@@ -1046,7 +1047,8 @@ class DAModel(ModelIsotherm):
                              m_mode: str = "Fit",
                              k_mode: str = "Fit",
                              va_mode: str = "Excess",
-                             pore_volume: float = 0.003) -> "DAModel":
+                             pore_volume: float = 0.003,
+                             verbose: bool = True) -> "DAModel":
         """Fit the DA model to a list of ExcessIsotherm data.
 
         Parameters
@@ -1131,6 +1133,10 @@ class DAModel(ModelIsotherm):
             The experimentally measured pore volume of the sorbent material
             (m^3/kg). It serves as the maximum possible physical value for the
             parameters w0 and va. The default is 0.003.
+
+        verbose : bool, optional
+            Determines whether or not the complete fitting quality report is
+            logged for the user. The default is True.
 
         Returns
         -------
@@ -1286,7 +1292,8 @@ class DAModel(ModelIsotherm):
                                        temperature_combined,
                                        stored_fluid))
 
-        print(lmfit.fit_report(fitting))
+        if verbose:
+            logger.info(lmfit.fit_report(fitting))
         paramsdict = fitting.params.valuesdict()
 
         # For the "Fit" results, it means the mode in the actual model object
@@ -1627,7 +1634,8 @@ class MDAModel(ModelIsotherm):
                              m_mode: str = "Fit",
                              k_mode: str = "Fit",
                              beta_mode: str = "Fit",
-                             pore_volume: float = 0.003) -> "MDAModel":
+                             pore_volume: float = 0.003,
+                             verbose: bool = True) -> "MDAModel":
         """Fit the MDA model from a list of excess adsorption data.
 
         Parameters
@@ -1711,6 +1719,10 @@ class MDAModel(ModelIsotherm):
             The experimentally measured pore volume of the sorbent material
             (m^3/kg). It serves as the maximum possible physical value for the
             parameters w0 and va. The default is 0.003.
+
+        verbose : bool, optional
+            Determines whether or not the complete fitting quality report is
+            logged for the user. The default is True.
 
         Returns
         -------
@@ -1843,7 +1855,8 @@ class MDAModel(ModelIsotherm):
                                        temperature_combined,
                                        stored_fluid))
 
-        print(lmfit.fit_report(fitting))
+        if verbose:
+            logger.info(lmfit.fit_report(fitting))
         paramsdict = fitting.params.valuesdict()
 
         f0_res = paramsdict["f0"] if f0_mode == "Fit" else f0guess
