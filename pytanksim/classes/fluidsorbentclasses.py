@@ -1523,7 +1523,7 @@ class MDAModel(ModelIsotherm):
             fluid.update(CP.QT_INPUTS, q, T)
         rhomolar = fluid.rhomolar()
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p, T)
-    
+
     def internal_energy_adsorbed(self, p: float, T: float,
                                  q: float = 1) -> float:
         """Calculate the molar integral internal energy of adsorption (J/mol).
@@ -1592,29 +1592,13 @@ class MDAModel(ModelIsotherm):
         h0_excess = self.stored_fluid.backend.hmolar_excess()
         h0_ideal = h0_real - h0_excess
         return h0_ideal - self.alpha * \
-                (-np.log(na/self.nmax))**(1/self.m)
-    
+            (-np.log(na/self.nmax))**(1/self.m)
+
     def differential_energy(self, p, T, q):
         na = self.n_absolute(p, T)
         return self.differential_energy_na(na, T)
-        
-    # def pressure_from_absolute_adsorption(self, n_abs: float, T: float,
-    #                                        p_max_guess: float = 35E6) -> float:
-    #     if self.f0_mode == "Constant":
-    #         f0 = self.f0
-    #     if self.f0_mode == "Dubinin":
-    #         pc = self.stored_fluid.backend.p_critical()
-    #         Tc = self.stored_fluid.backend.T_critical()
-    #         if T < Tc:
-    #             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
-    #             f0 = self.stored_fluid.backend.fugacity(0)
-    #         else:
-    #             p0 = ((T/Tc)**self.k) * pc
-    #             self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
-    #             f0 = self.stored_fluid.backend.fugacity(0)
-    #     f = f0 * np.exp(-(self.alpha + self.beta * T) *
-    #                     np.sqrt(- np.log(n_abs / self.nmax))
-    #                     / (sp.constants.R * T))
+    
+
         
 
     @classmethod
@@ -1881,8 +1865,7 @@ class MDAModel(ModelIsotherm):
 
 
 class SorbentMaterial:
-    """Class containing the various properties of a sorbent material.
-
+    """
     Attributes
     ----------
     mass : float

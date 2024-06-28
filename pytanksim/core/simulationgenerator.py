@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """Main module of pytanksim, used to generate simulations."""
 
-__all__ = ["generate_simulation"]
+__all__ = ["generate_simulation", "automatic_simulation"]
 
 from pytanksim.classes.basesimclass import BoundaryFlux, SimParams,\
     BaseSimulation
+from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.storagetankclasses import StorageTank, SorbentTank
 from pytanksim.classes.onephasesorbentsimclasses import *
 from pytanksim.classes.twophasesorbentsimclasses import *
@@ -101,3 +102,159 @@ def generate_simulation(
         get(class_caller)(storage_tank=storage_tank,
                           boundary_flux=boundary_flux,
                           simulation_params=simulation_params)
+
+
+def _gen_phase(res: SimResults,
+               prev_phase: int) -> int:
+    """
+    Generate number of phases for the next simulation in automated simulations.
+
+    Parameters
+    ----------
+    res : SimResults
+        Results of the previous simulation.
+
+    prev_phase : int
+        The number of fluid phases in the previous simulation. If the fluid
+        was a single phase, it's 1. If the fluid was on the saturation line and
+        there was a vapor-liquid equilibrium, then it's 2.
+
+    Returns
+    -------
+    int
+        Number of fluid phases in the next simulation.
+
+    """
+    if prev_phase == 1:
+        phase = 2 if res.stop_reason == "SaturLineReached" else 1
+    else:
+        phase = 1 if res.stop_reason == "PhaseChangeEnded" else 2
+    return phase
+
+
+def _gen_type(res: SimResults, handle_max_pres: str,
+              handle_min_pres: str) -> str:
+    """
+    Generate the next simulation type in a series of automated simulations.
+
+    Parameters
+    ----------
+    res : SimResults
+        Results of the previous simulation.
+
+    handle_max_pres : str
+        A string indicating how the simulation is to continue if the tank has
+        reached its maximum allowable working pressure. "Cooled" means that the
+        tank will not vent any gas, but will be actively cooled down. "Venting"
+        means that the tank will begin to vent the exact amount of fluid inside
+        to maintain the maximum pressure.
+
+    handle_min_pres : str
+        A string indicating how the simulation is to continue if the tank has
+        reached its minimum supply pressure. "Heated" means exactly enough heat
+        will be provided to the tank to maintain the minimum supply pressure.
+        "Continue" means the simulation will restart without changing any
+        parameters.
+
+    Returns
+    -------
+    str
+        The simulation type.
+
+    """
+    if res.stop_reason == "MaxPresReached":
+        return handle_max_pres
+    elif res.stop_reason == "MinPresReached":
+        if handle_min_pres == "Continue":
+            return "Default"
+        else:
+            return handle_min_pres
+    else:
+        return "Default"
+
+
+def automatic_simulation(
+        storage_tank: Union[StorageTank, SorbentTank],
+        boundary_flux: BoundaryFlux,
+        simulation_params: SimParams,
+        stop_at_max_pres: bool = False,
+        stop_at_min_pres: bool = False,
+        handle_max_pres: str = "Cooled",
+        handle_min_pres: str = "Heated") -> SimResults:
+    """
+    Automatically run and restart simulations until a target is reached.
+
+    Parameters
+    ----------
+    storage_tank : Union[StorageTank, SorbentTank]
+        An object with the properties of the storage tank. Can either be of the
+        class StorageTank or its child class SorbentTank.
+
+    boundary_flux : BoundaryFlux
+        An object containing information about the mass and energy entering and
+        leaving the control volume of the tank.
+
+    simulation_params : SimParams
+        An object containing various parameters for the dynamic simulation.
+
+    stop_at_max_pres : bool, optional
+        Whether or not the simulation is to be stopped when the tank hits its
+        maximum allowable working pressure. The default is False.
+
+    stop_at_min_pres : bool, optional
+        Whether or not the simulation is to be stopped when the tank hits its
+        minimum supply pressure. The default is False.
+
+    handle_max_pres : str, optional
+        A string indicating how the simulation is to continue if the tank has
+        reached its maximum allowable working pressure. "Cooled" means that the
+        tank will not vent any gas, but will be actively cooled down. "Venting"
+        means that the tank will begin to vent the exact amount of fluid inside
+        to maintain the maximum pressure. The default is "Cooled".
+
+    handle_min_pres : str, optional
+        A string indicating how the simulation is to continue if the tank has
+        reached its minimum supply pressure. "Heated" means exactly enough heat
+        will be provided to the tank to maintain the minimum supply pressure.
+        "Continue" means the simulation will restart without changing any
+        parameters. The default is "Heated".
+
+    Returns
+    -------
+    SimResults
+        An object for storing and manipulating the results of the dynamic
+        simulations.
+
+    """
+    spr = simulation_params
+    init_p = spr.init_pressure
+    init_T = spr.init_temperature
+    init_phase = storage_tank.\
+        stored_fluid.determine_phase(init_p, init_T)
+
+    valid_stop_reasons = ["FinishedNormally", "TargetTempReached",
+                          "TargetPresReached", "TargetCondsReached",
+                          "TargetCapReached", "CritPointReached"]
+    if stop_at_max_pres:
+        valid_stop_reasons.append("MaxPresReached")
+    if stop_at_min_pres:
+        valid_stop_reasons.append("MinPresReached")
+
+    res_list = []
+    simtype = "Default"
+    phase = 1 if init_phase != "Saturated" else 2
+    sim = generate_simulation(storage_tank, boundary_flux, spr,
+                              phase=phase,
+                              simulation_type=simtype)
+    res = sim.run()
+    res_list.append(res)
+    while not (res.stop_reason in valid_stop_reasons):
+        phase = _gen_phase(res, phase)
+        simtype = _gen_type(res, handle_max_pres, handle_min_pres)
+        spr = SimParams.from_SimResults(res)
+        sim = generate_simulation(storage_tank, boundary_flux, spr,
+                                  phase=phase,
+                                  simulation_type=simtype)
+        res = sim.run()
+        res_list.append(res)
+    return SimResults.combine(res_list)
