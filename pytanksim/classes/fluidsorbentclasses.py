@@ -734,7 +734,7 @@ class DAModel(ModelIsotherm):
 
     """
     model_name = "Dubinin-Astakhov Model"
-    
+
     key_attr = ["sorbent", "w0", "f0", "eps", "m", "k", "rhoa",
                 "va", "va_mode", "rhoa_mode", "f0_mode"]
 
@@ -832,6 +832,36 @@ class DAModel(ModelIsotherm):
         self.va_mode = va_mode
         self.f0_mode = f0_mode
         self.k = k
+        self.T_triple = self.stored_fluid.backend.Ttriple()
+        self.T_critical = self.stored_fluid.backend.T_critical()
+        Tlin = np.linspace(self.T_triple, self.T_critical, 2000)
+        flin = np.zeros_like(Tlin)
+        for i, Temper in enumerate(Tlin):
+            self.stored_fluid.backend.update(CP.QT_INPUTS, 0, Temper)
+            flin[i] = self.stored_fluid.backend.fugacity(0)
+        f0 = flin[0]
+        T0 = Tlin[0]
+        MW = self.stored_fluid.backend.molar_mass()
+        Rv = sp.constants.R/MW
+        self.Rv = Rv
+        self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T0)
+        hl = self.stored_fluid.backend.hmass()
+        self.stored_fluid.backend.update(CP.QT_INPUTS, 1, T0)
+        hg = self.stored_fluid.backend.hmass()
+        L = hg - hl
+        self.L = L
+
+        def fit_penalty(params):
+            a = params["a"]
+            err = np.zeros_like(flin)
+            for i, f in enumerate(flin):
+                err[i] = flin[i] - f0 * np.exp(a*(L/Rv)*((1/T0)-(1/Tlin[i])))
+            return err
+        params = lmfit.Parameters()
+        params.add("a", 1, min=0, max=10)
+        fitting = lmfit.minimize(fit_penalty, params)
+        paramsdict = fitting.params.valuesdict()
+        self.a = paramsdict["a"]
 
     def f0_calc(self, T: float) -> float:
         """Calculate the fugacity at saturation (Pa) at a given temperature.
@@ -851,16 +881,24 @@ class DAModel(ModelIsotherm):
             f0 = self.f0
         if self.f0_mode == "Dubinin":
             pc = self.stored_fluid.backend.p_critical()
-            Tc = self.stored_fluid.backend.T_critical()
+            Tc = self.T_critical
             if T < Tc:
                 self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
                 f0 = self.stored_fluid.backend.fugacity(0)
             else:
-                p0 = ((T/Tc)**self.k) * pc
-                self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
-                f0 = self.stored_fluid.backend.fugacity(0)
+                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, Tc)
+                fc = self.stored_fluid.backend.fugacity(0)
+                f0 = ((T/Tc)**self.k) * fc
         return f0
 
+    def dlnf0_dT(self, T):
+        if self.f0_mode == "Constant":
+            return 0
+        elif T >= self.T_critical:
+            return self.k/T
+        else:
+            return self.a * self.L / (self.Rv * (T**2))
+    
     def rhoa_calc(self, T: float) -> float:
         """Calculate the density of the adsorbed phase at a given temperature.
 
@@ -986,6 +1024,38 @@ class DAModel(ModelIsotherm):
             self.stored_fluid.backend.update(CP.QT_INPUTS, q, T)
         rhomolar = fluid.rhomolar()
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p, T)
+
+    def differential_energy_na(self, na, T):
+        try:
+            self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
+        except(ValueError):
+            self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
+        h0_real = self.stored_fluid.backend.hmolar()
+        h0_excess = self.stored_fluid.backend.hmolar_excess()
+        h0_ideal = h0_real - h0_excess
+        dlnf0_dT = self.dlnf0_dT(T)
+        rhoa = self.rhoa_calc(T)
+        diff_ene = - sp.constants.R * (T**2) * dlnf0_dT + h0_ideal - self.eps \
+            * ((np.log(self.w0*rhoa/na))**(1/self.m))
+        if self.rhoa_mode == "Ozawa":
+            try:
+                self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
+            except:
+                Ttrip = self.stored_fluid.backend.Ttriple()
+                Tcrit = self.stored_fluid.backend.T_critical()
+                if Ttrip < 298 and 298 < Tcrit:
+                    self.stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
+                else:
+                    self.stored_fluid.backend.update(CP.QT_INPUTS,
+                                                     Ttrip+Tcrit/2)
+            Tb = self.stored_fluid.backend.T()
+            diff_ene += - ((self.eps*Tb)/(self.m * T))\
+                * ((np.log(self.w0*rhoa/na))**((1-self.m)/self.m))
+        return diff_ene
+
+    def differential_energy(self, p, T, q):
+        na = self.n_absolute(p, T)
+        return self.differential_energy_na(na, T)
 
     def internal_energy_adsorbed(self, p: float, T: float,
                                  q: float = 1) -> float:
@@ -1415,6 +1485,58 @@ class MDAModel(ModelIsotherm):
         self.k = k
         self.va_mode = va_mode
         self.f0_mode = f0_mode
+        self.T_triple = self.stored_fluid.backend.Ttriple()
+        self.T_critical = self.stored_fluid.backend.T_critical()
+        Tlin = np.linspace(self.T_triple, self.T_critical, 2000)
+        flin = np.zeros_like(Tlin)
+        for i, Temper in enumerate(Tlin):
+            self.stored_fluid.backend.update(CP.QT_INPUTS, 0, Temper)
+            flin[i] = self.stored_fluid.backend.fugacity(0)
+        f0 = flin[0]
+        T0 = Tlin[0]
+        MW = self.stored_fluid.backend.molar_mass()
+        Rv = sp.constants.R/MW
+        self.Rv = Rv
+        self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T0)
+        hl = self.stored_fluid.backend.hmass()
+        self.stored_fluid.backend.update(CP.QT_INPUTS, 1, T0)
+        hg = self.stored_fluid.backend.hmass()
+        L = hg - hl
+        self.L = L
+
+        def fit_penalty(params):
+            a = params["a"]
+            err = np.zeros_like(flin)
+            for i, f in enumerate(flin):
+                err[i] = flin[i] - f0 * np.exp(a*(L/Rv)*((1/T0)-(1/Tlin[i])))
+            return err
+        params = lmfit.Parameters()
+        params.add("a", 1, min=0, max=10)
+        fitting = lmfit.minimize(fit_penalty, params)
+        paramsdict = fitting.params.valuesdict()
+        self.a = paramsdict["a"]
+
+    def dlnf0_dT(self, T):
+        if self.f0_mode == "Constant":
+            return 0
+        elif T >= self.T_critical:
+            return self.k/T
+        else:
+            return self.a * self.L / (self.Rv * (T**2))
+
+    def f0_fun(self, T):
+        if self.f0_mode == "Constant":
+            return self.f0
+        elif self.f0_mode == "Dubinin":
+            Tc = self.T_critical
+            if T < Tc:
+                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
+                f0 = self.stored_fluid.backend.fugacity(0)
+            else:
+                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, Tc)
+                fc = self.stored_fluid.backend.fugacity(0)
+                f0 = ((T/Tc)**self.k) * fc
+            return f0
 
     def n_absolute(self, p: float, T: float) -> float:
         """Calculate the absolute adsorbed amount at given conditions.
@@ -1439,18 +1561,7 @@ class MDAModel(ModelIsotherm):
         else:
             self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
         fug = self.stored_fluid.backend.fugacity(0)
-        if self.f0_mode == "Constant":
-            f0 = self.f0
-        if self.f0_mode == "Dubinin":
-            pc = self.stored_fluid.backend.p_critical()
-            Tc = self.stored_fluid.backend.T_critical()
-            if T < Tc:
-                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
-                f0 = self.stored_fluid.backend.fugacity(0)
-            else:
-                p0 = ((T/Tc)**self.k) * pc
-                self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
-                f0 = self.stored_fluid.backend.fugacity(0)
+        f0 = self.f0_fun(T)
         if fug > f0:
             fug = f0
         return self.nmax * np.exp(-((sp.constants.R * T /
@@ -1480,8 +1591,8 @@ class MDAModel(ModelIsotherm):
             try:
                 self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 0)
             except:
-                Ttrip = self.stored_fluid.backend.Ttriple()
-                Tcrit = self.stored_fluid.backend.T_critical()
+                Ttrip = self.T_triple
+                Tcrit = self.T_critical
                 if Ttrip < 298 and 298 < Tcrit:
                     self.stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
                 else:
@@ -1550,24 +1661,12 @@ class MDAModel(ModelIsotherm):
         Notes
         -----
         .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-           the case for absolute adsorption as the basis for thermodynamic
-           analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-           doi: 10.1007/s10450-014-9604-1.
+            the case for absolute adsorption as the basis for thermodynamic
+            analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
+            doi: 10.1007/s10450-014-9604-1.
 
         """
         n_abs = self.n_absolute(p, T)
-        if self.f0_mode == "Constant":
-            f0 = self.f0
-        if self.f0_mode == "Dubinin":
-            pc = self.stored_fluid.backend.p_critical()
-            Tc = self.stored_fluid.backend.T_critical()
-            if T < Tc:
-                self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
-                f0 = self.stored_fluid.backend.fugacity(0)
-            else:
-                p0 = ((T/Tc)**self.k) * pc
-                self.stored_fluid.backend.update(CP.PT_INPUTS, p0, T)
-                f0 = self.stored_fluid.backend.fugacity(0)
         n_max = self.nmax
         if n_abs < n_max*1E-3:
             n_abs = n_max*1E-3
@@ -1578,10 +1677,7 @@ class MDAModel(ModelIsotherm):
             self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
         except(ValueError):
             self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
-        u0_real = self.stored_fluid.backend.umolar()
-        u0_excess = self.stored_fluid.backend.umolar_excess()
-        u0_ideal = u0_real - u0_excess
-        return u0_ideal + sp.integrate.simps(heat_grid, n_grid) / n_abs
+        return sp.integrate.simps(heat_grid, n_grid) / n_abs
 
     def differential_energy_na(self, na, T):
         try:
@@ -1591,15 +1687,13 @@ class MDAModel(ModelIsotherm):
         h0_real = self.stored_fluid.backend.hmolar()
         h0_excess = self.stored_fluid.backend.hmolar_excess()
         h0_ideal = h0_real - h0_excess
-        return h0_ideal - self.alpha * \
-            (-np.log(na/self.nmax))**(1/self.m)
+        dlnf0_dT = self.dlnf0_dT(T)
+        return - sp.constants.R * (T**2) * dlnf0_dT + h0_ideal - self.alpha \
+            * ((np.log(self.nmax/na))**(1/self.m))
 
-    def differential_energy(self, p, T, q):
+    def differential_energy(self, p, T, q = 1):
         na = self.n_absolute(p, T)
         return self.differential_energy_na(na, T)
-    
-
-        
 
     @classmethod
     def from_ExcessIsotherms(cls,

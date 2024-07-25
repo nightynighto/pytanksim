@@ -314,13 +314,14 @@ class StorageTank:
             vol = sp.optimize.minimize_scalar(min_func, bounds=(0, 1E16),
                                               method="bounded")
             if self.capacity(full_pressure, full_temperature, full_quality) <\
-                set_capacity:
-                    raise ValueError("Difference between full and empty"
-                                     " conditions too small. Tank volume not"
-                                     " converged (i.e. solution >1E16).")
+                    set_capacity:
+                raise ValueError("Difference between full and empty"
+                                 " conditions too small. Tank volume not"
+                                 " converged (i.e. solution >1E16).")
             self.volume = vol.x
 
-    def capacity(self, p: float, T: float, q: float = 0) -> float:
+    def capacity(self, p: float, T: float, q: float = 0,
+                 unit: str = "mol") -> float:
         """Return the amount of fluid stored in the tank at given conditions.
 
         Parameters
@@ -335,10 +336,14 @@ class StorageTank:
             Vapor quality of the fluid being stored. Can vary between 0 and 1.
             The default is 0.
 
+        unit : str, optional
+            Unit of the capacity to be returned. Valid units are "mol" and
+            "kg". The default is "mol".
+
         Returns
         -------
         float
-            Amount of fluid stored (moles).
+            Amount of fluid stored.
 
         """
         if p == 0:
@@ -349,9 +354,14 @@ class StorageTank:
             fluid.update(CP.QT_INPUTS, q, T)
         else:
             fluid.update(CP.PT_INPUTS, p, T)
-        return fluid.rhomolar() * self.volume
+        cap_mol = fluid.rhomolar() * self.volume
+        if unit == "mol":
+            return cap_mol
+        elif unit == "kg":
+            return cap_mol * self.stored_fluid.backend.molar_mass()
 
-    def capacity_bulk(self, p: float, T: float, q: float = 0) -> float:
+    def capacity_bulk(self, p: float, T: float, q: float = 0,
+                      unit: str = "mol") -> float:
         """Calculate the amount of bulk fluid in the tank.
 
         Parameters
@@ -366,13 +376,17 @@ class StorageTank:
             Vapor quality of the fluid being stored. Can vary between 0 and 1.
             The default is 0.
 
+        unit : str, optional
+            Unit of the capacity to be returned. Valid units are "mol" and
+            "kg". The default is "mol".
+
         Returns
         -------
         float
-            Amount of bulk fluid stored (moles).
+            Amount of bulk fluid stored.
 
         """
-        return self.capacity(p, T, q)
+        return self.capacity(p, T, q, unit)
 
     def find_quality_at_saturation_capacity(self, T: float,
                                             capacity: float) -> float:

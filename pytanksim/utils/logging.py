@@ -11,8 +11,9 @@ import sys
 logger = logging.getLogger('pytanksim')
 logger.setLevel(logging.DEBUG)
 
-ch = logging.StreamHandler(stream=sys.stdout)
-ch.setLevel(logging.INFO)
 
-# add the handlers to the logger
-logger.addHandler(ch)
+if not len(logger.handlers):
+    ch = logging.StreamHandler(stream=sys.stdout)
+    ch.setLevel(logging.INFO)
+    logger.addHandler(ch)
+    
