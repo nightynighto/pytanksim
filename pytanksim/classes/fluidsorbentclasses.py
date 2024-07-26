@@ -1026,6 +1026,13 @@ class DAModel(ModelIsotherm):
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p, T)
 
     def differential_energy_na(self, na, T):
+        f0 = self.f0_calc(T)
+        n_max = self.n_absolute(f0, T)
+        n_max = 0.99 * n_max
+        if na < n_max*1E-3:
+            na = n_max*1E-3
+        if na >= n_max:
+            na = n_max
         try:
             self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
         except(ValueError):
@@ -1091,13 +1098,14 @@ class DAModel(ModelIsotherm):
         n_abs = self.n_absolute(p, T)
         f0 = self.f0_calc(T)
         n_max = self.n_absolute(f0, T)
+        n_max = 0.99*n_max
         if n_abs < n_max*1E-3:
             n_abs = n_max*1E-3
+        if n_abs >= n_max:
+            n_abs = n_max
         n_grid = np.linspace(n_max*1E-4, n_abs, 50)
-        p_grid = np.array([self.pressure_from_absolute_adsorption(n, T)
-                           if n != 0 else 0 for n in n_grid])
-        heat_grid = np.array([self.differential_energy(pres, T, q)
-                              for pres in p_grid])
+        heat_grid = np.array([self.differential_energy_na(na, T)
+                              for na in n_grid])
         return sp.integrate.simps(heat_grid, n_grid) / n_abs
 
     @classmethod
@@ -1667,19 +1675,22 @@ class MDAModel(ModelIsotherm):
 
         """
         n_abs = self.n_absolute(p, T)
-        n_max = self.nmax
+        n_max = 0.99 * self.nmax
         if n_abs < n_max*1E-3:
             n_abs = n_max*1E-3
+        if n_abs >= n_max:
+            n_abs = n_max
         n_grid = np.linspace(n_max*1E-4, n_abs, 50)
         heat_grid = np.array([self.differential_energy_na(na, T)
                               for na in n_grid])
-        try:
-            self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
-        except(ValueError):
-            self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
         return sp.integrate.simps(heat_grid, n_grid) / n_abs
 
     def differential_energy_na(self, na, T):
+        n_max = 0.99 * self.nmax
+        if na < n_max*1E-3:
+            na = n_max*1E-3
+        if na >= n_max:
+            na = n_max
         try:
             self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
         except(ValueError):
