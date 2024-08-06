@@ -638,7 +638,7 @@ class SimResults:
 
     def interpolate(self, x_var: str = "t"
                     ) -> "dict[Callable[[float], float]]":
-        """Interpolate simulation results between time points.
+        """Interpolate simulation results between points.
 
         Parameters
         ----------
