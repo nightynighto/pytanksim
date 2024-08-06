@@ -3,7 +3,21 @@
 
 This includes SimParams, BoundaryFlux, and BaseSimulation.
 """
+"""
+Copyright 2024 Muhammad Irfan Maulana Kusdhany
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 __all__ = ["SimParams", "BoundaryFlux", "BaseSimulation"]
 
@@ -130,6 +144,10 @@ class SimParams:
         The cumulative amount of heat (J) which has leaked into the tank prior
         to the start of a simulation. The default value is 0. Useful when
         stopping and restarting simulations involving heat leakage.
+
+    verbose : bool, optional
+        Whether or not the simulation will print out its progress bars and
+        give a notification once it has finished. The default value is True.
 
     """
 
@@ -650,7 +668,7 @@ class BaseSimulation:
             stored_fluid.determine_phase(init_p, init_T)
         spr.init_ng = spr.init_ng if spr.init_ng >= 0 else 0
         spr.init_nl = spr.init_nl if spr.init_nl >= 0 else 0
-        if init_phase=="Saturated":
+        if init_phase s== "Saturated":
             psat = self.storage_tank.stored_fluid.saturation_property_dict(
                 init_T, 0)
             init_p = psat

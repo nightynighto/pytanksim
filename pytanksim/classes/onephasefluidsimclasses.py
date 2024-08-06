@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 """Module for simulating one phase fluid storage tanks without sorbents."""
+"""
+Copyright 2024 Muhammad Irfan Maulana Kusdhany
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 __all__ = ["OnePhaseFluidSim", "OnePhaseFluidDefault", "OnePhaseFluidVenting",
            "OnePhaseFluidCooled", "OnePhaseFluidHeatedDischarge"]
@@ -131,7 +146,8 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
@@ -169,44 +185,44 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
             if state_info[0] != 0:
                 self.stop_reason = "MaxPresReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit maximum pressure!"
+                    logger.warn("\nThe simulation has hit maximum pressure!"
                                 "\n Switch to venting or cooling simulation")
                 raise TerminateSimulation
             if state_info[1] != 0 and solver.y[1] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit the saturation line!"
-                                "\n Switch to two-phase simulation")
+                    logger.warn("\nThe simulation has hit the saturation line!"
+                                "\nSwitch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "MinPresReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit min. supply pressure!"
-                                "\n Switch to heated discharge simulation")
+                    logger.warn("\nThe simulation has hit min supply pressure!"
+                                "\nSwitch to heated discharge simulation")
                 raise TerminateSimulation
 
             if state_info[3] != 0 and solver.sw[0]:
                 self.stop_reason = "TargetPresReached"
                 if self.simulation_params.verbose:
-                    logger.warn("Target pressure reached")
+                    logger.warn("\nTarget pressure reached")
                 raise TerminateSimulation
 
             if state_info[4] != 0 and solver.sw[1]:
                 self.stop_reason = "TargetTempReached"
                 if self.simulation_params.verbose:
-                    logger.warn("Target temperature reached")
+                    logger.warn("\nTarget temperature reached")
                 raise TerminateSimulation
 
             if state_info[3] != 0 and state_info[4] != 0:
                 self.stop_reason = "TargetCondsReached"
                 if self.simulation_params.verbose:
-                    logger.warn("Target conditions reached")
+                    logger.warn("\nTarget conditions reached")
                 raise TerminateSimulation
 
             if state_info[5] != 0:
                 self.stop_reason = "TargetCapReached"
                 if self.simulation_params.verbose:
-                    logger.warn("Target capacity reached")
+                    logger.warn("\nTarget capacity reached")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_pressure,
@@ -231,6 +247,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-10
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
@@ -383,7 +400,8 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
@@ -421,18 +439,18 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit the saturation line!\n"
-                                " Switch to two-phase simulation")
+                    logger.warn("\nThe simulation has hit the saturation line!"
+                                "\nSwitch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
                 self.stop_reason = "TargetTempReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit target temperature.")
+                    logger.warn("\nThe simulation has hit target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
                 if self.simulation_params.verbose:
-                    logger.warn("Target capacity reached.")
+                    logger.warn("\nTarget capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_temperature,
@@ -454,6 +472,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-10
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t,  y = sim.simulate(self.simulation_params.final_time,
                              self.simulation_params.displayed_points)
         try:
@@ -602,7 +621,8 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
@@ -640,18 +660,18 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit the saturation line!\n"
-                                "Switch to two-phase simulation")
+                    logger.warn("\nThe simulation has hit the saturation line!"
+                                "\nSwitch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
                 self.stop_reason = "TargetTempReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit target temperature.")
+                    logger.warn("\nThe simulation has hit target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit target capacity.")
+                    logger.warn("\nThe simulation has hit target capacity.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_temperature,
@@ -673,6 +693,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-10
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
@@ -819,7 +840,8 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
@@ -855,18 +877,18 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
             if state_info[0] != 0 and solver.y[0] <= Tcrit:
                 self.stop_reason = "SaturLineReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation has hit the saturation line!\n"
-                                "Switch to two-phase simulation")
+                    logger.warn("\nThe simulation has hit the saturation line!"
+                                "\nSwitch to two-phase simulation")
                 raise TerminateSimulation
             if state_info[1] != 0:
                 self.stop_reason = "TargetTempReached"
                 if self.simulation_params.verbose:
-                    logger.warn("The simulation hit target temperature.")
+                    logger.warn("\nThe simulation hit target temperature.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
                 if self.simulation_params.verbose:
-                    logger.warn("Target capacity reached.")
+                    logger.warn("\nTarget capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_temperature,
@@ -889,6 +911,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-10
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
 

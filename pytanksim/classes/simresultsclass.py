@@ -3,6 +3,21 @@
 
 It is used for storing and post-processing the results of dynamic simulations.
 """
+"""
+Copyright 2024 Muhammad Irfan Maulana Kusdhany
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 __all__ = ["SimResults"]
 
 import numpy as np
@@ -15,6 +30,7 @@ from pytanksim.classes.fluidsorbentclasses import MDAModel, StoredFluid,\
     SorbentMaterial, DAModel
 from scipy.interpolate import make_interp_spline
 from ast import literal_eval
+from pytanksim.utils import logger
 if TYPE_CHECKING:
     from pytanksim.classes.basesimclass import SimParams
 
@@ -380,7 +396,7 @@ class SimResults:
             final_dict[key] = value.iloc[idx]
         return final_dict
 
-    def to_csv(self, filename: str):
+    def to_csv(self, filename: str, verbose: bool = True):
         """Export simulation results to a csv file.
 
         Parameters
@@ -388,12 +404,15 @@ class SimResults:
         filename : str
             The desired filepath for the csv file to be created.
 
+        verbose : bool, optional
+            Whether or nor to report the completion of the export. The default
+            value is True.
+
         """
         df_export = self.results_df.copy()
         new_colnames = [SimResults.fancy_colnames_dict[colname] for
                         colname in list(df_export.columns)]
         df_export.columns = new_colnames
-        print(df_export)
         sparams = self.sim_params
         header_info = [
             ["Fluid Name", self.tank_params.stored_fluid.fluid_name],
@@ -446,6 +465,9 @@ class SimResults:
             data = csv.writer(f)
             data.writerows(header_info)
         df_export.to_csv(filename, header=True, mode="a")
+        if verbose:
+            logger.info("Dataframe exported to "+filename)
+            logger.info(df_export)
 
     @classmethod
     def from_csv(cls, filename: str, import_components: bool = False):

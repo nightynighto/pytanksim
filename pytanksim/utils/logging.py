@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
+"""Initializes the logger for pytanksim."""
 """
-Created on Thu Jun 27 12:11:52 2024
+Copyright 2024 Muhammad Irfan Maulana Kusdhany
 
-@author: nextf
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 import logging
 import sys
 
 logger = logging.getLogger('pytanksim')
-logger.setLevel(logging.DEBUG)
-
-
-if not len(logger.handlers):
-    ch = logging.StreamHandler(stream=sys.stdout)
-    ch.setLevel(logging.INFO)
-    logger.addHandler(ch)
     

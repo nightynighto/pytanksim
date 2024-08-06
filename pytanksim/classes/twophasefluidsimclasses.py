@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 """Module for simulating fluid tanks in the two-phase region."""
+"""
+Copyright 2024 Muhammad Irfan Maulana Kusdhany
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 __all__ = ["TwoPhaseFluidSim", "TwoPhaseFluidDefault", "TwoPhaseFluidVenting",
            "TwoPhaseFluidCooled", "TwoPhaseFluidHeatedDischarge"]
@@ -12,6 +27,7 @@ from assimulo.solvers import CVode
 from assimulo.exception import TerminateSimulation
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.basesimclass import BaseSimulation
+from pytanksim.utils import logger
 
 
 class TwoPhaseFluidSim(BaseSimulation):
@@ -142,7 +158,8 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
 
@@ -182,46 +199,54 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0:
                 self.stop_reason = "MinPresReached"
-                print("\n Minimum pressure has been reached."
-                      " \n Switch to heated discharge simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nMinimum pressure has been reached."
+                                "\nSwitch to heated discharge simulation.")
                 raise TerminateSimulation
 
             if state_info[1] != 0:
                 self.stop_reason = "MaxPresReached"
-                print("\n Maximum pressure has been reached. "
-                      "\n Either begin venting or cooling.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nMaximum pressure has been reached. "
+                                "\nEither begin venting or cooling.")
                 raise TerminateSimulation
 
             if state_info[2] != 0 or state_info[3] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[4] != 0 and solver.sw[0]:
                 self.stop_reason = "TargetTempReached"
-                print("\n Target temperature reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget temperature reached.")
                 raise TerminateSimulation
 
             if state_info[5] != 0 and solver.sw[1]:
                 self.stop_reason = "TargetPresReached"
-                print("\n Target pressure reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget pressure reached.")
                 raise TerminateSimulation
 
             if state_info[4] != 0 and state_info[5] != 0:
                 self.stop_reason = "TargetCondsReached"
-                print("\n Target conditions reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget conditions reached.")
                 raise TerminateSimulation
 
             if state_info[6] != 0:
                 self.stop_reason = "CritTempReached"
-                print("\n Reached critical temperature.\n"
-                      " Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nReached critical temperature."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[7] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Reached target capacity.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nReached target capacity.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -247,13 +272,15 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-6
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
         except Exception:
             pass
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
         pres = np.zeros_like(t)
         for i, time in enumerate(t):
             fluid.update(CP.QT_INPUTS, 0, y[i, 2])
@@ -371,7 +398,8 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time / 1000]
 
         def rhs(t, w, sw):
@@ -403,12 +431,14 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Reached target capacity.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nReached target capacity.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -431,13 +461,15 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-6
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
         except Exception:
             pass
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
         if self.stop_reason is None:
             self.stop_reason = "FinishedNormally"
         return SimResults(time=t,
@@ -550,7 +582,8 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
             tqdm._instances.clear()
         except Exception:
             pass
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
 
         def rhs(t, w, sw):
@@ -581,12 +614,14 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended.\n"
-                      " Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Reached target capacity.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nReached target capacity.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -610,14 +645,15 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-6
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
         try:
             tqdm._instances.clear()
         except Exception:
             pass
-
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
 
         if self.stop_reason is None:
             self.stop_reason = "FinishedNormally"
@@ -732,7 +768,8 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
 
         def rhs(t, w, sw):
@@ -764,13 +801,15 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
 
             if state_info[0] != 0 or state_info[1] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Reached target capacity.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nReached target capacity.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -793,6 +832,7 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         sim = CVode(model)
         sim.discr = "BDF"
         sim.rtol = 1E-6
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
 
@@ -800,8 +840,8 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
             tqdm._instances.clear()
         except Exception:
             pass
-
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
         if self.stop_reason is None:
             self.stop_reason = "FinishedNormally"
         return SimResults(time=t,

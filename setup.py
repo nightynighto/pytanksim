@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Feb  3 14:21:18 2023
-
-@author: nextf
-"""
-
 from setuptools import setup
 
 setup(name = "pyTankSim",
@@ -14,7 +7,6 @@ setup(name = "pyTankSim",
        "pytanksim",
        "pytanksim.utils",
        "pytanksim.classes",
-       "pytanksim.mpta"
           ],
       author = "Muhammad Irfan Maulana Kusdhany",
       author_email = "ikusdhany@kyudai.jp",
@@ -24,7 +16,10 @@ setup(name = "pyTankSim",
           "numpy",
           "assimulo",
           "lmfit",
-          "pandas"
+          "pandas",
+          "matplotlib",
+          "tqdm"
           ],
+      license="Apache Software License",
       python_requires='>3.7'
       )

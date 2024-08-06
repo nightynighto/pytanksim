@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 """Module for simulating sorbent tanks in the two-phase region."""
+"""
+Copyright 2024 Muhammad Irfan Maulana Kusdhany
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 __all__ = ["TwoPhaseSorbentSim",
            "TwoPhaseSorbentDefault",
@@ -16,6 +31,7 @@ from assimulo.solvers import CVode
 from assimulo.exception import TerminateSimulation
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.basesimclass import BaseSimulation
+from pytanksim.utils import logger
 
 
 class TwoPhaseSorbentSim(BaseSimulation):
@@ -213,7 +229,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
         fluid = self.storage_tank.stored_fluid.backend
         Tcrit = fluid.T_critical()
@@ -255,46 +272,54 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             state_info = event_info[0]
             if state_info[0] != 0:
                 self.stop_reason = "CritTempReached"
-                print("\n The simulation has reached critical temperature, \n"
-                      "please switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nThe simulation has reached crit. temp.,"
+                                "\nplease switch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[1] != 0:
                 self.stop_reason = "MinPresReached"
-                print("\n The simulation has hit the minimum supply pressure."
-                      "\n Switch to heated discharge.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nThe simulation has hit min. pressure."
+                                "\nSwitch to heated discharge.")
                 raise TerminateSimulation
 
             if state_info[2] != 0:
                 self.stop_reason = "MaxPresReached"
-                print("\n The simulation has hit maximum pressure! \n"
-                      "Switch to cooling or venting simulation")
+                if self.simulation_params.verbose:
+                    logger.warn("\nThe simulation has hit maximum pressure!"
+                                "\nSwitch to cooling or venting simulation")
                 raise TerminateSimulation
 
             if state_info[3] != 0 or state_info[4] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[5] != 0 and solver.sw[0]:
                 self.stop_reason = "TargetPresReached"
-                print("\n Target pressure reached")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget pressure reached")
                 raise TerminateSimulation
 
             if state_info[6] != 0 and solver.sw[1]:
                 self.stop_reason = "TargetTempReached"
-                print("\n Target temperature reached")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget temperature reached")
                 raise TerminateSimulation
 
             if state_info[5] != 0 and state_info[6] != 0:
                 self.stop_reason = "TargetCondsReached"
-                print("\n Target conditions has been reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget conditions has been reached.")
                 raise TerminateSimulation
 
             if state_info[6] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("Target capacity has been reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget capacity has been reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -318,7 +343,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         model.handle_event = handle_event
         model.name = "2 Phase Dynamics"
         sim = CVode(model)
-        sim.report_continuously = True
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         sim.discr = "BDF"
         sim.atol = [1, 1, 0.05, 1, 1, 1, 1, 1, 1, 1]
         t, y = sim.simulate(self.simulation_params.final_time,
@@ -327,8 +352,8 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
             tqdm._instances.clear()
         except Exception:
             pass
-
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
         pres = np.zeros_like(t)
         nads = np.zeros_like(t)
 
@@ -455,7 +480,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             tqdm._instances.clear()
         except Exception:
             pass
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
 
         def rhs(t, w, sw):
@@ -483,13 +509,15 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
 
             if state_info[0] != 0 or state_info[1] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("Target capacity reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -511,6 +539,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         model.name = "2 Phase Dynamics Cooled with Constant Pressure"
         sim = CVode(model)
         sim.discr = "BDF"
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         sim.rtol = 1E-3
         t, y = sim.simulate(self.simulation_params.final_time,
                             self.simulation_params.displayed_points)
@@ -518,8 +547,8 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
             tqdm._instances.clear()
         except Exception:
             pass
-
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
 
         nads = self.storage_tank.sorbent_material.model_isotherm.n_absolute(
             self.simulation_params.init_pressure,
@@ -645,7 +674,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         except Exception:
             pass
 
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
 
         def rhs(t, w, sw):
@@ -678,13 +708,15 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Target capacity reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -705,6 +737,7 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         model.handle_event = handle_event
         model.name = "2 Phase Dynamics w/ venting"
         sim = CVode(model)
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         sim.discr = "BDF"
         sim.rtol = 1E-6
         t, y = sim.simulate(self.simulation_params.final_time,
@@ -713,7 +746,8 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
             tqdm._instances.clear()
         except Exception:
             pass
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
 
         nads = self.storage_tank.sorbent_material.model_isotherm.n_absolute(
            self.simulation_params.init_pressure,
@@ -832,7 +866,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             simulation.
 
         """
-        pbar = tqdm(total=1000, unit="‰")
+        pbar = tqdm(total=1000, unit="‰",
+                    disable=not(self.simulation_params.verbose))
         state = [0, self.simulation_params.final_time/1000]
 
         def rhs(t, w, sw):
@@ -863,13 +898,15 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             state_info = event_info[0]
             if state_info[0] != 0 or state_info[1] != 0:
                 self.stop_reason = "PhaseChangeEnded"
-                print("\n Phase change has ended. \n"
-                      "Switch to one phase simulation.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nPhase change has ended."
+                                "\nSwitch to one phase simulation.")
                 raise TerminateSimulation
 
             if state_info[2] != 0:
                 self.stop_reason = "TargetCapReached"
-                print("\n Target capacity reached.")
+                if self.simulation_params.verbose:
+                    logger.warn("\nTarget capacity reached.")
                 raise TerminateSimulation
 
         w0 = np.array([self.simulation_params.init_ng,
@@ -889,6 +926,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         model.handle_event = handle_event
         model.name = "2 Phase Dynamics Heated with Constant Pressure"
         sim = CVode(model)
+        sim.verbosity = 30 if self.simulation_params.verbose else 50
         sim.discr = "BDF"
         sim.rtol = 1E-3
         t,  y = sim.simulate(self.simulation_params.final_time,
@@ -897,8 +935,8 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
             tqdm._instances.clear()
         except Exception:
             pass
-
-        print("Saving results...")
+        if self.simulation_params.verbose:
+            logger.info("Saving results...")
 
         nads = self.storage_tank.sorbent_material.model_isotherm.n_absolute(
             self.simulation_params.init_pressure,
