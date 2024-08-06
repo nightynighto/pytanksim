@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Module for calculating derivatives numerically."""
+
 """
 Copyright 2024 Muhammad Irfan Maulana Kusdhany
 
@@ -32,6 +33,7 @@ __all__ = [
     ]
 
 from typing import Callable, List
+from copy import deepcopy
 
 
 def pardev(func: Callable[[float], float],
@@ -108,12 +110,11 @@ def partial_derivative(func: Callable[..., float], var: int,
         by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return pardev(wraps, point[var], stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var] = x
+        return func(*x_perturbed)
+    return pardev(func_at_point, point[var], stepsize)
 
 
 def backdev(func: Callable[[float], float], loc: float,
@@ -191,12 +192,11 @@ def backward_partial_derivative(func: Callable[..., float], var: int,
         by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return backdev(wraps, point[var], stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var] = x
+        return func(*x_perturbed)
+    return backdev(func_at_point, point[var], stepsize)
 
 
 def fordev(func: Callable[[float], float], loc: float,
@@ -274,12 +274,11 @@ def forward_partial_derivative(func: Callable[..., float], var: int,
         by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return fordev(wraps, point[var], stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var] = x
+        return func(*x_perturbed)
+    return fordev(func_at_point, point[var], stepsize)
 
 
 def secder(function: Callable[[float], float], location: float,
@@ -359,12 +358,11 @@ def second_derivative(func: Callable[..., float], var: int,
         by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return secder(wraps, point, stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var] = x
+        return func(*x_perturbed)
+    return secder(func_at_point, point, stepsize)
 
 
 def secforder(function: Callable[[float], float], location: float,
@@ -444,12 +442,11 @@ def second_forward_derivative(func: Callable[..., float], var: int,
         by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return secforder(wraps, point, stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var] = x
+        return func(*x_perturbed)
+    return secforder(func_at_point, point, stepsize)
 
 
 def secbackder(function: Callable[[float], float], location: float,
@@ -529,12 +526,11 @@ def second_backward_derivative(func: Callable[..., float], var: int,
         by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var] = x
-        return func(*args)
-    return secbackder(wraps, point, stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var] = x
+        return func(*x_perturbed)
+    return secbackder(func_at_point, point, stepsize)
 
 
 def mixsecder(function: Callable[[float, float], float], location: List[float],
@@ -615,10 +611,9 @@ def mixed_second_derivative(func: Callable[..., float], var: List[int],
         specified by `var` evaluated at `point`.
 
     """
-    args = point[:]
-
-    def wraps(x):
-        args[var[0]] = x[0]
-        args[var[1]] = x[1]
-        return func(*args)
-    return mixsecder(wraps, [point[var[0]], point[var[1]]], stepsize)
+    def func_at_point(x):
+        x_perturbed = deepcopy(point)
+        x_perturbed[var[0]] = x[0]
+        x_perturbed[var[1]] = x[1]
+        return func(*x_perturbed)
+    return mixsecder(func_at_point, [point[var[0]], point[var[1]]], stepsize)
