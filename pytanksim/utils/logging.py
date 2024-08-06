@@ -17,7 +17,6 @@ limitations under the License.
 """
 
 import logging
-import sys
 
 logger = logging.getLogger('pytanksim')
     

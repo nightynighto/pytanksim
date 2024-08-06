@@ -28,7 +28,6 @@ from assimulo.exception import TerminateSimulation
 from pytanksim.classes.simresultsclass import SimResults
 from pytanksim.classes.basesimclass import BaseSimulation
 from pytanksim.utils import logger
-import textwrap
 
 
 class OnePhaseFluidSim(BaseSimulation):
