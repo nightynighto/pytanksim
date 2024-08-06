@@ -638,7 +638,21 @@ class SimResults:
 
     def interpolate(self, x_var: str = "t"
                     ) -> "dict[Callable[[float], float]]":
+        """Interpolate simulation results between time points.
 
+        Parameters
+        ----------
+        x_var : str, optional
+            Variable to be used as a basis/input for interpolation.The default
+            is "t".
+
+        Returns
+        -------
+        "dict[Callable[[float], float]]"
+            A dictionary containing functions which interpolate each variable
+            in the SimResults object w.r.t. the variable chosen in x_var.
+
+        """
         df = self.df
         x = df.loc[:, x_var]
         interp_dict = {}
