@@ -668,7 +668,7 @@ class BaseSimulation:
             stored_fluid.determine_phase(init_p, init_T)
         spr.init_ng = spr.init_ng if spr.init_ng >= 0 else 0
         spr.init_nl = spr.init_nl if spr.init_nl >= 0 else 0
-        if init_phase s== "Saturated":
+        if init_phase == "Saturated":
             psat = self.storage_tank.stored_fluid.saturation_property_dict(
                 init_T, 0)
             init_p = psat

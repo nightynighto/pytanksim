@@ -20,6 +20,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .tanksimutils import *
 from .finitedifferences import *
 from .logging import logger
