@@ -1,0 +1,2 @@
+,init pressure,init temperature,init quality,dormancy time,final temperature,final quality,final pressure,capacity error,total energy change,sorbent energy contribution,bulk energy contribution,immersion heat contribution,solid heat capacity contribution
+0,1869775.5859912622,80,0,52.224746986646885,129.67538038001797,0,10000000.0,2.3468705876439344e-06,4512218.139646291,2757806.807916036,246203.4442584936,0,1508207.8874717609
