@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name = "pyTankSim",
+setup(name = "pytanksim",
       version = "1.0.0",
       description = "Simulates thermodynamics of fluid tank refueling and discharging.",
       packages =[
@@ -20,6 +20,15 @@ setup(name = "pyTankSim",
           "matplotlib",
           "tqdm"
           ],
+      classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+        "Programming Language :: Python :: 3.7",
+        "Operating System :: Microsoft :: Windows"
+    ],
       license="LGPLv3+",
+      license_files=('COPYING.txt', 'COPYING.LESSER.txt', 'NOTICE.txt'),
       python_requires='>3.7'
       )
