@@ -8,7 +8,7 @@ setup(name = "pyTankSim",
        "pytanksim.utils",
        "pytanksim.classes",
           ],
-      author = "Muhammad Irfan Maulana Kusdhany",
+      author = "Muhammad Irfan Maulana Kusdhany, Kyushu University",
       author_email = "ikusdhany@kyudai.jp",
       install_requires =[
           "scipy",
@@ -20,6 +20,6 @@ setup(name = "pyTankSim",
           "matplotlib",
           "tqdm"
           ],
-      license="Apache Software License",
+      license="LGPLv3+",
       python_requires='>3.7'
       )
