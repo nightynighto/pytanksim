@@ -12,13 +12,13 @@ setup(name = "pytanksim",
       author_email = "ikusdhany@kyudai.jp",
       install_requires =[
           "scipy",
-          "CoolProp",
           "numpy",
-          "assimulo",
-          "lmfit",
           "pandas",
           "matplotlib",
-          "tqdm"
+          "tqdm",
+          "assimulo",
+          "lmfit",
+          "CoolProp",
           ],
       classifiers=[
         "Development Status :: 4 - Beta",
