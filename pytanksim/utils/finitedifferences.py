@@ -467,13 +467,14 @@ def secbackder(function: Callable[[float], float], location: float,
         Location where the second derivative is to be evaluated.
 
     stepsize : float
-        The stepsize for the finite difference approximation.
+        The stepsize for the finite difference approximation. The default
+        is 1e-6.
+
 
     Returns
     -------
     float
-        The first derivative of `function` evaluated at `location`. The default
-        is 1e-6.
+        The first derivative of `function` evaluated at `location`.
 
     """
     loc1 = (location - stepsize)

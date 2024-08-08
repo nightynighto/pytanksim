@@ -1,0 +1,33 @@
+﻿pytanksim
+=========
+
+.. automodule:: pytanksim
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   pytanksim.classes
+   pytanksim.core
+   pytanksim.utils
+

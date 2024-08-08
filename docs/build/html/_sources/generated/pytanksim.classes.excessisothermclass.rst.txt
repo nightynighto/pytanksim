@@ -1,0 +1,29 @@
+pytanksim.classes.excessisothermclass
+=====================================
+
+.. automodule:: pytanksim.classes.excessisothermclass
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ExcessIsotherm
+   
+   
+
+   
+   
+   
+
+
+

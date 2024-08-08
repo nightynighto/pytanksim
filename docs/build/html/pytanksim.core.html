@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytanksim.core package &mdash; pytanksim 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=af2ce170"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pytanksim
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">pytanksim.core package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pytanksim.core.simulationgenerator">pytanksim.core.simulationgenerator module</a><ul>
+<li><a class="reference internal" href="#pytanksim.core.simulationgenerator.automatic_simulation"><code class="docutils literal notranslate"><span class="pre">automatic_simulation()</span></code></a></li>
+<li><a class="reference internal" href="#pytanksim.core.simulationgenerator.generate_simulation"><code class="docutils literal notranslate"><span class="pre">generate_simulation()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">pytanksim.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pytanksim.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-pytanksim.core">
+<span id="pytanksim-core-package"></span><h1>pytanksim.core package<a class="headerlink" href="#module-pytanksim.core" title="Permalink to this heading"></a></h1>
+<p>Contains the core functions of pytanksim</p>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-pytanksim.core.simulationgenerator">
+<span id="pytanksim-core-simulationgenerator-module"></span><h2>pytanksim.core.simulationgenerator module<a class="headerlink" href="#module-pytanksim.core.simulationgenerator" title="Permalink to this heading"></a></h2>
+<p>Main module of pytanksim, used to generate simulations.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pytanksim.core.simulationgenerator.automatic_simulation">
+<span class="sig-prename descclassname"><span class="pre">pytanksim.core.simulationgenerator.</span></span><span class="sig-name descname"><span class="pre">automatic_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">storage_tank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.StorageTank" title="pytanksim.classes.storagetankclasses.StorageTank"><span class="pre">StorageTank</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.SorbentTank" title="pytanksim.classes.storagetankclasses.SorbentTank"><span class="pre">SorbentTank</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.BoundaryFlux" title="pytanksim.classes.basesimclass.BoundaryFlux"><span class="pre">BoundaryFlux</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.SimParams" title="pytanksim.classes.basesimclass.SimParams"><span class="pre">SimParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_at_max_pres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_at_min_pres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handle_max_pres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Cooled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handle_min_pres</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Heated'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.simresultsclass.SimResults" title="pytanksim.classes.simresultsclass.SimResults"><span class="pre">SimResults</span></a></span></span><a class="headerlink" href="#pytanksim.core.simulationgenerator.automatic_simulation" title="Permalink to this definition"></a></dt>
+<dd><p>Automatically run and restart simulations until a target is reached.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>storage_tank</strong> (<em>Union</em><em>[</em><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.StorageTank" title="pytanksim.classes.storagetankclasses.StorageTank"><em>StorageTank</em></a><em>, </em><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.SorbentTank" title="pytanksim.classes.storagetankclasses.SorbentTank"><em>SorbentTank</em></a><em>]</em>) – An object with the properties of the storage tank. Can either be of the
+class StorageTank or its child class SorbentTank.</p></li>
+<li><p><strong>boundary_flux</strong> (<a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.BoundaryFlux" title="pytanksim.classes.basesimclass.BoundaryFlux"><em>BoundaryFlux</em></a>) – An object containing information about the mass and energy entering and
+leaving the control volume of the tank.</p></li>
+<li><p><strong>simulation_params</strong> (<a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.SimParams" title="pytanksim.classes.basesimclass.SimParams"><em>SimParams</em></a>) – An object containing various parameters for the dynamic simulation.</p></li>
+<li><p><strong>stop_at_max_pres</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not the simulation is to be stopped when the tank hits its
+maximum allowable working pressure. The default is False.</p></li>
+<li><p><strong>stop_at_min_pres</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not the simulation is to be stopped when the tank hits its
+minimum supply pressure. The default is False.</p></li>
+<li><p><strong>handle_max_pres</strong> (<em>str</em><em>, </em><em>optional</em>) – A string indicating how the simulation is to continue if the tank has
+reached its maximum allowable working pressure. “Cooled” means that the
+tank will not vent any gas, but will be actively cooled down. “Venting”
+means that the tank will begin to vent the exact amount of fluid inside
+to maintain the maximum pressure. The default is “Cooled”.</p></li>
+<li><p><strong>handle_min_pres</strong> (<em>str</em><em>, </em><em>optional</em>) – A string indicating how the simulation is to continue if the tank has
+reached its minimum supply pressure. “Heated” means exactly enough heat
+will be provided to the tank to maintain the minimum supply pressure.
+“Continue” means the simulation will restart without changing any
+parameters. The default is “Heated”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An object for storing and manipulating the results of the dynamic
+simulations.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.simresultsclass.SimResults" title="pytanksim.classes.simresultsclass.SimResults">SimResults</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pytanksim.core.simulationgenerator.generate_simulation">
+<span class="sig-prename descclassname"><span class="pre">pytanksim.core.simulationgenerator.</span></span><span class="sig-name descname"><span class="pre">generate_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">storage_tank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.StorageTank" title="pytanksim.classes.storagetankclasses.StorageTank"><span class="pre">StorageTank</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.SorbentTank" title="pytanksim.classes.storagetankclasses.SorbentTank"><span class="pre">SorbentTank</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.BoundaryFlux" title="pytanksim.classes.basesimclass.BoundaryFlux"><span class="pre">BoundaryFlux</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.SimParams" title="pytanksim.classes.basesimclass.SimParams"><span class="pre">SimParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.BaseSimulation" title="pytanksim.classes.basesimclass.BaseSimulation"><span class="pre">BaseSimulation</span></a></span></span><a class="headerlink" href="#pytanksim.core.simulationgenerator.generate_simulation" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a dynamic simulation object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>storage_tank</strong> (<em>Union</em><em>[</em><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.StorageTank" title="pytanksim.classes.storagetankclasses.StorageTank"><em>StorageTank</em></a><em>, </em><a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.storagetankclasses.SorbentTank" title="pytanksim.classes.storagetankclasses.SorbentTank"><em>SorbentTank</em></a><em>]</em>) – An object with the properties of the storage tank. Can either be of the
+class StorageTank or its child class SorbentTank.</p></li>
+<li><p><strong>boundary_flux</strong> (<a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.BoundaryFlux" title="pytanksim.classes.basesimclass.BoundaryFlux"><em>BoundaryFlux</em></a>) – An object containing information about the mass and energy entering and
+leaving the control volume of the tank.</p></li>
+<li><p><strong>simulation_params</strong> (<a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.SimParams" title="pytanksim.classes.basesimclass.SimParams"><em>SimParams</em></a>) – An object containing various parameters for the dynamic simulation.</p></li>
+<li><p><strong>simulation_type</strong> (<em>str</em><em>, </em><em>optional</em>) – <p>A string describing the type of the simulation to be run. The default
+is “Default”. The valid types are:</p>
+<blockquote>
+<div><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Default</span></code> : A regular dynamic simulation with no constraints.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cooled</span></code> : A simulation where the tank is cooled to maintain a
+constant pressure. Here, the cooling power becomes one of the
+output variables. Typically used for simulating refueling after
+the tank has reached maximum allowable working pressure, or for
+simulating zero boil-off systems which are actively cooled.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Heated</span></code>: A simulation where the tank is heated to maintain a
+constant pressure. Here, the heating power becomes one of the
+output variables. Typically used for simulating discharging when
+the tank has reached the minimum supply pressure of the fuel cell
+system.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Venting</span></code> : A simulation where the tank vents the fluid stored
+inside to maintain a constant pressure. Here, the amount vented
+becomes an output variable. Typically used to simulate boil-off
+or refueling with a feed-and-bleed scheme.</p></li>
+</ul>
+</div></blockquote>
+</p></li>
+<li><p><strong>phase</strong> (<em>int</em><em>, </em><em>optional</em>) – Specifies whether the fluid being stored is a single phase (1) or a
+two-phase (2) liquid and gas mixture. The default is 1 for single
+phase.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A simulation object which can be <code class="docutils literal notranslate"><span class="pre">run()</span></code> to output a SimResults
+object. Which class will be generated depends on the parameters
+provided to this function.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A child class of <a class="reference internal" href="pytanksim.classes.html#pytanksim.classes.basesimclass.BaseSimulation" title="pytanksim.classes.basesimclass.BaseSimulation">BaseSimulation</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

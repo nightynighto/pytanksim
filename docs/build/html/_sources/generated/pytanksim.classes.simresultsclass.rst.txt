@@ -1,0 +1,29 @@
+pytanksim.classes.simresultsclass
+=================================
+
+.. automodule:: pytanksim.classes.simresultsclass
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SimResults
+   
+   
+
+   
+   
+   
+
+
+

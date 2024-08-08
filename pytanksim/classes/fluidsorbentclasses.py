@@ -21,7 +21,7 @@ and its derivatives.
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ["StoredFluid", "SorbentMaterial", "MDAModel", "DAModel"]
+__all__ = ["StoredFluid", "SorbentMaterial", "ModelIsotherm", "MDAModel", "DAModel"]
 
 import numpy as np
 import CoolProp as CP
@@ -1754,7 +1754,6 @@ class MDAModel(ModelIsotherm):
             is None. If None, the StoredFluid object inside of one of the
             ExcessIsotherm objects passed will be used.
 
-
         sorbent : str, optional
             Name of sorbent material. The default is None. If None, name will
             be taken from one of the ExcessIsotherm objects passed.
@@ -1786,7 +1785,6 @@ class MDAModel(ModelIsotherm):
         kguess : float, optional
             The initial guess for the heterogeneity parameter of Dubinin's
             approximation method for saturation fugacity. The default is 2.0.
-
 
         va_mode : str, optional
             Determines how the volume of the adsorbed phase (va) is
@@ -1986,7 +1984,8 @@ class MDAModel(ModelIsotherm):
 
 
 class SorbentMaterial:
-    """
+    """Class containing the properties of a sorbent material.
+
     Attributes
     ----------
     mass : float

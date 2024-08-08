@@ -1,0 +1,39 @@
+pytanksim.classes
+=================
+
+.. automodule:: pytanksim.classes
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   pytanksim.classes.basesimclass
+   pytanksim.classes.excessisothermclass
+   pytanksim.classes.fluidsorbentclasses
+   pytanksim.classes.onephasefluidsimclasses
+   pytanksim.classes.onephasesorbentsimclasses
+   pytanksim.classes.simresultsclass
+   pytanksim.classes.storagetankclasses
+   pytanksim.classes.twophasefluidsimclasses
+   pytanksim.classes.twophasesorbentsimclasses
+

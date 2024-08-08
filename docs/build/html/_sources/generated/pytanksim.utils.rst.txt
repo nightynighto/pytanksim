@@ -1,0 +1,32 @@
+pytanksim.utils
+===============
+
+.. automodule:: pytanksim.utils
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   pytanksim.utils.finitedifferences
+   pytanksim.utils.logging
+

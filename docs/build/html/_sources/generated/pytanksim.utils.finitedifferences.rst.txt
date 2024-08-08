@@ -1,0 +1,42 @@
+pytanksim.utils.finitedifferences
+=================================
+
+.. automodule:: pytanksim.utils.finitedifferences
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      backdev
+      backward_partial_derivative
+      fordev
+      forward_partial_derivative
+      mixed_second_derivative
+      mixsecder
+      pardev
+      partial_derivative
+      secbackder
+      secder
+      secforder
+      second_backward_derivative
+      second_derivative
+      second_forward_derivative
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

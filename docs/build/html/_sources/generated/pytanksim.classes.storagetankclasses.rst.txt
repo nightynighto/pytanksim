@@ -1,0 +1,36 @@
+pytanksim.classes.storagetankclasses
+====================================
+
+.. automodule:: pytanksim.classes.storagetankclasses
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      Cs_gen
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SorbentTank
+      StorageTank
+   
+   
+
+   
+   
+   
+
+
+

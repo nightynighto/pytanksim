@@ -1,0 +1,30 @@
+pytanksim.core.simulationgenerator
+==================================
+
+.. automodule:: pytanksim.core.simulationgenerator
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      automatic_simulation
+      generate_simulation
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to pytanksim’s documentation! &mdash; pytanksim 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=af2ce170"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="autoapi/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            pytanksim
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to pytanksim’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-pytanksim-s-documentation">
+<h1>Welcome to pytanksim’s documentation!<a class="headerlink" href="#welcome-to-pytanksim-s-documentation" title="Permalink to this heading"></a></h1>
+<p>pytanksim is a package which calculates the mass and energy balances in fluid storage tanks and simulates the dynamics during processes such as refueling, discharging, dormancy, and boil-off.</p>
+<p>It is also equipped to fit gas adsorption data on nanoporous materials to adsorption models, which then allows the inclusion of sorbent materials in the dynamic simulation.</p>
+</section>
+<section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this heading"></a></h1>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this heading"></a></h2>
+<p>The installation of pytanksim requires:</p>
+<ul class="simple">
+<li><p>python versions 3.7 and above</p></li>
+<li><p>CoolProp</p></li>
+<li><p>pandas</p></li>
+<li><p>numpy&gt;=1.6.1</p></li>
+<li><p>scipy</p></li>
+<li><p>tqdm</p></li>
+<li><p>assimulo&gt;=3.0</p></li>
+<li><p>matplotlib</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<p>Pytanksim is listed on PyPI, so it should be possible in theory to install it with a single command via pip. Unfortunately, one of its dependencies, assimulo, tend to cause issues if one were to try installing pytanksim directly via pip, since the PyPI version of assimulo is not up to date and seems to be broken for newer versions of python, therefore causing pytanksim’s install to fail. However, the build of assimulo on Anaconda seems to be well-maintained and working fine.</p>
+<p>Thus, the easiest way to get pytanksim running if you don’t have python installed on your computer, is to install python via <a class="reference external" href="https://www.anaconda.com">Anaconda</a> or <a class="reference external" href="https://conda.io/miniconda.html">Miniconda</a>. In Anaconda or Miniconda, you can create a virtual environment that contains python version 3.7 using the following command on the Anaconda prompter (just change the myenv name to whatever you want to name your working environment):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">myenv</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.7</span>
+</pre></div>
+</div>
+<p>Then, activate this new virtual environment.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">activate</span> <span class="n">myenv</span>
+</pre></div>
+</div>
+<p>You can then write the following to install a working version of assimulo in this virtual environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span><span class="p">::</span><span class="n">assimulo</span>
+</pre></div>
+</div>
+<p>Finally, you can install pytanksim to this virtual environment.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">pytanksim</span>
+</pre></div>
+</div>
+<p>You should be able to use pytanksim in this virtual environment after this!</p>
+<p>If you need an Integrated Development Environment (IDE), you need to install the IDE through Anaconda within the virtual environment as well. For more information on how to work with virtual environments via Anaconda, you may want to see the <a class="reference external" href="https://docs.anaconda.com/working-with-conda/environments/">Anaconda website</a>.</p>
+<p>As an alternative to working with Anaconda, you may also install assimulo directly from <a class="reference external" href="https://github.com/modelon-community/Assimulo/blob/master/INSTALL">the source</a> and then you can pip install pytanksim without having to use a virtual environment, but that process is generally more involved.</p>
+</section>
+</section>
+<section id="license">
+<h1>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h1>
+<p>pytanksim is available under an LGPL v3+ open source license. See GNU’s <a class="reference external" href="https://www.gnu.org/licenses/licenses.html">website</a> for more detail regarding what this license allows.</p>
+</section>
+<section id="contact-information">
+<h1>Contact Information<a class="headerlink" href="#contact-information" title="Permalink to this heading"></a></h1>
+<p>If you have any questions or inquiries regarding this package, please contact Muhammad Irfan Maulana Kusdhany, Kyushu University, at <a class="reference external" href="mailto:ikusdhany&#37;&#52;&#48;kyudai&#46;jp">ikusdhany<span>&#64;</span>kyudai<span>&#46;</span>jp</a>.</p>
+</section>
+<section id="acknowledgement">
+<h1>Acknowledgement<a class="headerlink" href="#acknowledgement" title="Permalink to this heading"></a></h1>
+<p>This work was supported by JST, the establishment of university fellowships towards the creation of science technology innovation, Grant Number JPMJFS2132, and by an external research grant from Mitsubishi Fuso Truck &amp; Bus Corporation.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="autoapi/pytanksim/index.html">pytanksim</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="autoapi/index.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
