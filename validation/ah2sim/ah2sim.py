@@ -69,7 +69,6 @@ plt.ylabel("Excess H$_2$ (mol/kg)")
 for i, temper in enumerate(temperatures):
     pressure = np.linspace(100, 70E5, 300)
     mda_result = []
-    da_result = []
     for index, pres in enumerate(pressure):
         mda_result.append(model_isotherm_mda.n_excess(pres, temper))
     c = next(palette)
