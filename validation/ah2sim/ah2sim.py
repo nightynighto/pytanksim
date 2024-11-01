@@ -25,6 +25,17 @@ import scienceplots
 import matplotlib.transforms as mtransforms
 
 plt.style.use(["science", "nature"])
+small = 8.5
+medium = 9
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=small)
 
 
 stored_fluid = pts.StoredFluid(fluid_name="Hydrogen",
@@ -47,36 +58,7 @@ model_isotherm_mda = pts.classes.MDAModel.from_ExcessIsotherms(
                                         m_mode="Constant",
                                         verbose=False)
 
-palette = itertools.cycle(["#8e463a",
-                           "#71b54a",
-                           "#9349cd",
-                           "#c59847",
-                           "#7b8cd1",
-                           "#d14f38",
-                           "#56a5a1",
-                           "#cc4d97",
-                           "#56733f",
-                           "#593e78",
-                           "#c07685"])
 
-symbols = itertools.cycle(["o", "^", "D", "s", "p", "P", "X",
-                           "*", "v", "1", (6, 2, 0)])
-plt.figure(figsize=(3.543, 2/3*3.543))
-plt.xlim(0, 7)
-plt.ylim(0, 60)
-plt.xlabel("P (MPa)")
-plt.ylabel("Excess H$_2$ (mol/kg)")
-for i, temper in enumerate(temperatures):
-    pressure = np.linspace(100, 70E5, 300)
-    mda_result = []
-    for index, pres in enumerate(pressure):
-        mda_result.append(model_isotherm_mda.n_excess(pres, temper))
-    c = next(palette)
-    plt.plot(pressure * 1E-6, mda_result, color=c)
-    plt.scatter(excesslist[i].pressure * 1E-6, excesslist[i].loading,
-                label=str(temper)+"K", color=c, marker=next(symbols))
-plt.legend(ncol=3)
-plt.savefig("MDAFit.jpeg", format="jpeg", dpi=1000, bbox_inches="tight")
 
 tankvol = 0.0024946
 rhoskel = 2300
@@ -144,7 +126,7 @@ results.to_csv("AH2sim.csv")
 
 results = pts.SimResults.from_csv("AH2sim.csv")
 
-fig, ax = plt.subplots(2, figsize=((3.543, 5/4*3.543)))
+fig, ax = plt.subplots(3, figsize=((3.543, 7.5/4*3.543)))
 
 for ind, axis in enumerate(ax):
     label = r"\textbf{"+chr(ord('`')+(ind+1))+".)" + "}"
@@ -153,25 +135,54 @@ for ind, axis in enumerate(ax):
               fontsize='medium', va='bottom', fontfamily='serif',
               weight="bold")
 
-ax[0].set_ylabel("Pressure (MPa)")
-ax[0].set_xlabel("Time (s)")
+palette = itertools.cycle(["#8e463a",
+                           "#71b54a",
+                           "#9349cd",
+                           "#c59847",
+                           "#7b8cd1",
+                           "#d14f38",
+                           "#56a5a1",
+                           "#cc4d97",
+                           "#56733f",
+                           "#593e78",
+                           "#c07685"])
+
+symbols = itertools.cycle(["o", "^", "D", "s", "p", "P", "X",
+                           "*", "v", "1", (6, 2, 0)])
+ax[0].set_xlim(0, 7)
+ax[0].set_ylim(0, 60)
+ax[0].set_xlabel("P (MPa)")
+ax[0].set_ylabel("Excess H$_2$ (mol/kg)")
+for i, temper in enumerate(temperatures):
+    pressure = np.linspace(100, 70E5, 300)
+    mda_result = []
+    for index, pres in enumerate(pressure):
+        mda_result.append(model_isotherm_mda.n_excess(pres, temper))
+    c = next(palette)
+    ax[0].plot(pressure * 1E-6, mda_result, color=c)
+    ax[0].scatter(excesslist[i].pressure * 1E-6, excesslist[i].loading,
+                  label=str(temper)+" K", color=c, marker=next(symbols))
+ax[0].legend(ncol=3, columnspacing=0.1, labelspacing=0.3, handletextpad=0.1)
+
+ax[1].set_ylabel("Pressure (MPa)")
+ax[1].set_xlabel("Time (s)")
 
 test20pres = pd.read_csv("test20-pres.csv")
 test20temp = pd.read_csv("test20-temp.csv")
 
 
-ax[0].scatter(test20pres["t (s)"], test20pres["P (Pa)"] * 1E-6,
+ax[1].scatter(test20pres["t (s)"], test20pres["P (Pa)"] * 1E-6,
               label="Experiment",
               color="#DC3220")
-ax[0].plot(results.results_df["time"], results.results_df["pressure"] * 1E-6,
+ax[1].plot(results.results_df["time"], results.results_df["pressure"] * 1E-6,
            label="pytanksim", color="#005AB5")
-ax[0].legend()
+ax[1].legend()
 
-ax[1].set_xlabel("Time (s)")
-ax[1].set_ylabel("Temperature (K)")
-ax[1].scatter(test20temp["t (s)"], test20temp["T (K)"], label="Experiment",
+ax[2].set_xlabel("Time (s)")
+ax[2].set_ylabel("Temperature (K)")
+ax[2].scatter(test20temp["t (s)"], test20temp["T (K)"], label="Experiment",
               color="#DC3220")
-ax[1].plot(results.results_df["time"], results.results_df["temperature"],
+ax[2].plot(results.results_df["time"], results.results_df["temperature"],
            label="pytanksim", color="#005AB5")
 plt.tight_layout()
 plt.savefig("AH2-Validation.jpeg", format="jpeg", dpi=1000)

@@ -61,7 +61,7 @@ lpa_tank = pts.SorbentTank(
                     sorbent_material=sorbent_material,
                     set_capacity=cap,
                     full_pressure=1E5,
-                    full_temperature=313.15,
+                    full_temperature=308.15,
                     empty_pressure=1E5,
                     empty_temperature=473.15
     )
@@ -73,7 +73,7 @@ sorbent_cost_per_kwh = sorbent_cost/total_energy
 
 # Simulate the discharging of the sorbent tank
 bf1 = pts.BoundaryFlux(mass_flow_out=mdot_work)
-sp1 = pts.SimParams(init_temperature=313.15,
+sp1 = pts.SimParams(init_temperature=308.15,
                     final_time=charge_time,
                     init_pressure=1E5)
 sim1 = pts.generate_simulation(lpa_tank, bf1, sp1, simulation_type="Heated")
@@ -111,7 +111,7 @@ def heat_exchanger(T_tank, heat_load, T_water=303.15,
         hfinal_ideal = water.fluid_property_dict(p_water, T_pinch)["hf"]
     except(ValueError):
         print(T_pinch)
-        hfinal_ideal = water.saturation_property_dict(T_water, T_pinch)["hf"]
+        hfinal_ideal = water.saturation_property_dict(p_water, T_pinch)["hf"]
     q = (hfinal_ideal-hinit)*eff
     hfinal_actual = q + hinit
     water.backend.update(CP.HmolarP_INPUTS, hfinal_actual, p_water)
@@ -139,7 +139,7 @@ i = 0
 for i in range(len(res2.df["t"])):
     T = res2.df["T"][i]
     heat = res2.df["Qcoolreq_dot"][i]
-    eff_actual, mfrate, cost_i = heat_exchanger(T, heat, T_water=303.15)
+    eff_actual, mfrate, cost_i = heat_exchanger(T, heat, T_water=298.15)
     if eff_actual > 0.85+0.85*1E-3:
         print(T)
         break
@@ -177,7 +177,22 @@ palette = itertools.cycle(["#8e463a", "#71b54a"])
 symbols = itertools.cycle(["o", "^"])
 
 plt.style.use(["science", "nature"])
-fig, ax = plt.subplots(3, figsize=(3.543, 2*3.543))
+small = 8.5
+medium = 9.3
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
+fig = plt.figure(figsize=(7.4801, 3 / 4 * 7.4801))
+ax = []
+ax.append(plt.subplot2grid((60, 80), [0, 0], 53, 30))
+ax.append(plt.subplot2grid((60, 80), [0, 40], 23, 40))
+ax.append(plt.subplot2grid((60, 80), [30, 40], 23, 50))
 
 
 ax[0].set_xlim(0, 0.5)
@@ -185,7 +200,6 @@ ax[0].set_ylim(0, 20)
 ax[0].set_xlabel("P (MPa)")
 ax[0].set_ylabel("Excess CO$_2$ (mol/kg)")
 for i, temper in enumerate(temperatures):
-    # pressure = excesslist[i].pressure
     pressure = np.linspace(100, 5E5, 300)
     mda_result = []
     da_result = []
@@ -194,46 +208,45 @@ for i, temper in enumerate(temperatures):
     c = next(palette)
     ax[0].plot(pressure * 1E-6, mda_result, color=c)
     ax[0].scatter(excesslist[i].pressure * 1E-6, excesslist[i].loading,
-                  label=str(temper)+"K", color=c, marker=next(symbols))
+                  label=str(temper)+"K", color=c, marker=next(symbols), s=20)
 ax[0].legend(ncol=3)
 twin1 = ax[1].twinx()
 twin2 = ax[1].twinx()
 
-p1, = ax[1].plot(res1.df["t"], res1.df["T"], label="Temperature",
+p1, = ax[1].plot(res1.df["t"]/3600, res1.df["T"], label="Temperature",
                  color="#e41a1c")
-p2, = twin1.plot(res1.df["t"], res1.df["Qheatreq_dot"]*1E-3,
-                 label="Heating Power", color="#377eb8")
-p3, = twin2.plot(res1.df["t"], mfrate_all_discharge, label="Steam Flow",
-                 color="#4daf4a")
-ax[1].set_xlabel("Time (s)")
+p2, = twin1.plot(res1.df["t"]/3600, res1.df["Qheatreq_dot"]*1E-6,
+                 label="Heating Power", color="#377eb8", linestyle="dashed")
+p3, = twin2.plot(res1.df["t"]/3600, mfrate_all_discharge, label="Steam Flow",
+                 color="#4daf4a", linestyle="dashdot")
+ax[1].set_xlabel("Time (h)")
 ax[1].set_ylabel("Temperature (K)")
-twin1.set_ylabel("Required Heating Power (kW)")
-twin1.set_ylim(13000, 30000)
-twin2.set_ylabel("Mass Flow of Waste Steam (kg/s)")
+twin1.set_ylabel("Required Heating Power (MW)")
+twin1.set_ylim(13, 30)
+twin2.set_ylabel("Steam Mass Flow Rate (kg/s)")
 twin2.set_ylim(0, 400)
-twin2.spines.right.set_position(("axes", 1.2))
+twin2.spines.right.set_position(("axes", 1.15))
 ax[1].legend(handles=[p1, p2, p3])
 twin3 = ax[2].twinx()
 twin4 = ax[2].twinx()
-p4, = ax[2].plot(res2.df["t"], res2.df["T"], label="Temperature",
+p4, = ax[2].plot(res2.df["t"]/3600, res2.df["T"], label="Temperature",
                  color="#e41a1c")
-p5, = twin3.plot(res2.df["t"], res2.df["Qcoolreq_dot"]*1E-3,
-                 label="Cooling Power", color="#377eb8")
-p6, = twin4.plot(res1.df["t"], mfrate_all_charge, label="Chilled Water Flow",
-                 color="#4daf4a")
-ax[2].set_xlabel("Time (s)")
+p5, = twin3.plot(res2.df["t"]/3600, res2.df["Qcoolreq_dot"]*1E-6,
+                 label="Cooling Power", color="#377eb8", linestyle="dashed")
+p6, = twin4.plot(res1.df["t"]/3600, mfrate_all_charge, label="Water Flow",
+                 color="#4daf4a", linestyle="dashdot")
+ax[2].set_xlabel("Time (h)")
 ax[2].set_ylabel("Temperature (K)")
-twin3.set_ylabel("Required Cooling Power (kW)")
-twin3.set_ylim(13000, 30000)
-twin4.set_ylabel("Mass Flow of Chilled Water (kg/s)")
+twin3.set_ylabel("Required Cooling Power (MW)")
+twin3.set_ylim(13, 30)
+twin4.set_ylabel("Water Mass Flow Rate (kg/s)")
 twin4.set_ylim(0, 700)
-twin4.spines.right.set_position(("axes", 1.2))
+twin4.spines.right.set_position(("axes", 1.15))
 ax[2].legend(handles=[p4, p5, p6], loc="upper center")
 for ind, axis in enumerate(ax):
     label = r"\textbf{"+chr(ord('`')+(ind+1))+".)" + "}"
     trans = mtransforms.ScaledTranslation(-30/72, 3/72, fig.dpi_scale_trans)
-    axis.text(0.0, 1.0, label, transform=axis.transAxes + trans,
+    axis.text(-0.03, 1.0, label, transform=axis.transAxes + trans,
               fontsize='medium', va='bottom', fontfamily='serif',
               weight="bold")
-
-plt.savefig("aco2valid.jpeg", format="jpeg", dpi=1000, bbox_inches="tight")
+plt.savefig("aco2valid.jpeg", format="jpeg", dpi=1000)

@@ -22,7 +22,19 @@ import matplotlib.pyplot as plt
 import scienceplots
 import matplotlib.transforms as mtransforms
 
-plt.style.use(["science", "nature"])
+plt.style.use(["science","nature"])
+small = 8.5
+medium = 9.3
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
+
 
 stored_fluid = pts.StoredFluid(fluid_name="Hydrogen",
                                EOS="HEOS")
@@ -69,9 +81,9 @@ simulation_results = pts.automatic_simulation(storage_tank_fluid,
 
 
 simulation_results.to_csv("SLH2sim.csv")
-simulation_results.plot("nin", ["p", "T"])
+simulation_results.plot("min", ["p", "T"])
 
-fig, ax = plt.subplots(2, figsize=(3.543, 5/4*3.543))
+fig, ax = plt.subplots(3, figsize=(3.543, 7.5/4*3.543))
 
 for ind, axis in enumerate(ax):
     label = r"\textbf{"+chr(ord('`')+(ind+1))+".)" + "}"
@@ -81,27 +93,42 @@ for ind, axis in enumerate(ax):
               weight="bold")
 
 ax[0].set_ylabel("Pressure (MPa)")
-ax[0].set_xlabel("Time (s)")
+ax[0].set_xlabel("Usable Hydrogen (kg)")
 
 validpres = pd.read_csv("SLH2valid-pres.csv")
 validtemp = pd.read_csv("SLH2valid-temp.csv")
 
-
-ax[0].plot(validpres["Moles"], validpres["P (Pa)"] * 1E-6,
+MW = stored_fluid.backend.molar_mass()
+ax[0].plot(validpres["Moles"] * MW, validpres["P (Pa)"] * 1E-6,
            label="ANL Simulation",
            color="#DC3220", linestyle="-.")
-ax[0].plot(simulation_results.results_df["inserted_amount"],
-           simulation_results.results_df["pressure"] * 1E-6,
-           label="pytanksim", color="#005AB5", alpha=0.5)
+ax[0].plot(simulation_results.df['min'],
+           simulation_results.df['p'] * 1E-6,
+           label="pytanksim", color="#005AB5", alpha=0.95)
 ax[0].legend()
 
-ax[1].set_xlabel("Inserted Amount (Moles)")
+ax[1].set_xlabel("Usable Hydrogen (kg)")
 ax[1].set_ylabel("T (K)")
-ax[1].plot(validtemp["Moles"], validtemp["T (K)"], label="ANL Simulation",
+
+ax[1].plot(validtemp["Moles"]*MW, validtemp["T (K)"], label="ANL Simulation",
            color="#DC3220", linestyle="-.")
-ax[1].plot(simulation_results.results_df["inserted_amount"],
-           simulation_results.results_df["temperature"],
-           label="pytanksim", color="#005AB5", alpha=0.5)
+ax[1].plot(simulation_results.df['min'],
+           simulation_results.df['T'],
+           label="pytanksim", color="#005AB5", alpha=0.95)
+ax[1].legend()
+
+ax[2].set_xlabel("Usable Hydrogen (kg)")
+ax[2].set_ylabel("Hydrogen Mass (kg)")
+ax[2].set_ylim(0, 12)
+
+ax[2].plot(simulation_results.df['min'],
+           simulation_results.df['mg'],
+           label="Gaseous Hydrogen", color="green", linestyle="-.")
+
+ax[2].plot(simulation_results.df['min'],
+           simulation_results.df['ml'] + simulation_results.df['ms'],
+           label="Liquid Hydrogen", color="blue", linestyle="dashed")
+ax[2].legend()
 
 plt.tight_layout()
 plt.savefig("SLH2-Validation.jpeg", format="jpeg", dpi=1000)

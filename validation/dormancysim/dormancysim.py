@@ -23,6 +23,17 @@ import itertools
 import scienceplots
 
 plt.style.use(["science", "nature"])
+small = 9
+medium = 10
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
 
 
 stored_fluid = pts.StoredFluid(fluid_name="Hydrogen",
@@ -197,8 +208,8 @@ for i in range(len(tank_list)):
         f"{vent_temp_5kg[i]:.1f}" + " K")
 
 
-fig, ax = plt.subplots(2, 2, figsize=(7.48, 7),
-                       gridspec_kw={'height_ratios': [3, 5]})
+fig, ax = plt.subplots(2, 2, figsize=(7.48, 8),
+                       gridspec_kw={'height_ratios': [3.5, 5]})
 
 palette = itertools.cycle(["#8e463a",
                            "#71b54a",
@@ -226,11 +237,11 @@ for i, temper in enumerate(temperatures_mof):
     c = next(palette)
     ax[0].plot(pressure * 1E-6, mda_result, color=c)
     ax[0].scatter(excesslist_mof[i].pressure * 1E-6, excesslist_mof[i].loading,
-                  label=str(temper)+"K", color=c, marker=next(symbols))
-ax[0].legend(ncol=3)
-ax[0].text(0, 1.05, "MOF-5 (Powder)",
-           transform=ax[0].transAxes, fontsize='large', va='bottom',
-           fontfamily='serif', weight="bold")
+                  label=str(temper)+" K", color=c, marker=next(symbols), s=20)
+ax[0].legend(ncol=3, loc="upper right", columnspacing=0.5,
+             handletextpad=0.1)
+ax[0].text(0, 1.02, r"\textbf{MOF-5 (Powder)}",
+           transform=ax[0].transAxes, fontsize=11, va='bottom', weight="bold")
 
 
 ax[1].set_xlim(0, 10)
@@ -246,17 +257,19 @@ for i, temper in enumerate(temperatures_mofp):
     ax[1].plot(pressure * 1E-6, mda_result, color=c)
     ax[1].scatter(excesslist_mofp[i].pressure * 1E-6,
                   excesslist_mofp[i].loading,
-                  label=str(temper)+"K", color=c, marker=next(symbols))
-ax[1].legend(ncol=2)
-ax[1].text(0, 1.05, "MOF-5 (Pellet)",
-           transform=ax[1].transAxes, fontsize='large', va='bottom',
-           fontfamily='serif', weight="bold")
+                  label=str(temper)+" K", color=c,
+                  marker=next(symbols), s=20)
+ax[1].legend(ncol=2, loc="upper right", columnspacing=0.5,
+             handletextpad=0.1)
+ax[1].text(0, 1.02, r"\textbf{MOF-5 (Pellet)}",
+           transform=ax[1].transAxes, va='bottom',
+           fontsize=11, weight="bold")
 for n, axis in enumerate(ax):
-    axis.text(-0.1, 0.99, r"\textbf{"+chr(ord('`')+(n+1))+".)" + "}",
-              transform=axis.transAxes, fontsize='medium', va='bottom',
-              fontfamily='serif', weight="bold")
+    axis.text(-0.15, 1.02, r"\textbf{"+chr(ord('`')+(n+1))+".)" + "}",
+              transform=axis.transAxes, va='bottom',
+              fontsize=11, weight="bold")
 
-samplenames = ["CcH2", "AX-21 (Powder)", "MOF-5 (Powder)", "MOF-5 (Pellet)"]
+samplenames = ["CcH2", "AX-21\n(Powder)", "MOF-5\n(Powder)", "MOF-5\n(Pellet)"]
 tick_pos = range(len(samplenames))
 
 counts_usable = {
@@ -297,7 +310,7 @@ for heat, heat_count in counts_5kg.items():
     p = ax[2].bar(samplenames, heat_count, label=heat, bottom=bottom)
     bottom += heat_count
     if heat == "$\Delta U_s$":
-        ax[2].bar_label(p, vent_label_list_5kg, padding=3)
+        ax[2].bar_label(p, vent_label_list_5kg, padding=9)
 for i, label in enumerate(start_label_list_5kg):
     ax[2].annotate(label, (i, 0.15), ha="center", va="bottom")
 
@@ -306,16 +319,16 @@ ax[2].set_ylabel("Dormancy (watt days)")
 ax[2].set_xticks(tick_pos)
 ax[2].set_xticklabels(samplenames)
 ax[2].legend(loc='upper left')
-ax[2].text(0, 1.05, "5 kg Total Hydrogen in Tank",
-           transform=ax[2].transAxes, fontsize='large', va='bottom',
-           fontfamily='serif', weight="bold")
+ax[2].text(0, 1.02, r"\textbf{5 kg Total Hydrogen in Tank}",
+           transform=ax[2].transAxes, va='bottom',
+           fontsize=11, weight="bold")
 
 bottom = np.zeros(4)
 for heat, heat_count in counts_usable.items():
     p = ax[3].bar(samplenames, heat_count, label=heat, bottom=bottom)
     bottom += heat_count
     if heat == "$\Delta U_s$":
-        ax[3].bar_label(p, vent_label_list_usable, padding=3)
+        ax[3].bar_label(p, vent_label_list_usable, padding=9)
 
 for i, label in enumerate(start_label_list_usable):
     ax[3].annotate(label, (i, 0.15), ha="center", va="bottom")
@@ -324,9 +337,10 @@ ax[3].set_ylabel("Dormancy (watt days)")
 ax[3].set_xticks(tick_pos)
 ax[3].set_xticklabels(samplenames)
 ax[3].legend()
-ax[3].text(0, 1.05, "40 kg/$\mathrm{m^3}$ Usable Density w/ 50 K Swing",
-           transform=ax[3].transAxes, fontsize='large', va='bottom',
-           fontfamily='serif', weight="bold")
+ax[3].text(0, 1.02, r"\textbf{40 kg/$\mathbf{m^3}$ Usable Density w/ "
+           "50 K Swing}",
+           transform=ax[3].transAxes, va='bottom',
+           fontsize=11, weight="bold")
 
 plt.tight_layout()
 plt.savefig("dormancysim.jpeg", dpi=1000)

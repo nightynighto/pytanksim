@@ -29,6 +29,17 @@ import matplotlib.transforms as mtransforms
 stored_fluid = pts.StoredFluid(fluid_name="Methane",
                                EOS="HEOS")
 plt.style.use(["science", "nature"])
+small = 8.5
+medium = 9.3
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
 
 adsorptiondata = pd.read_csv("RGM1-303K.csv")
 MW = stored_fluid.backend.molar_mass()
@@ -46,19 +57,6 @@ model_isotherm_da = pts.classes.DAModel.from_ExcessIsotherms(
                                         k_mode="Constant",
                                         rhoa_mode="Ozawa",
                                         f0_mode="Dubinin")
-
-pressure = np.linspace(100, 35E5, 50)
-da_result = []
-for index, pres in enumerate(pressure):
-    da_result.append(model_isotherm_da.n_excess(pres, 303))
-plt.figure(figsize=(3.543, 2 * 3.543 / 3))
-plt.xlabel("P (MPa)")
-plt.ylabel("Excess CH$_4$ (mol/kg)")
-plt.plot(pressure * 1E-6, da_result, color="#b96f74", label="DA Fit")
-plt.scatter(excesslist[0].pressure * 1E-6, excesslist[0].loading,
-            label="Experimental", color="#b96f74")
-plt.legend()
-plt.savefig("DAFit.jpeg", format="jpeg", dpi=1000, bbox_inches="tight")
 
 tankvol = 1.82 * 1E-3
 surface_area = np.pi * 0.1116 * 0.202 + 2 * np.pi * ((0.1116/2)**2) - \
@@ -118,22 +116,33 @@ results.to_csv("ANGsim.csv")
 
 validdata = pd.read_csv("ANGsimvalid.csv")
 
-fig, ax = plt.subplots(2,  figsize=((3.543, 5/4*3.543)))
-ax[0].set_ylabel("Pressure (MPa)")
+fig, ax = plt.subplots(3,  figsize=((3.543, 7.5/4*3.543)))
 
-ax[0].set_xlabel("Time (s)")
-ax[0].scatter(validdata["t (s)"], validdata["P (Pa)"] * 1E-6,
-              label="Experiment",
-              color="#DC3220")
-ax[0].plot(results.results_df["time"], results.results_df["pressure"] * 1E-6,
-           label="pytanksim", color="#005AB5")
+pressure = np.linspace(100, 35E5, 50)
+da_result = []
+for index, pres in enumerate(pressure):
+    da_result.append(model_isotherm_da.n_excess(pres, 303))
+ax[0].set_xlabel("P (MPa)")
+ax[0].set_ylabel("Excess CH$_4$ (mol/kg)")
+ax[0].plot(pressure * 1E-6, da_result, color="#8e463a", label="DA Fit")
+ax[0].scatter(excesslist[0].pressure * 1E-6, excesslist[0].loading,
+            label="Experiment", color="#8e463a")
 ax[0].legend()
+ax[1].set_ylabel("Pressure (MPa)")
 
 ax[1].set_xlabel("Time (s)")
-ax[1].set_ylabel("T (K)")
-ax[1].scatter(validdata["t (s)"], validdata["T (K)"], label="Experiment",
+ax[1].scatter(validdata["t (s)"], validdata["P (Pa)"] * 1E-6,
+              label="Experiment",
               color="#DC3220")
-ax[1].plot(results.results_df["time"], results.results_df["temperature"],
+ax[1].plot(results.results_df["time"], results.results_df["pressure"] * 1E-6,
+           label="pytanksim", color="#005AB5")
+ax[1].legend()
+
+ax[2].set_xlabel("Time (s)")
+ax[2].set_ylabel("T (K)")
+ax[2].scatter(validdata["t (s)"], validdata["T (K)"], label="Experiment",
+              color="#DC3220")
+ax[2].plot(results.results_df["time"], results.results_df["temperature"],
            label="pytanksim", color="#005AB5")
 
 for ind, ax in enumerate(ax):
@@ -142,5 +151,6 @@ for ind, ax in enumerate(ax):
     ax.text(0.0, 1.0, label, transform=ax.transAxes + trans,
             fontsize='medium', va='bottom', fontfamily='serif', weight="bold")
 
+plt.tight_layout()
 plt.savefig("ANG-Validation.jpeg", format="jpeg", dpi=1000,
             bbox_inches="tight")
