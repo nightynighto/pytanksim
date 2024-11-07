@@ -58,6 +58,60 @@ If you need an Integrated Development Environment (IDE), you need to install the
 
 As an alternative to working with Anaconda, you may also install assimulo directly from [the source](https://github.com/modelon-community/Assimulo/blob/master/INSTALL) and then you can pip install pytanksim without having to use a virtual environment, but that process is generally more involved.
 
+### Validation Case Studies
+
+Several case studies are available under the validation folder which illustrates pytanksim's various functionalities.
+First time users are recommended to go through the example case studies.
+
+#### Datasets
+
+The data used in the case studies are taken from the following papers:
+
+Petitpas, G., Bénard, P., Klebanoff, L. E., Xiao, J., & Aceves, S. (2014).
+A comparative analysis of the cryo-compression and cryo-adsorption hydrogen
+storage methods. International Journal of Hydrogen Energy, 39(20),
+10564–10584. https://doi.org/10.1016/j.ijhydene.2014.04.200
+Copyright 2014 Elsevier.
+
+Ahluwalia, R. K., & Peng, J. K. (2008). Dynamics of cryogenic hydrogen
+storage in insulated pressure vessels for automotive applications.
+International Journal of Hydrogen Energy, 33(17), 4622–4633.
+https://doi.org/10.1016/j.ijhydene.2008.05.090
+Copyright 2008 Elsevier.
+
+Sahoo, P. K., John, M., Newalkar, B. L., Choudhary, N. V., &
+Ayappa, K. G. (2011). Filling Characteristics for an Activated Carbon
+Based Adsorbed Natural Gas Storage System. Industrial & Engineering
+Chemistry Research, 50(23), 13000–13011. https://doi.org/10.1021/ie200241x
+Copyright 2011 American Chemical Society.
+
+Xiao, J., Zhou, Z., Cossement, D., Bénard, P., & Chahine, R. (2013).
+Lumped parameter model for charge–discharge cycle of adsorptive hydrogen
+storage system. International Journal of Heat and Mass Transfer, 64,
+245–253. https://doi.org/10.1016/j.ijheatmasstransfer.2013.04.029
+Copyright 2013 Elsevier.
+
+Richard, M.-A., Bénard, P., & Chahine, R. (2009). Gas adsorption process
+in activated carbon over a wide temperature range above the critical point.
+Part 1: Modified Dubinin-Astakhov model. Adsorption, 15, 43–51.
+Copyright 2009 Springer.
+
+Purewal, J., Liu, D., Sudik, A., Veenstra, M., Yang, J., Maurer, S., Müller,
+U., & Siegel, D. J. (2012). Improved Hydrogen Storage and Thermal Conductivity
+in High-Density MOF-5 Composites. The Journal of Physical Chemistry C, 116(38),
+20199–20212. https://doi.org/10.1021/jp305524f
+Copyright 2012 American Chemical Society.
+
+Zhou, W., Wu, H., Hartman, M. R., & Yildirim, T. (2007). Hydrogen and Methane
+Adsorption in Metal−Organic Frameworks: A High-Pressure Volumetric Study.
+The Journal of Physical Chemistry C, 111(44), 16131–16137.
+https://doi.org/10.1021/jp074889i
+Copyright 2007 American Chemical Society.
+
+Please cite them if you use the data from the case studies in your own work.
+If you wish to redistribute the data for your own work, you are 
+advised to contact the original authors or publishers for the copyright
+information.
 
 ## License
 

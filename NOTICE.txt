@@ -14,8 +14,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 The data (in csv format) included in the validation folder were obtained
-by digitizing plots from published papers as listed below, with
-permission from each respective publisher:
+by digitizing plots from published papers as listed below:
 
 Petitpas, G., Bénard, P., Klebanoff, L. E., Xiao, J., & Aceves, S. (2014).
 A comparative analysis of the cryo-compression and cryo-adsorption hydrogen
@@ -58,7 +57,7 @@ The Journal of Physical Chemistry C, 111(44), 16131–16137.
 https://doi.org/10.1021/jp074889i
 Copyright 2007 American Chemical Society.
 
-If you wish to redistribute the data for your own derivative work, you are 
+If you wish to redistribute the data for your own work, you are 
 advised to contact the original authors or publishers for the copyright
 information.
 

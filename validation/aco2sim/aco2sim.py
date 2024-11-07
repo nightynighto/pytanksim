@@ -139,7 +139,7 @@ i = 0
 for i in range(len(res2.df["t"])):
     T = res2.df["T"][i]
     heat = res2.df["Qcoolreq_dot"][i]
-    eff_actual, mfrate, cost_i = heat_exchanger(T, heat, T_water=298.15)
+    eff_actual, mfrate, cost_i = heat_exchanger(T, heat, T_water=299.65)
     if eff_actual > 0.85+0.85*1E-3:
         print(T)
         break
@@ -153,7 +153,7 @@ cost_charge_per_kwh = cost_charge/total_energy
 mfrate_total_charge = simps(mfrate_all_charge, res2.df["t"])
 cooling_tower_max_cap = max(mfrate_all_charge)
 ct_max_cap_gpm = 264.172*60*cooling_tower_max_cap/rho_water
-cooling_tower_cost = ct_max_cap_gpm * 30 * 1.12 * 1.1 * 1.8
+cooling_tower_cost = ct_max_cap_gpm * 50 * 1.12 * 1.1 * 1.8
 cooling_tower_cost_per_kwh = cooling_tower_cost/total_energy
 
 cost_discharge = 0
@@ -240,7 +240,7 @@ ax[2].set_ylabel("Temperature (K)")
 twin3.set_ylabel("Required Cooling Power (MW)")
 twin3.set_ylim(13, 30)
 twin4.set_ylabel("Water Mass Flow Rate (kg/s)")
-twin4.set_ylim(0, 700)
+twin4.set_ylim(0, 900)
 twin4.spines.right.set_position(("axes", 1.15))
 ax[2].legend(handles=[p4, p5, p6], loc="upper center")
 for ind, axis in enumerate(ax):
