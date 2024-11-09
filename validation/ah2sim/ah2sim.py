@@ -24,20 +24,6 @@ import itertools
 import scienceplots
 import matplotlib.transforms as mtransforms
 
-plt.style.use(["science", "nature"])
-small = 8.5
-medium = 9
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": 'Helvetica'
-})
-plt.rc('font', size=medium)
-plt.rc('axes', labelsize=medium)
-plt.rc('xtick', labelsize=small)
-plt.rc('ytick', labelsize=small)
-plt.rc('legend', fontsize=small)
-
-
 stored_fluid = pts.StoredFluid(fluid_name="Hydrogen",
                                EOS="HEOS")
 
@@ -58,9 +44,6 @@ model_isotherm_mda = pts.classes.MDAModel.from_ExcessIsotherms(
                                         m_mode="Constant",
                                         verbose=False)
 
-
-
-tankvol = 0.0024946
 rhoskel = 2300
 rhopack = 269
 mads = 0.671
@@ -71,6 +54,7 @@ sorbent_material = pts.SorbentMaterial(model_isotherm=model_isotherm_mda,
                                        mass=mads,
                                        specific_surface_area=2800)
 
+tankvol = 0.0024946
 
 storage_tank = pts.SorbentTank(
                     volume=tankvol,
@@ -123,6 +107,19 @@ simulation = pts.generate_simulation(storage_tank=storage_tank,
 
 results = simulation.run()
 results.to_csv("AH2sim.csv")
+
+plt.style.use(["science", "nature"])
+small = 8.5
+medium = 9
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=small)
 
 results = pts.SimResults.from_csv("AH2sim.csv")
 

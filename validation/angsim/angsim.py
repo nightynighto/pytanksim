@@ -28,18 +28,6 @@ import matplotlib.transforms as mtransforms
 
 stored_fluid = pts.StoredFluid(fluid_name="Methane",
                                EOS="HEOS")
-plt.style.use(["science", "nature"])
-small = 8.5
-medium = 9.3
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": 'Helvetica'
-})
-plt.rc('font', size=medium)
-plt.rc('axes', labelsize=medium)
-plt.rc('xtick', labelsize=small)
-plt.rc('ytick', labelsize=small)
-plt.rc('legend', fontsize=medium)
 
 adsorptiondata = pd.read_csv("RGM1-303K.csv")
 MW = stored_fluid.backend.molar_mass()
@@ -115,6 +103,19 @@ results = simulation.run()
 results.to_csv("ANGsim.csv")
 
 validdata = pd.read_csv("ANGsimvalid.csv")
+
+plt.style.use(["science", "nature"])
+small = 8.5
+medium = 9.3
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
 
 fig, ax = plt.subplots(3,  figsize=((3.543, 7.5/4*3.543)))
 

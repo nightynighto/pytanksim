@@ -22,20 +22,6 @@ import matplotlib.pyplot as plt
 import scienceplots
 import matplotlib.transforms as mtransforms
 
-plt.style.use(["science","nature"])
-small = 8.5
-medium = 9.3
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": 'Helvetica'
-})
-plt.rc('font', size=medium)
-plt.rc('axes', labelsize=medium)
-plt.rc('xtick', labelsize=small)
-plt.rc('ytick', labelsize=small)
-plt.rc('legend', fontsize=medium)
-
-
 stored_fluid = pts.StoredFluid(fluid_name="Hydrogen",
                                EOS="HEOS")
 
@@ -82,6 +68,19 @@ simulation_results = pts.automatic_simulation(storage_tank_fluid,
 
 simulation_results.to_csv("SLH2sim.csv")
 simulation_results.plot("min", ["p", "T"])
+
+plt.style.use(["science","nature"])
+small = 8.5
+medium = 9.3
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
 
 fig, ax = plt.subplots(3, figsize=(3.543, 7.5/4*3.543))
 

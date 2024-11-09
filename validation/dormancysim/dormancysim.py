@@ -22,20 +22,6 @@ import matplotlib.pyplot as plt
 import itertools
 import scienceplots
 
-plt.style.use(["science", "nature"])
-small = 9
-medium = 10
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": 'Helvetica'
-})
-plt.rc('font', size=medium)
-plt.rc('axes', labelsize=medium)
-plt.rc('xtick', labelsize=small)
-plt.rc('ytick', labelsize=small)
-plt.rc('legend', fontsize=medium)
-
-
 stored_fluid = pts.StoredFluid(fluid_name="Hydrogen",
                                EOS="HEOS")
 
@@ -197,16 +183,28 @@ vent_label_list_5kg = []
 start_label_list_5kg = []
 for i in range(len(tank_list)):
     start_label_list_usable.append(
-        f"{start_pres_usable[i]/1E5:.1f}"+" bar,\n80 K")
+        f"{start_pres_usable[i]/1E5:.0f}"+" bar,\n80 K")
     vent_label_list_usable.append(
-        f"{vent_pres_usable[i]/1E5:.1f}" + " bar,\n"
+        f"{vent_pres_usable[i]/1E5:.0f}" + " bar,\n"
         + f"{vent_temp_usable[i]:.1f}" + " K")
     start_label_list_5kg.append(
-        f"{start_pres_5kg[i]/1E5:.1f}" + " bar,\n80 K")
+        f"{start_pres_5kg[i]/1E5:.0f}" + " bar,\n80 K")
     vent_label_list_5kg.append(
         "100 bar,\n" +
-        f"{vent_temp_5kg[i]:.1f}" + " K")
+        f"{vent_temp_5kg[i]:.0f}" + " K")
 
+plt.style.use(["science", "nature"])
+small = 9
+medium = 10
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": 'Helvetica'
+})
+plt.rc('font', size=medium)
+plt.rc('axes', labelsize=medium)
+plt.rc('xtick', labelsize=small)
+plt.rc('ytick', labelsize=small)
+plt.rc('legend', fontsize=medium)
 
 fig, ax = plt.subplots(2, 2, figsize=(7.48, 8),
                        gridspec_kw={'height_ratios': [3.5, 5]})
@@ -312,7 +310,8 @@ for heat, heat_count in counts_5kg.items():
     if heat == "$\Delta U_s$":
         ax[2].bar_label(p, vent_label_list_5kg, padding=9)
 for i, label in enumerate(start_label_list_5kg):
-    ax[2].annotate(label, (i, 0.15), ha="center", va="bottom")
+    col = "black" if i == 0 else "white"
+    ax[2].annotate(label, (i, 0.15), ha="center", va="bottom", color=col)
 
 ax[2].set_ylim(0, 60)
 ax[2].set_ylabel("Dormancy (watt days)")
@@ -331,7 +330,8 @@ for heat, heat_count in counts_usable.items():
         ax[3].bar_label(p, vent_label_list_usable, padding=9)
 
 for i, label in enumerate(start_label_list_usable):
-    ax[3].annotate(label, (i, 0.15), ha="center", va="bottom")
+    col = "black" if i == 0 else "white"
+    ax[3].annotate(label, (i, 0.15), ha="center", va="bottom", color=col)
 ax[3].set_ylim(0, 14)
 ax[3].set_ylabel("Dormancy (watt days)")
 ax[3].set_xticks(tick_pos)
