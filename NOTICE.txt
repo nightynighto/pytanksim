@@ -57,7 +57,8 @@ The Journal of Physical Chemistry C, 111(44), 16131–16137.
 https://doi.org/10.1021/jp074889i
 Copyright 2007 American Chemical Society.
 
-If you wish to redistribute the data for your own work, you are 
+We do not claim copyright or provide any license over these datasets.
+If you wish to redistribute the data for your own work, you are
 advised to contact the original authors or publishers for the copyright
 information.
 
