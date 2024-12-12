@@ -37,3 +37,11 @@ keywords = ["hydrogen", "methane", "co2", "adsorption", "fluid", "storage",
 [project.urls]
 Homepage = "https://github.com/nightynighto/pytanksim"
 Issues = "https://github.com/nightynighto/pytanksim/issues"
+
+[tool.setuptools]
+license-files = ["NOTICE.txt","COPYING.txt","COPYING.LESSER.txt"]
+
+[tool.setuptools.packages.find]
+where = ["src"] 
+include = ["pytanksim*"] 
+exclude = ["pytanksim.core*"]
