@@ -34,6 +34,9 @@ license = {text = "GNU Lesser General Public License v3 or later (LGPLv3+)"}
 keywords = ["hydrogen", "methane", "co2", "adsorption", "fluid", "storage",
             "porous", "sorbent", "thermodynamics"]
 
+[project.optional-dependencies]
+validation = ["SciencePlots"]
+
 [project.urls]
 Homepage = "https://github.com/nightynighto/pytanksim"
 Issues = "https://github.com/nightynighto/pytanksim/issues"
