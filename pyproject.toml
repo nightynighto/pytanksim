@@ -5,10 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pytanksim"
 version = "1.0.0"
-authors = [
-  { name="Muhammad Irfan Maulana Kusdhany, Kyushu University",
-   email="ikusdhany@kyudai.jp" },
-]
+authors = [{ name="Muhammad Irfan Maulana Kusdhany"},
+{email="ikusdhany@kyudai.jp"}]
 description = "Simulates thermodynamics of fluid tank refueling and discharging."
 readme = "README.md"
 requires-python = ">=3.7"
