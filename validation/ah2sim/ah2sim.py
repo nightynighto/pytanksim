@@ -42,7 +42,7 @@ model_isotherm_mda = pts.classes.MDAModel.from_ExcessIsotherms(
                                         sorbent="AX21",
                                         stored_fluid=stored_fluid,
                                         m_mode="Constant",
-                                        verbose=False)
+                                        verbose=True)
 
 rhoskel = 2300
 rhopack = 269

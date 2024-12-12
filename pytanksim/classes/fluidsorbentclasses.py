@@ -1918,7 +1918,7 @@ class MDAModel(ModelIsotherm):
         if f0_mode == "Fit":
             params.add("f0", f0guess, True, 1E5)
         params.add("alpha", alphaguess, True, 500, 80000)
-        params.add("beta", betaguess, beta_mode == "Fit", 0, 100)
+        params.add("beta", betaguess, beta_mode == "Fit", 0,100)
         if va_mode == "Fit":
             params.add("va", vaguess, min=0, max=pore_volume)
         if m_mode == "Fit":

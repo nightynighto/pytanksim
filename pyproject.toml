@@ -1,5 +1,39 @@
 [build-system]
-requires = [
-    "setuptools",
-]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytanksim"
+version = "1.0.0"
+authors = [
+  { name="Muhammad Irfan Maulana Kusdhany, Kyushu University",
+   email="ikusdhany@kyudai.jp" },
+]
+description = "Simulates thermodynamics of fluid tank refueling and discharging."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3.7",
+    "Operating System :: Microsoft :: Windows"
+]
+dependencies = [
+    "scipy",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "tqdm",
+    "assimulo",
+    "lmfit",
+    "CoolProp",
+    ]
+license = {text = "GNU Lesser General Public License v3 or later (LGPLv3+)"}
+keywords = ["hydrogen", "methane", "co2", "adsorption", "fluid", "storage",
+            "porous", "sorbent", "thermodynamics"]
+
+[project.urls]
+Homepage = "https://github.com/nightynighto/pytanksim"
+Issues = "https://github.com/nightynighto/pytanksim/issues"
