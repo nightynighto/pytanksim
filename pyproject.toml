@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytanksim"
-version = "1.0.0"
+dynamic = ["version"]
 authors = [{ name="Muhammad Irfan Maulana Kusdhany"},
 {email="ikusdhany@kyudai.jp"}]
 description = "Simulates thermodynamics of fluid tank refueling and discharging."
@@ -45,3 +45,5 @@ license-files = ["NOTICE.txt","COPYING.txt","COPYING.LESSER.txt"]
 where = ["src"] 
 include = ["pytanksim*"] 
 exclude = ["pytanksim.core*"]
+
+[tool.setuptools_scm]
