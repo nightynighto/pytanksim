@@ -177,10 +177,9 @@ ax[1].legend()
 ax[2].set_xlabel("Time (min)")
 ax[2].set_ylabel("Temperature (K)")
 ax[2].set_ylim(77, 110)
-ax[2].scatter(testtemp[0]/60, testtemp[1], label="2D-COMSOL",
+ax[2].scatter(testtemp[0]/60, testtemp[1], label="Experiment",
               color="#DC3220")
 ax[2].plot(results.results_df["time"]/60, results.results_df["temperature"],
            label="pytanksim", color="#005AB5")
-ax[2].legend()
 plt.tight_layout()
 plt.savefig("AH2Cryo-Validation.jpeg", format="jpeg", dpi=1000)
