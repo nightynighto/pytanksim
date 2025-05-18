@@ -27,7 +27,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: StoredFluid(fluid_name: str, EOS: str = 'HEOS', mole_fractions: List = None)
+.. py:class:: StoredFluid(fluid_name, EOS = 'HEOS', mole_fractions = None)
 
    A class to calculate the properties of the fluid being stored.
 
@@ -68,7 +68,7 @@ Module Contents
    :rtype: StoredFluid
 
 
-   .. py:method:: fluid_property_dict(p: float, T: float) -> Dict[str, float]
+   .. py:method:: fluid_property_dict(p, T)
 
       Generate a dictionary of fluid properties using CoolProp.
 
@@ -78,22 +78,34 @@ Module Contents
       :type T: float
 
       :returns: Dictionary containing several fluid properties needed for various
-                calculations in pytanksim. "hf" is the enthalpy (J/mol). "drho_dp"
-                is the first partial derivative of density (mol/m^3) w.r.t.
-                pressure (Pa). "drho_dT" is the first partial derivative of density
-                (mol/m^3) w.r.t. temperature (K). "rhof" is density (mol/m^3).
-                "dh_dp" is the first partial derivative of enthalpy (J/mol) w.r.t.
-                pressure (Pa). "dh_dT" is the first partial derivative of enthalpy
-                (J/mol) w.r.t. temperature (K). "uf" is the internal energy
-                (J/mol). "du_dp" is the first partial derivative of internal energy
-                (J/mol) w.r.t. pressure (Pa). "du_dT" is the first partial
-                derivative of internal energy (J/mol) w.r.t. temperature (K). "MW"
-                is molar mass (kg/mol).
+                calculations in pytanksim.
       :rtype: Dict[str, float]
 
+      .. rubric:: Notes
+
+      Below is a list of keys and the variables they contain for the output
+      dictionary.
+
+      - ``hf``: enthalpy (J/mol)
+      - ``drho_dp``: first partial derivative of density (mol/m^3) w.r.t.
+        pressure (Pa)
+      - ``drho_dT``: first partial derivative of density (mol/m^3) w.r.t.
+        temperature (K)
+      - ``rhof``: density (mol/m^3)
+      - ``dh_dp``: first partial derivative of enthalpy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``dh_dT``: first partial derivative of enthalpy (J/mol) w.r.t.
+        temperature (K)
+      - ``uf``: internal energy (J/mol)
+      - ``du_dp``: first partial derivative of internal energy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``du_dT``: first partial derivative of internal energy (J/mol)
+        w.r.t. temperature (K)
+      - ``MW``: molar mass (kg/mol)
 
 
-   .. py:method:: saturation_property_dict(T: float, Q: int = 0) -> Dict[str, float]
+
+   .. py:method:: saturation_property_dict(T, Q = 0)
 
       Generate a dictionary of fluid properties at saturation.
 
@@ -103,24 +115,37 @@ Module Contents
       :type Q: float
 
       :returns: A dictionary containing the fluid properties at saturation
-                at a given temperature. "psat" is the saturation vapor pressure
-                (Pa). "dps_dT" is the first derivative of the saturation vapor
-                pressure (Pa) w.r.t. temperature (K). "hf" is the enthalpy (J/mol).
-                "drho_dp" is the first partial derivative of density (mol/m^3)
-                w.r.t. pressure (Pa). "drho_dT" is the first partial derivative of
-                density (mol/m^3) w.r.t. temperature (K). "rhof" is density
-                (mol/m^3). "dh_dp" is the first partial derivative of enthalpy
-                (J/mol) w.r.t. pressure (Pa). "dh_dT" is the first partial
-                derivative of enthalpy (J/mol) w.r.t. temperature (K). "uf" is the
-                internal energy (J/mol). "du_dp" is the first partial derivative of
-                internal energy (J/mol) w.r.t. pressure (Pa). "du_dT" is the first
-                partial derivative of internal energy (J/mol) w.r.t. temperature
-                (K). "MW" is molar mass (kg/mol).
+                at a given temperature.
       :rtype: Dict[str, float]
 
+      .. rubric:: Notes
+
+      Below is a list of keys and the variables they contain for the output
+      dictionary.
+
+      - ``psat``: saturation vapor pressure (Pa)
+      - ``dps_dT``: first derivative of the saturation vapor pressure (Pa)
+        w.r.t. temperature (K).
+      - ``hf``: enthalpy (J/mol)
+      - ``drho_dp``: first partial derivative of density (mol/m^3) w.r.t.
+        pressure (Pa)
+      - ``drho_dT``: first partial derivative of density (mol/m^3) w.r.t.
+        temperature (K)
+      - ``rhof``: density (mol/m^3)
+      - ``dh_dp``: first partial derivative of enthalpy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``dh_dT``: first partial derivative of enthalpy (J/mol) w.r.t.
+        temperature (K)
+      - ``uf``: internal energy (J/mol)
+      - ``du_dp``: first partial derivative of internal energy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``du_dT``: first partial derivative of internal energy (J/mol)
+        w.r.t. temperature (K)
+      - ``MW``: molar mass (kg/mol)
 
 
-   .. py:method:: determine_phase(p: float, T: float) -> str
+
+   .. py:method:: determine_phase(p, T)
 
       Determine the phase of the fluid being stored.
 
@@ -144,7 +169,7 @@ Module Contents
 
 
 
-   .. py:method:: pressure_from_absolute_adsorption(n_abs: float, T: float, p_max_guess: float = 35000000.0) -> float
+   .. py:method:: pressure_from_absolute_adsorption(n_abs, T, p_max_guess = 35000000.0)
 
       Calculate a pressure value corresponding to an adsorbed amount.
 
@@ -164,7 +189,7 @@ Module Contents
 
 
 
-   .. py:method:: isosteric_enthalpy(p: float, T: float, q: float = 1) -> float
+   .. py:method:: isosteric_enthalpy(p, T, q = 1)
 
       Calculate isosteric adsorbed enthalpy (J/mol).
 
@@ -181,7 +206,7 @@ Module Contents
 
 
 
-   .. py:method:: isosteric_internal_energy(p: float, T: float, q: float = 1) -> float
+   .. py:method:: isosteric_internal_energy(p, T, q = 1)
 
       Calculate the isosteric internal energy of the adsorbed phase.
 
@@ -198,7 +223,7 @@ Module Contents
 
 
 
-   .. py:method:: _derivfunc(func: Callable, var: int, point: float, qinit: float, stepsize: float) -> float
+   .. py:method:: _derivfunc(func, var, point, qinit, stepsize)
 
       Calculate the first partial derivative.
 
@@ -210,7 +235,7 @@ Module Contents
 
 
 
-   .. py:method:: _derivfunc_second(func: Callable, point: float, qinit: float, stepsize: float) -> float
+   .. py:method:: _derivfunc_second(func, point, qinit, stepsize)
 
       Calculate the second partial derivative.
 
@@ -222,7 +247,7 @@ Module Contents
 
 
 
-   .. py:method:: isosteric_energy_temperature_deriv(p: float, T: float, q: float = 1, stepsize: float = 0.001) -> float
+   .. py:method:: isosteric_energy_temperature_deriv(p, T, q = 1, stepsize = 0.001)
 
       Calculate first derivative of isosteric internal energy w.r.t. T.
 
@@ -245,7 +270,7 @@ Module Contents
 
 
 
-   .. py:method:: differential_energy(p: float, T: float, q: float = 1) -> float
+   .. py:method:: differential_energy(p, T, q = 1)
 
       Calculate the differential energy of adsorption (J/mol).
 
@@ -271,7 +296,7 @@ Module Contents
 
 
 
-   .. py:method:: differential_heat(p: float, T: float, q: float = 1) -> float
+   .. py:method:: differential_heat(p, T, q = 1)
 
       Calculate the differential heat of adsorption (J/mol).
 
@@ -297,7 +322,7 @@ Module Contents
 
 
 
-   .. py:method:: internal_energy_adsorbed(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_adsorbed(p, T, q = 1)
 
       Calculate the molar integral internal energy of adsorption (J/mol).
 
@@ -323,7 +348,7 @@ Module Contents
 
 
 
-   .. py:method:: areal_immersion_energy(T: float) -> float
+   .. py:method:: areal_immersion_energy(T)
 
       Calculate the areal energy of immersion (J/m^2).
 
@@ -337,7 +362,7 @@ Module Contents
 
 
 
-.. py:class:: DAModel(sorbent: str, stored_fluid: StoredFluid, w0: float, f0: float, eps: float, m: float = 2, k: float = 2, rhoa: float = None, va: float = None, va_mode: str = 'Constant', rhoa_mode: str = 'Constant', f0_mode: str = 'Dubinin')
+.. py:class:: DAModel(sorbent, stored_fluid, w0, f0, eps, m = 2, k = 2, rhoa = None, va = None, va_mode = 'Constant', rhoa_mode = 'Constant', f0_mode = 'Dubinin')
 
    Bases: :py:obj:`ModelIsotherm`
 
@@ -483,7 +508,7 @@ Module Contents
    :rtype: DAModel
 
 
-   .. py:method:: f0_calc(T: float) -> float
+   .. py:method:: f0_calc(T)
 
       Calculate the fugacity at saturation (Pa) at a given temperature.
 
@@ -495,7 +520,19 @@ Module Contents
 
 
 
-   .. py:method:: rhoa_calc(T: float) -> float
+   .. py:method:: dlnf0_dT(T)
+
+      Calculate derivative of log saturation fugacity w.r.t. temperature.
+
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Derivative of log saturation fugacity w.r.t. temperature
+      :rtype: float
+
+
+
+   .. py:method:: rhoa_calc(T)
 
       Calculate the density of the adsorbed phase at a given temperature.
 
@@ -507,7 +544,7 @@ Module Contents
 
 
 
-   .. py:method:: v_ads(p: float, T: float) -> float
+   .. py:method:: v_ads(p, T)
 
       Calculate the volume of the adsorbed phase (m^3/kg).
 
@@ -521,7 +558,7 @@ Module Contents
 
 
 
-   .. py:method:: n_absolute(p: float, T: float) -> float
+   .. py:method:: n_absolute(p, T)
 
       Calculate the absolute adsorbed amount at a given condition.
 
@@ -535,7 +572,7 @@ Module Contents
 
 
 
-   .. py:method:: n_excess(p: float, T: float, q: float = 1) -> float
+   .. py:method:: n_excess(p, T, q = 1)
 
       Calculate the excess adsorbed amount at a given condition.
 
@@ -552,33 +589,37 @@ Module Contents
 
 
 
+   .. py:method:: differential_energy_na(na, T)
+
+      Calculate differential energy of adsorption analytically.
+
+      :param na: Amount adsorbed (mol/kg)
+      :type na: float
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Differential energy of adsorption (J/mol)
+      :rtype: float
+
+
+
    .. py:method:: differential_energy(p, T, q)
 
-      Calculate the differential energy of adsorption (J/mol).
-
-      The calculation is based on Myers & Monson [1]_.
+      Calculate differential energy of adsorption analytically.
 
       :param p: Pressure (Pa).
       :type p: float
       :param T: Temperature (K).
       :type T: float
-      :param q: Vapor quality of the bulk fluid. Can vary between 0 to 1.
-                The default is 1.
-      :type q: float, optional
+      :param q: Vapor quality.
+      :type q: float
 
-      :returns: The differential energy of adsorption (J/mol).
+      :returns: Differential energy of adsorption (J/mol).
       :rtype: float
 
-      .. rubric:: Notes
-
-      .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-         the case for absolute adsorption as the basis for thermodynamic
-         analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-         doi: 10.1007/s10450-014-9604-1.
 
 
-
-   .. py:method:: internal_energy_adsorbed(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_adsorbed(p, T, q = 1)
 
       Calculate the molar integral internal energy of adsorption (J/mol).
 
@@ -604,7 +645,7 @@ Module Contents
 
 
 
-   .. py:method:: from_ExcessIsotherms(ExcessIsotherms: List[pytanksim.classes.excessisothermclass.ExcessIsotherm], stored_fluid: StoredFluid = None, sorbent: str = None, w0guess: float = 0.001, f0guess: float = 1470000000.0, epsguess: float = 3000, vaguess: float = 0.001, rhoaguess: float = None, mguess: float = 2.0, kguess: float = 2.0, rhoa_mode: str = 'Fit', f0_mode: str = 'Fit', m_mode: str = 'Fit', k_mode: str = 'Fit', va_mode: str = 'Excess', pore_volume: float = 0.003, verbose: bool = True) -> DAModel
+   .. py:method:: from_ExcessIsotherms(ExcessIsotherms, stored_fluid = None, sorbent = None, w0guess = 0.001, f0guess = 1470000000.0, epsguess = 3000, vaguess = 0.001, rhoaguess = None, mguess = 2.0, kguess = 2.0, rhoa_mode = 'Fit', f0_mode = 'Fit', m_mode = 'Fit', k_mode = 'Fit', va_mode = 'Excess', pore_volume = 0.003, verbose = True)
       :classmethod:
 
 
@@ -686,7 +727,7 @@ Module Contents
 
 
 
-.. py:class:: MDAModel(sorbent: str, stored_fluid: StoredFluid, nmax: float, f0: float, alpha: float, beta: float, va: float, m: float = 2, k: float = 2, va_mode: str = 'Constant', f0_mode: str = 'Constant')
+.. py:class:: MDAModel(sorbent, stored_fluid, nmax, f0, alpha, beta, va, m = 2, k = 2, va_mode = 'Constant', f0_mode = 'Constant')
 
    Bases: :py:obj:`ModelIsotherm`
 
@@ -738,7 +779,31 @@ Module Contents
    :rtype: MDAModel
 
 
-   .. py:method:: n_absolute(p: float, T: float) -> float
+   .. py:method:: dlnf0_dT(T)
+
+      Calculate derivative of log saturation fugacity w.r.t. temperature.
+
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Derivative of log saturation fugacity w.r.t. temperature
+      :rtype: float
+
+
+
+   .. py:method:: f0_fun(T)
+
+      Calculate saturation fugacity as a function of temperature.
+
+      :param T: Temperature (K).
+      :type T: float
+
+      :returns: Saturation fugacity (Pa).
+      :rtype: float
+
+
+
+   .. py:method:: n_absolute(p, T)
 
       Calculate the absolute adsorbed amount at given conditions.
 
@@ -752,7 +817,7 @@ Module Contents
 
 
 
-   .. py:method:: v_ads(p: float, T: float) -> float
+   .. py:method:: v_ads(p, T)
 
       Calculate the adsorbed phase volume at the given condtions.
 
@@ -766,7 +831,7 @@ Module Contents
 
 
 
-   .. py:method:: n_excess(p: float, T: float, q: float = 1) -> float
+   .. py:method:: n_excess(p, T, q = 1)
 
       Calculate the excess adsorbed amount at the given conditions.
 
@@ -783,7 +848,7 @@ Module Contents
 
 
 
-   .. py:method:: internal_energy_adsorbed(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_adsorbed(p, T, q = 1)
 
       Calculate the molar integral internal energy of adsorption (J/mol).
 
@@ -809,33 +874,37 @@ Module Contents
 
 
 
-   .. py:method:: differential_energy(p, T, q=1)
+   .. py:method:: differential_energy_na(na, T)
 
-      Calculate the differential energy of adsorption (J/mol).
+      Calculate differential energy of adsorption analytically.
 
-      The calculation is based on Myers & Monson [1]_.
+      :param na: Amount adsorbed (mol/kg)
+      :type na: float
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Differential energy of adsorption (J/mol)
+      :rtype: float
+
+
+
+   .. py:method:: differential_energy(p, T, q = 1)
+
+      Calculate differential energy of adsorption analytically.
 
       :param p: Pressure (Pa).
       :type p: float
       :param T: Temperature (K).
       :type T: float
-      :param q: Vapor quality of the bulk fluid. Can vary between 0 to 1.
-                The default is 1.
-      :type q: float, optional
+      :param q: Vapor quality.
+      :type q: float
 
-      :returns: The differential energy of adsorption (J/mol).
+      :returns: Differential energy of adsorption (J/mol).
       :rtype: float
 
-      .. rubric:: Notes
-
-      .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-         the case for absolute adsorption as the basis for thermodynamic
-         analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-         doi: 10.1007/s10450-014-9604-1.
 
 
-
-   .. py:method:: from_ExcessIsotherms(ExcessIsotherms: List[pytanksim.classes.excessisothermclass.ExcessIsotherm], stored_fluid: StoredFluid = None, sorbent: str = None, nmaxguess: float = 71.6, f0guess: float = 1470000000.0, alphaguess: float = 3080, betaguess: float = 18.9, vaguess: float = 0.00143, mguess: float = 2.0, kguess: float = 2.0, va_mode: str = 'Fit', f0_mode: str = 'Fit', m_mode: str = 'Fit', k_mode: str = 'Fit', beta_mode: str = 'Fit', pore_volume: float = 0.003, verbose: bool = True) -> MDAModel
+   .. py:method:: from_ExcessIsotherms(ExcessIsotherms, stored_fluid = None, sorbent = None, nmaxguess = 71.6, f0guess = 1470000000.0, alphaguess = 3080, betaguess = 18.9, vaguess = 0.00143, mguess = 2.0, kguess = 2.0, va_mode = 'Fit', f0_mode = 'Fit', m_mode = 'Fit', k_mode = 'Fit', beta_mode = 'Fit', pore_volume = 0.003, verbose = True)
       :classmethod:
 
 
@@ -914,7 +983,7 @@ Module Contents
 
 
 
-.. py:class:: SorbentMaterial(skeletal_density: float, bulk_density: float, specific_surface_area: float, model_isotherm: ModelIsotherm, mass: float = 0, molar_mass: float = 0.01201, Debye_temperature: float = 1500, heat_capacity_function: Callable[[float], float] = None)
+.. py:class:: SorbentMaterial(skeletal_density, bulk_density, specific_surface_area, model_isotherm, mass = 0, molar_mass = 0.01201, Debye_temperature = 1500, heat_capacity_function = None)
 
    Class containing the properties of a sorbent material.
 

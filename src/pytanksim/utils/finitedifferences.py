@@ -59,7 +59,7 @@ def pardev(func: Callable[[float], float],
     Returns
     -------
     float
-        The first derivative of  `func` evaluated at `loc`.
+        The first derivative of `func` evaluated at `loc`.
 
     """
     loc1 = (loc + stepsize)
@@ -98,7 +98,7 @@ def partial_derivative(func: Callable[..., float], var: int,
 
     point : List
         A list of input values for `func`. These input values indicate the
-        location where the partial derivative is to be evaluated.
+        locations where the partial derivative is to be evaluated.
 
     stepsize : float
         The stepsize for the finite difference approximation. The default is

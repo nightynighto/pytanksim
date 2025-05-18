@@ -355,6 +355,11 @@ class BoundaryFlux:
         the tank as a  function of tank pressure (Pa), tank temperature (K),
         and time (s). The default is None.
 
+    heat_leak_in : Callable[[float, float, float,float], float], optional
+        A function which returns the heat (J/mol) leaking into the tank as a
+        function of tank pressure (Pa), tank temperature (K), time (s), and
+        temperature of tank surroundings (K). The default is None.
+
     """
 
     def __init__(self,
@@ -374,6 +379,9 @@ class BoundaryFlux:
                  enthalpy_in: Union[Callable[[float, float, float], float],
                                     float] = None,
                  enthalpy_out: Union[Callable[[float, float, float], float],
+                                     float] = None,
+                 heat_leak_in: Union[Callable[[float, float, float, float],
+                                              float],
                                      float] = None) -> "BoundaryFlux":
         """Initialize a BoundaryFlux object.
 
@@ -381,7 +389,7 @@ class BoundaryFlux:
         ----------
         mass_flow_in : Callable or float, optional
             A function which returns mass flow into the tank (kg/s) as a
-            functionof tank pressure (Pa), tank temperature (K), and time (s).
+            function of tank pressure (Pa), tank temperature (K), and time (s).
             The default is a function which returns 0 everywhere. If a float is
             provided, it will be converted to a function which returns that
             value everywhere.
@@ -483,11 +491,23 @@ class BoundaryFlux:
                     # the tank.
                     return temperature_in
 
-        environment_temp : float, optional
+        environment_temp : Callable or float, optional
             The temperature (K) of the environment surrounding the tank. This
             value is used in the dynamic simulation to calculate heat leakage
-            into the tank. The default is 0, in which case heat leakage into
-            the tank is not considered.
+            into the tank. It can be provided either as a float or as a
+            function of tank pressure (Pa), tank temperature (K). The default
+            is 0, in which case heat leakage into the tank is not considered.
+
+            If a callable is passed, it must have the signature::
+
+                def env_temp_function(p, T, time):
+                    # 'p' is tank pressure (Pa)
+                    # 'T' is tank temperature (K)
+                    # 'time' is the time elapsed within the simulation (s)
+                    ....
+                    # Returned is the temperature of the surroundings in the
+                    # unit of K.
+                    return enthalpy_in
 
         enthalpy_in : Callable or float, optional
             A function which returns the enthalpy (J/mol) of the fluid being
@@ -525,6 +545,27 @@ class BoundaryFlux:
                     # of the tank.
                     return enthalpy_out
 
+        heat_leak_in : Callable or float, optional
+            A function which returns the amount of heat leakage into the tank
+            (W) as a  function of tank pressure (Pa), tank temperature
+            (K), time (s), and temperature of surroundings (K). The default is
+            None, which will use the thermal resistance calculation from the
+            storage tank. Otherwise, it will override that calculation. If a
+            float is  provided, it will be converted to a function which
+            returns that value everywhere.
+
+            If a callable is passed, it must have the signature::
+
+                def enthalpy_out_function(p, T, time, env_temp):
+                    # 'p' is tank pressure (Pa)
+                    # 'T' is tank temperature (K)
+                    # 'time' is the time elapsed within the simulation (s)
+                    # 'env_temp' is the temperature of surroundings (K)
+                    ....
+                    # Returned is the enthalpy (J/mol) of the fluid going out
+                    # of the tank.
+                    return enthalpy_out
+
         Raises
         ------
         ValueError
@@ -544,11 +585,19 @@ class BoundaryFlux:
                 return float(floatingvalue)
             return float_function
 
+        def float_function_generator_4var(floatingvalue):
+            def float_function(p, T, time, env_temp):
+                return float(floatingvalue)
+            return float_function
+
         if mass_flow_in != 0.0 and ((pressure_in is None or
                                      temperature_in is None) and
                                     enthalpy_in is None):
             raise ValueError("Please specify the pressure and temperature of"
                              " the flow going in")
+
+        if isinstance(environment_temp, (float, int)):
+            environment_temp = float_function_generator(environment_temp)
 
         if isinstance(pressure_in, (float, int)):
             pressure_in = float_function_generator(pressure_in)
@@ -574,6 +623,9 @@ class BoundaryFlux:
         if isinstance(cooling_power, (float, int)):
             cooling_power = float_function_generator(cooling_power)
 
+        if isinstance(heat_leak_in, (float, int)):
+            heat_leak_in = float_function_generator_4var(heat_leak_in)
+
         self.mass_flow_in = mass_flow_in
         self.mass_flow_out = mass_flow_out
         self.heating_power = heating_power
@@ -583,6 +635,7 @@ class BoundaryFlux:
         self.environment_temp = environment_temp
         self.enthalpy_in = enthalpy_in
         self.enthalpy_out = enthalpy_out
+        self.heat_leak_in = heat_leak_in
 
 
 class BaseSimulation:
@@ -705,13 +758,19 @@ class BaseSimulation:
                                          "initial amounts or only the"
                                          " quality.")
 
-    def heat_leak_in(self, T: float) -> float:
+    def heat_leak_in(self, p: float, T: float, time: float) -> float:
         """Calculate the heat leakage rate from the environment into the tank.
 
         Parameters
         ----------
+        p : float
+            Pressure (Pa) of the storage tank.
+
         T : float
             Temperature (K) of the storage tank.
+
+        time : float
+            Simulation time (s)
 
         Returns
         -------
@@ -719,12 +778,17 @@ class BaseSimulation:
             The rate of heat leakage into the tank from the environment (W).
 
         """
-        if self.boundary_flux.environment_temp == 0 or \
-                self.storage_tank.thermal_resistance == 0:
-            return 0
+        env_temp = self.boundary_flux.environment_temp(p, T, time)
+        if self.boundary_flux.heat_leak_in is not None:
+            return self.heat_leak_in(p, T, time, env_temp)
         else:
-            return (self.boundary_flux.environment_temp - T) / \
-                self.storage_tank.thermal_resistance
+            if env_temp == 0 or \
+                        self.storage_tank.thermal_res(p, T, time,
+                                                      env_temp) == 0:
+                return 0
+            else:
+                return (env_temp - T) / \
+                        self.storage_tank.thermal_res(p, T, time, env_temp)
 
     def run(self):
         """Abstract function which will be defined in the child classes.
@@ -791,10 +855,13 @@ class BaseSimulation:
             tank. In the case of the two phase simulation, it is the properties
             of the gas and not the liquid. For this function, this dictionary
             must return an enthalpy (J/mol) value given the key "hf".
+
         p : float
             Pressure inside of the tank (Pa)
+
         T : float
             Temperature inside of the tank (K)
+
         time : float
             Time (s) in the simulation.
 

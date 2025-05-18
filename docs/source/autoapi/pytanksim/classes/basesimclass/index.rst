@@ -170,7 +170,7 @@ Module Contents
    :type verbose: bool, optional
 
 
-   .. py:method:: from_SimResults(sim_results: pytanksim.classes.simresultsclass.SimResults, displayed_points: float = None, init_time: float = None, final_time: float = None, target_pres: float = None, target_temp: float = None, stop_at_target_pressure: bool = None, stop_at_target_temp: bool = None, target_capacity: float = None, verbose: bool = None) -> SimParams
+   .. py:method:: from_SimResults(sim_results, displayed_points = None, init_time = None, final_time = None, target_pres = None, target_temp = None, stop_at_target_pressure = None, stop_at_target_temp = None, target_capacity = None, verbose = None)
       :classmethod:
 
 
@@ -215,7 +215,7 @@ Module Contents
 
 
 
-.. py:class:: BoundaryFlux(mass_flow_in: Union[Callable[[float, float, float], float], float] = 0.0, mass_flow_out: Union[Callable[[float, float, float], float], float] = 0.0, heating_power: Union[Callable[[float, float, float], float], float] = 0.0, cooling_power: Union[Callable[[float, float, float], float], float] = 0.0, pressure_in: Union[Callable[[float, float, float], float], float] = None, temperature_in: Union[Callable[[float, float, float], float], float] = None, environment_temp: float = 0, enthalpy_in: Union[Callable[[float, float, float], float], float] = None, enthalpy_out: Union[Callable[[float, float, float], float], float] = None)
+.. py:class:: BoundaryFlux(mass_flow_in = 0.0, mass_flow_out = 0.0, heating_power = 0.0, cooling_power = 0.0, pressure_in = None, temperature_in = None, environment_temp = 0, enthalpy_in = None, enthalpy_out = None, heat_leak_in = None)
 
    Stores information of the mass and energy fluxes on the tank boundaries.
 
@@ -292,10 +292,18 @@ Module Contents
 
       :type: Callable[[float, float, float], float], optional
 
+   .. attribute:: heat_leak_in
+
+      A function which returns the heat (J/mol) leaking into the tank as a
+      function of tank pressure (Pa), tank temperature (K), time (s), and
+      temperature of tank surroundings (K). The default is None.
+
+      :type: Callable[[float, float, float,float], float], optional
+
    Initialize a BoundaryFlux object.
 
    :param mass_flow_in: A function which returns mass flow into the tank (kg/s) as a
-                        functionof tank pressure (Pa), tank temperature (K), and time (s).
+                        function of tank pressure (Pa), tank temperature (K), and time (s).
                         The default is a function which returns 0 everywhere. If a float is
                         provided, it will be converted to a function which returns that
                         value everywhere.
@@ -394,9 +402,21 @@ Module Contents
    :type temperature_in: Callable or float, optional
    :param environment_temp: The temperature (K) of the environment surrounding the tank. This
                             value is used in the dynamic simulation to calculate heat leakage
-                            into the tank. The default is 0, in which case heat leakage into
-                            the tank is not considered.
-   :type environment_temp: float, optional
+                            into the tank. It can be provided either as a float or as a
+                            function of tank pressure (Pa), tank temperature (K). The default
+                            is 0, in which case heat leakage into the tank is not considered.
+
+                            If a callable is passed, it must have the signature::
+
+                                def env_temp_function(p, T, time):
+                                    # 'p' is tank pressure (Pa)
+                                    # 'T' is tank temperature (K)
+                                    # 'time' is the time elapsed within the simulation (s)
+                                    ....
+                                    # Returned is the temperature of the surroundings in the
+                                    # unit of K.
+                                    return enthalpy_in
+   :type environment_temp: Callable or float, optional
    :param enthalpy_in: A function which returns the enthalpy (J/mol) of the fluid being
                        inserted into the tank as a  function of tank pressure (Pa), tank
                        temperature (K), and time (s). The default is None. If a float is
@@ -431,6 +451,26 @@ Module Contents
                                 # of the tank.
                                 return enthalpy_out
    :type enthalpy_out: Callable or float, optional
+   :param heat_leak_in: A function which returns the amount of heat leakage into the tank
+                        (W) as a  function of tank pressure (Pa), tank temperature
+                        (K), time (s), and temperature of surroundings (K). The default is
+                        None, which will use the thermal resistance calculation from the
+                        storage tank. Otherwise, it will override that calculation. If a
+                        float is  provided, it will be converted to a function which
+                        returns that value everywhere.
+
+                        If a callable is passed, it must have the signature::
+
+                            def enthalpy_out_function(p, T, time, env_temp):
+                                # 'p' is tank pressure (Pa)
+                                # 'T' is tank temperature (K)
+                                # 'time' is the time elapsed within the simulation (s)
+                                # 'env_temp' is the temperature of surroundings (K)
+                                ....
+                                # Returned is the enthalpy (J/mol) of the fluid going out
+                                # of the tank.
+                                return enthalpy_out
+   :type heat_leak_in: Callable or float, optional
 
    :raises ValueError: If the mass flow going in is specified but the parameters that
        specify its enthalpy (i.e., either pressure and temperature or
@@ -441,7 +481,7 @@ Module Contents
    :rtype: BoundaryFlux
 
 
-.. py:class:: BaseSimulation(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: BaseSimulation(simulation_params, storage_tank, boundary_flux)
 
    An abstract base class for dynamic simulations.
 
@@ -553,12 +593,16 @@ Module Contents
       :type: rtype: BaseSimulation
 
 
-   .. py:method:: heat_leak_in(T: float) -> float
+   .. py:method:: heat_leak_in(p, T, time)
 
       Calculate the heat leakage rate from the environment into the tank.
 
+      :param p: Pressure (Pa) of the storage tank.
+      :type p: float
       :param T: Temperature (K) of the storage tank.
       :type T: float
+      :param time: Simulation time (s)
+      :type time: float
 
       :returns: The rate of heat leakage into the tank from the environment (W).
       :rtype: float
@@ -578,7 +622,7 @@ Module Contents
 
 
 
-   .. py:method:: enthalpy_in_calc(p: float, T: float, time: float) -> float
+   .. py:method:: enthalpy_in_calc(p, T, time)
 
       Calculate the enthalpy (J/mol) of fluid going into the tank.
 
@@ -594,7 +638,7 @@ Module Contents
 
 
 
-   .. py:method:: enthalpy_out_calc(fluid_property_dict: Dict[str, float], p: float, T: float, time: float) -> float
+   .. py:method:: enthalpy_out_calc(fluid_property_dict, p, T, time)
 
       Calculate the enthalpy (J/mol) of fluid going out of the tank.
 

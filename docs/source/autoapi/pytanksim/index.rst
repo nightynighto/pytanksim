@@ -49,7 +49,7 @@ Functions
 Package Contents
 ----------------
 
-.. py:class:: ExcessIsotherm(adsorbate: str, sorbent: str, temperature: float, loading: List[float], pressure: List[float])
+.. py:class:: ExcessIsotherm(adsorbate, sorbent, temperature, loading, pressure)
 
    Stores experimental excess isotherm measurement results.
 
@@ -107,7 +107,7 @@ Package Contents
    :rtype: ExcessIsotherm
 
 
-   .. py:method:: from_csv(filename: str, adsorbate: str, sorbent: str, temperature: float) -> ExcessIsotherm
+   .. py:method:: from_csv(filename, adsorbate, sorbent, temperature)
       :classmethod:
 
 
@@ -127,7 +127,7 @@ Package Contents
 
 
 
-.. py:class:: BoundaryFlux(mass_flow_in: Union[Callable[[float, float, float], float], float] = 0.0, mass_flow_out: Union[Callable[[float, float, float], float], float] = 0.0, heating_power: Union[Callable[[float, float, float], float], float] = 0.0, cooling_power: Union[Callable[[float, float, float], float], float] = 0.0, pressure_in: Union[Callable[[float, float, float], float], float] = None, temperature_in: Union[Callable[[float, float, float], float], float] = None, environment_temp: float = 0, enthalpy_in: Union[Callable[[float, float, float], float], float] = None, enthalpy_out: Union[Callable[[float, float, float], float], float] = None)
+.. py:class:: BoundaryFlux(mass_flow_in = 0.0, mass_flow_out = 0.0, heating_power = 0.0, cooling_power = 0.0, pressure_in = None, temperature_in = None, environment_temp = 0, enthalpy_in = None, enthalpy_out = None, heat_leak_in = None)
 
    Stores information of the mass and energy fluxes on the tank boundaries.
 
@@ -204,10 +204,18 @@ Package Contents
 
       :type: Callable[[float, float, float], float], optional
 
+   .. attribute:: heat_leak_in
+
+      A function which returns the heat (J/mol) leaking into the tank as a
+      function of tank pressure (Pa), tank temperature (K), time (s), and
+      temperature of tank surroundings (K). The default is None.
+
+      :type: Callable[[float, float, float,float], float], optional
+
    Initialize a BoundaryFlux object.
 
    :param mass_flow_in: A function which returns mass flow into the tank (kg/s) as a
-                        functionof tank pressure (Pa), tank temperature (K), and time (s).
+                        function of tank pressure (Pa), tank temperature (K), and time (s).
                         The default is a function which returns 0 everywhere. If a float is
                         provided, it will be converted to a function which returns that
                         value everywhere.
@@ -306,9 +314,21 @@ Package Contents
    :type temperature_in: Callable or float, optional
    :param environment_temp: The temperature (K) of the environment surrounding the tank. This
                             value is used in the dynamic simulation to calculate heat leakage
-                            into the tank. The default is 0, in which case heat leakage into
-                            the tank is not considered.
-   :type environment_temp: float, optional
+                            into the tank. It can be provided either as a float or as a
+                            function of tank pressure (Pa), tank temperature (K). The default
+                            is 0, in which case heat leakage into the tank is not considered.
+
+                            If a callable is passed, it must have the signature::
+
+                                def env_temp_function(p, T, time):
+                                    # 'p' is tank pressure (Pa)
+                                    # 'T' is tank temperature (K)
+                                    # 'time' is the time elapsed within the simulation (s)
+                                    ....
+                                    # Returned is the temperature of the surroundings in the
+                                    # unit of K.
+                                    return enthalpy_in
+   :type environment_temp: Callable or float, optional
    :param enthalpy_in: A function which returns the enthalpy (J/mol) of the fluid being
                        inserted into the tank as a  function of tank pressure (Pa), tank
                        temperature (K), and time (s). The default is None. If a float is
@@ -343,6 +363,26 @@ Package Contents
                                 # of the tank.
                                 return enthalpy_out
    :type enthalpy_out: Callable or float, optional
+   :param heat_leak_in: A function which returns the amount of heat leakage into the tank
+                        (W) as a  function of tank pressure (Pa), tank temperature
+                        (K), time (s), and temperature of surroundings (K). The default is
+                        None, which will use the thermal resistance calculation from the
+                        storage tank. Otherwise, it will override that calculation. If a
+                        float is  provided, it will be converted to a function which
+                        returns that value everywhere.
+
+                        If a callable is passed, it must have the signature::
+
+                            def enthalpy_out_function(p, T, time, env_temp):
+                                # 'p' is tank pressure (Pa)
+                                # 'T' is tank temperature (K)
+                                # 'time' is the time elapsed within the simulation (s)
+                                # 'env_temp' is the temperature of surroundings (K)
+                                ....
+                                # Returned is the enthalpy (J/mol) of the fluid going out
+                                # of the tank.
+                                return enthalpy_out
+   :type heat_leak_in: Callable or float, optional
 
    :raises ValueError: If the mass flow going in is specified but the parameters that
        specify its enthalpy (i.e., either pressure and temperature or
@@ -499,7 +539,7 @@ Package Contents
    :type verbose: bool, optional
 
 
-   .. py:method:: from_SimResults(sim_results: pytanksim.classes.simresultsclass.SimResults, displayed_points: float = None, init_time: float = None, final_time: float = None, target_pres: float = None, target_temp: float = None, stop_at_target_pressure: bool = None, stop_at_target_temp: bool = None, target_capacity: float = None, verbose: bool = None) -> SimParams
+   .. py:method:: from_SimResults(sim_results, displayed_points = None, init_time = None, final_time = None, target_pres = None, target_temp = None, stop_at_target_pressure = None, stop_at_target_temp = None, target_capacity = None, verbose = None)
       :classmethod:
 
 
@@ -544,7 +584,7 @@ Package Contents
 
 
 
-.. py:class:: StoredFluid(fluid_name: str, EOS: str = 'HEOS', mole_fractions: List = None)
+.. py:class:: StoredFluid(fluid_name, EOS = 'HEOS', mole_fractions = None)
 
    A class to calculate the properties of the fluid being stored.
 
@@ -585,7 +625,7 @@ Package Contents
    :rtype: StoredFluid
 
 
-   .. py:method:: fluid_property_dict(p: float, T: float) -> Dict[str, float]
+   .. py:method:: fluid_property_dict(p, T)
 
       Generate a dictionary of fluid properties using CoolProp.
 
@@ -595,22 +635,34 @@ Package Contents
       :type T: float
 
       :returns: Dictionary containing several fluid properties needed for various
-                calculations in pytanksim. "hf" is the enthalpy (J/mol). "drho_dp"
-                is the first partial derivative of density (mol/m^3) w.r.t.
-                pressure (Pa). "drho_dT" is the first partial derivative of density
-                (mol/m^3) w.r.t. temperature (K). "rhof" is density (mol/m^3).
-                "dh_dp" is the first partial derivative of enthalpy (J/mol) w.r.t.
-                pressure (Pa). "dh_dT" is the first partial derivative of enthalpy
-                (J/mol) w.r.t. temperature (K). "uf" is the internal energy
-                (J/mol). "du_dp" is the first partial derivative of internal energy
-                (J/mol) w.r.t. pressure (Pa). "du_dT" is the first partial
-                derivative of internal energy (J/mol) w.r.t. temperature (K). "MW"
-                is molar mass (kg/mol).
+                calculations in pytanksim.
       :rtype: Dict[str, float]
 
+      .. rubric:: Notes
+
+      Below is a list of keys and the variables they contain for the output
+      dictionary.
+
+      - ``hf``: enthalpy (J/mol)
+      - ``drho_dp``: first partial derivative of density (mol/m^3) w.r.t.
+        pressure (Pa)
+      - ``drho_dT``: first partial derivative of density (mol/m^3) w.r.t.
+        temperature (K)
+      - ``rhof``: density (mol/m^3)
+      - ``dh_dp``: first partial derivative of enthalpy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``dh_dT``: first partial derivative of enthalpy (J/mol) w.r.t.
+        temperature (K)
+      - ``uf``: internal energy (J/mol)
+      - ``du_dp``: first partial derivative of internal energy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``du_dT``: first partial derivative of internal energy (J/mol)
+        w.r.t. temperature (K)
+      - ``MW``: molar mass (kg/mol)
 
 
-   .. py:method:: saturation_property_dict(T: float, Q: int = 0) -> Dict[str, float]
+
+   .. py:method:: saturation_property_dict(T, Q = 0)
 
       Generate a dictionary of fluid properties at saturation.
 
@@ -620,24 +672,37 @@ Package Contents
       :type Q: float
 
       :returns: A dictionary containing the fluid properties at saturation
-                at a given temperature. "psat" is the saturation vapor pressure
-                (Pa). "dps_dT" is the first derivative of the saturation vapor
-                pressure (Pa) w.r.t. temperature (K). "hf" is the enthalpy (J/mol).
-                "drho_dp" is the first partial derivative of density (mol/m^3)
-                w.r.t. pressure (Pa). "drho_dT" is the first partial derivative of
-                density (mol/m^3) w.r.t. temperature (K). "rhof" is density
-                (mol/m^3). "dh_dp" is the first partial derivative of enthalpy
-                (J/mol) w.r.t. pressure (Pa). "dh_dT" is the first partial
-                derivative of enthalpy (J/mol) w.r.t. temperature (K). "uf" is the
-                internal energy (J/mol). "du_dp" is the first partial derivative of
-                internal energy (J/mol) w.r.t. pressure (Pa). "du_dT" is the first
-                partial derivative of internal energy (J/mol) w.r.t. temperature
-                (K). "MW" is molar mass (kg/mol).
+                at a given temperature.
       :rtype: Dict[str, float]
 
+      .. rubric:: Notes
+
+      Below is a list of keys and the variables they contain for the output
+      dictionary.
+
+      - ``psat``: saturation vapor pressure (Pa)
+      - ``dps_dT``: first derivative of the saturation vapor pressure (Pa)
+        w.r.t. temperature (K).
+      - ``hf``: enthalpy (J/mol)
+      - ``drho_dp``: first partial derivative of density (mol/m^3) w.r.t.
+        pressure (Pa)
+      - ``drho_dT``: first partial derivative of density (mol/m^3) w.r.t.
+        temperature (K)
+      - ``rhof``: density (mol/m^3)
+      - ``dh_dp``: first partial derivative of enthalpy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``dh_dT``: first partial derivative of enthalpy (J/mol) w.r.t.
+        temperature (K)
+      - ``uf``: internal energy (J/mol)
+      - ``du_dp``: first partial derivative of internal energy (J/mol) w.r.t.
+        pressure (Pa)
+      - ``du_dT``: first partial derivative of internal energy (J/mol)
+        w.r.t. temperature (K)
+      - ``MW``: molar mass (kg/mol)
 
 
-   .. py:method:: determine_phase(p: float, T: float) -> str
+
+   .. py:method:: determine_phase(p, T)
 
       Determine the phase of the fluid being stored.
 
@@ -652,7 +717,7 @@ Package Contents
 
 
 
-.. py:class:: SorbentMaterial(skeletal_density: float, bulk_density: float, specific_surface_area: float, model_isotherm: ModelIsotherm, mass: float = 0, molar_mass: float = 0.01201, Debye_temperature: float = 1500, heat_capacity_function: Callable[[float], float] = None)
+.. py:class:: SorbentMaterial(skeletal_density, bulk_density, specific_surface_area, model_isotherm, mass = 0, molar_mass = 0.01201, Debye_temperature = 1500, heat_capacity_function = None)
 
    Class containing the properties of a sorbent material.
 
@@ -737,7 +802,7 @@ Package Contents
    :rtype: SorbentMaterial
 
 
-.. py:class:: MDAModel(sorbent: str, stored_fluid: StoredFluid, nmax: float, f0: float, alpha: float, beta: float, va: float, m: float = 2, k: float = 2, va_mode: str = 'Constant', f0_mode: str = 'Constant')
+.. py:class:: MDAModel(sorbent, stored_fluid, nmax, f0, alpha, beta, va, m = 2, k = 2, va_mode = 'Constant', f0_mode = 'Constant')
 
    Bases: :py:obj:`ModelIsotherm`
 
@@ -789,7 +854,31 @@ Package Contents
    :rtype: MDAModel
 
 
-   .. py:method:: n_absolute(p: float, T: float) -> float
+   .. py:method:: dlnf0_dT(T)
+
+      Calculate derivative of log saturation fugacity w.r.t. temperature.
+
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Derivative of log saturation fugacity w.r.t. temperature
+      :rtype: float
+
+
+
+   .. py:method:: f0_fun(T)
+
+      Calculate saturation fugacity as a function of temperature.
+
+      :param T: Temperature (K).
+      :type T: float
+
+      :returns: Saturation fugacity (Pa).
+      :rtype: float
+
+
+
+   .. py:method:: n_absolute(p, T)
 
       Calculate the absolute adsorbed amount at given conditions.
 
@@ -803,7 +892,7 @@ Package Contents
 
 
 
-   .. py:method:: v_ads(p: float, T: float) -> float
+   .. py:method:: v_ads(p, T)
 
       Calculate the adsorbed phase volume at the given condtions.
 
@@ -817,7 +906,7 @@ Package Contents
 
 
 
-   .. py:method:: n_excess(p: float, T: float, q: float = 1) -> float
+   .. py:method:: n_excess(p, T, q = 1)
 
       Calculate the excess adsorbed amount at the given conditions.
 
@@ -834,7 +923,7 @@ Package Contents
 
 
 
-   .. py:method:: internal_energy_adsorbed(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_adsorbed(p, T, q = 1)
 
       Calculate the molar integral internal energy of adsorption (J/mol).
 
@@ -860,33 +949,37 @@ Package Contents
 
 
 
-   .. py:method:: differential_energy(p, T, q=1)
+   .. py:method:: differential_energy_na(na, T)
 
-      Calculate the differential energy of adsorption (J/mol).
+      Calculate differential energy of adsorption analytically.
 
-      The calculation is based on Myers & Monson [1]_.
+      :param na: Amount adsorbed (mol/kg)
+      :type na: float
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Differential energy of adsorption (J/mol)
+      :rtype: float
+
+
+
+   .. py:method:: differential_energy(p, T, q = 1)
+
+      Calculate differential energy of adsorption analytically.
 
       :param p: Pressure (Pa).
       :type p: float
       :param T: Temperature (K).
       :type T: float
-      :param q: Vapor quality of the bulk fluid. Can vary between 0 to 1.
-                The default is 1.
-      :type q: float, optional
+      :param q: Vapor quality.
+      :type q: float
 
-      :returns: The differential energy of adsorption (J/mol).
+      :returns: Differential energy of adsorption (J/mol).
       :rtype: float
 
-      .. rubric:: Notes
-
-      .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-         the case for absolute adsorption as the basis for thermodynamic
-         analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-         doi: 10.1007/s10450-014-9604-1.
 
 
-
-   .. py:method:: from_ExcessIsotherms(ExcessIsotherms: List[pytanksim.classes.excessisothermclass.ExcessIsotherm], stored_fluid: StoredFluid = None, sorbent: str = None, nmaxguess: float = 71.6, f0guess: float = 1470000000.0, alphaguess: float = 3080, betaguess: float = 18.9, vaguess: float = 0.00143, mguess: float = 2.0, kguess: float = 2.0, va_mode: str = 'Fit', f0_mode: str = 'Fit', m_mode: str = 'Fit', k_mode: str = 'Fit', beta_mode: str = 'Fit', pore_volume: float = 0.003, verbose: bool = True) -> MDAModel
+   .. py:method:: from_ExcessIsotherms(ExcessIsotherms, stored_fluid = None, sorbent = None, nmaxguess = 71.6, f0guess = 1470000000.0, alphaguess = 3080, betaguess = 18.9, vaguess = 0.00143, mguess = 2.0, kguess = 2.0, va_mode = 'Fit', f0_mode = 'Fit', m_mode = 'Fit', k_mode = 'Fit', beta_mode = 'Fit', pore_volume = 0.003, verbose = True)
       :classmethod:
 
 
@@ -965,7 +1058,7 @@ Package Contents
 
 
 
-.. py:class:: DAModel(sorbent: str, stored_fluid: StoredFluid, w0: float, f0: float, eps: float, m: float = 2, k: float = 2, rhoa: float = None, va: float = None, va_mode: str = 'Constant', rhoa_mode: str = 'Constant', f0_mode: str = 'Dubinin')
+.. py:class:: DAModel(sorbent, stored_fluid, w0, f0, eps, m = 2, k = 2, rhoa = None, va = None, va_mode = 'Constant', rhoa_mode = 'Constant', f0_mode = 'Dubinin')
 
    Bases: :py:obj:`ModelIsotherm`
 
@@ -1111,7 +1204,7 @@ Package Contents
    :rtype: DAModel
 
 
-   .. py:method:: f0_calc(T: float) -> float
+   .. py:method:: f0_calc(T)
 
       Calculate the fugacity at saturation (Pa) at a given temperature.
 
@@ -1123,7 +1216,19 @@ Package Contents
 
 
 
-   .. py:method:: rhoa_calc(T: float) -> float
+   .. py:method:: dlnf0_dT(T)
+
+      Calculate derivative of log saturation fugacity w.r.t. temperature.
+
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Derivative of log saturation fugacity w.r.t. temperature
+      :rtype: float
+
+
+
+   .. py:method:: rhoa_calc(T)
 
       Calculate the density of the adsorbed phase at a given temperature.
 
@@ -1135,7 +1240,7 @@ Package Contents
 
 
 
-   .. py:method:: v_ads(p: float, T: float) -> float
+   .. py:method:: v_ads(p, T)
 
       Calculate the volume of the adsorbed phase (m^3/kg).
 
@@ -1149,7 +1254,7 @@ Package Contents
 
 
 
-   .. py:method:: n_absolute(p: float, T: float) -> float
+   .. py:method:: n_absolute(p, T)
 
       Calculate the absolute adsorbed amount at a given condition.
 
@@ -1163,7 +1268,7 @@ Package Contents
 
 
 
-   .. py:method:: n_excess(p: float, T: float, q: float = 1) -> float
+   .. py:method:: n_excess(p, T, q = 1)
 
       Calculate the excess adsorbed amount at a given condition.
 
@@ -1180,33 +1285,37 @@ Package Contents
 
 
 
+   .. py:method:: differential_energy_na(na, T)
+
+      Calculate differential energy of adsorption analytically.
+
+      :param na: Amount adsorbed (mol/kg)
+      :type na: float
+      :param T: Temperature (K)
+      :type T: float
+
+      :returns: Differential energy of adsorption (J/mol)
+      :rtype: float
+
+
+
    .. py:method:: differential_energy(p, T, q)
 
-      Calculate the differential energy of adsorption (J/mol).
-
-      The calculation is based on Myers & Monson [1]_.
+      Calculate differential energy of adsorption analytically.
 
       :param p: Pressure (Pa).
       :type p: float
       :param T: Temperature (K).
       :type T: float
-      :param q: Vapor quality of the bulk fluid. Can vary between 0 to 1.
-                The default is 1.
-      :type q: float, optional
+      :param q: Vapor quality.
+      :type q: float
 
-      :returns: The differential energy of adsorption (J/mol).
+      :returns: Differential energy of adsorption (J/mol).
       :rtype: float
 
-      .. rubric:: Notes
-
-      .. [1] A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-         the case for absolute adsorption as the basis for thermodynamic
-         analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-         doi: 10.1007/s10450-014-9604-1.
 
 
-
-   .. py:method:: internal_energy_adsorbed(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_adsorbed(p, T, q = 1)
 
       Calculate the molar integral internal energy of adsorption (J/mol).
 
@@ -1232,7 +1341,7 @@ Package Contents
 
 
 
-   .. py:method:: from_ExcessIsotherms(ExcessIsotherms: List[pytanksim.classes.excessisothermclass.ExcessIsotherm], stored_fluid: StoredFluid = None, sorbent: str = None, w0guess: float = 0.001, f0guess: float = 1470000000.0, epsguess: float = 3000, vaguess: float = 0.001, rhoaguess: float = None, mguess: float = 2.0, kguess: float = 2.0, rhoa_mode: str = 'Fit', f0_mode: str = 'Fit', m_mode: str = 'Fit', k_mode: str = 'Fit', va_mode: str = 'Excess', pore_volume: float = 0.003, verbose: bool = True) -> DAModel
+   .. py:method:: from_ExcessIsotherms(ExcessIsotherms, stored_fluid = None, sorbent = None, w0guess = 0.001, f0guess = 1470000000.0, epsguess = 3000, vaguess = 0.001, rhoaguess = None, mguess = 2.0, kguess = 2.0, rhoa_mode = 'Fit', f0_mode = 'Fit', m_mode = 'Fit', k_mode = 'Fit', va_mode = 'Excess', pore_volume = 0.003, verbose = True)
       :classmethod:
 
 
@@ -1314,7 +1423,7 @@ Package Contents
 
 
 
-.. py:class:: StorageTank(stored_fluid: pytanksim.classes.fluidsorbentclasses.StoredFluid, aluminum_mass: float = 0, carbon_fiber_mass: float = 0, steel_mass: float = 0, vent_pressure: float = None, min_supply_pressure: float = 100000.0, thermal_resistance: float = 0, surface_area: float = 0, heat_transfer_coefficient: float = 0, volume: float = None, set_capacity: float = None, full_pressure: float = None, empty_pressure: float = None, full_temperature: float = None, empty_temperature: float = None, full_quality: float = 1, empty_quality: float = 1)
+.. py:class:: StorageTank(stored_fluid, aluminum_mass = 0, carbon_fiber_mass = 0, steel_mass = 0, vent_pressure = None, min_supply_pressure = 100000.0, thermal_resistance = 0, surface_area = 0, heat_transfer_coefficient = 0, volume = None, set_capacity = None, full_pressure = None, empty_pressure = None, full_temperature = None, empty_temperature = None, full_quality = 1, empty_quality = 1)
 
    Stores the properties of the storage tank.
 
@@ -1374,12 +1483,9 @@ Package Contents
    .. attribute:: thermal_resistance
 
       The thermal resistance of the tank walls (K/W). The default is 0.
-      If 0, the value will not be considered in simulations. If the
-      arguments 'surface_area' and 'heat_transfer' are passed,
-      'thermal_resistance' will be calculated based on those two arguments
-      as long as the user does not pass a value to 'thermal_resistance'.
+      If 0, the value will not be considered in simulations.
 
-      :type: float, optional
+      :type: Callable, optional
 
    .. attribute:: surface_area
 
@@ -1393,259 +1499,112 @@ Package Contents
       The heat transfer coefficient of the tank surface (W/(m^2 K)).
       The default is 0.
 
-      :type: float, optional
+      :type: Callable, optional
+
+   Initialize a StorageTank object.
+
+   :param stored_fluid: Object to calculate the thermophysical properties of the fluid
+                        being stored.
+   :type stored_fluid: StoredFluid
+   :param aluminum_mass: The mass of aluminum making up the tank walls (kg). The default is
+                         0.
+   :type aluminum_mass: float, optional
+   :param carbon_fiber_mass: The mass of carbon fiber making up the tank walls (kg). The default
+                             is 0.
+   :type carbon_fiber_mass: float, optional
+   :param steel_mass: The mass of steel making up the tank walls (kg). The default is 0.
+   :type steel_mass: float, optional
+   :param vent_pressure: The pressure (Pa) at which the fluid being stored must be vented.
+                         The default is None. If None, the value will be taken as the
+                         maximum value where the CoolProp backend can calculate the
+                         properties of the fluid being stored.
+   :type vent_pressure: float, optional
+   :param min_supply_pressure: The minimum supply pressure (Pa) for discharging simulations.The
+                               default is 1E5.
+   :type min_supply_pressure: float, optional
+   :param thermal_resistance: A function which returns the thermal resistance of the tank
+                              walls (K/W) as a function of tank pressure (Pa), tank
+                              temperature (K), time (s), and temperature of surroundings (K). The
+                              default is 0. If a float is provided, it will be converted to a
+                              function which returns that value everywhere. If both this and
+                              the arguments 'surface_area' and 'heat_transfer_coefficient' are
+                              passed, two values of thermal resistance will be calculated and
+                              the highest value between the two will be taken at each time step.
+                              Thus, to avoid confusion, one should either: (a) use the other two
+                              arguments together, or (b) use this one, but not both at the same
+                              time.
+
+                              If a callable is passed, it must have the signature::
+
+                                  def tr_function(p, T, time, env_temp):
+                                      # 'p' is tank pressure (Pa)
+                                      # 'T' is tank temperature (K)
+                                      # 'time' is the time elapsed within the simulation (s)
+                                      # 'env_temp' is the temperature of surroundings (K)
+                                      ....
+                                      # Returned is the thermal resistance (K/W)
+                                      return tr_value
+   :type thermal_resistance: Callable or float, optional
+   :param surface_area: The surface area of the tank that is in contact with the
+                        environment (m^2). The default is 0.
+   :type surface_area: float, optional
+   :param heat_transfer_coefficient: A function which returns the heat transfer coefficient of the tank
+                                     walls (W/(m^2 K)) as a function of tank pressure (Pa), tank
+                                     temperature (K), time (s), and temperature of surroundings (K). The
+                                     default is 0. If a float is  provided, it will be converted to a
+                                     function which returns that value everywhere.
+
+                                     If a callable is passed, it must have the signature::
+
+                                         def htc_function(p, T, time, env_temp):
+                                             # 'p' is tank pressure (Pa)
+                                             # 'T' is tank temperature (K)
+                                             # 'time' is the time elapsed within the simulation (s)
+                                             # 'env_temp' is the temperature of surroundings (K)
+                                             ....
+                                             # Returned is the heat transfer coefficient (W/(m^2 K))
+                                             return heat_transfer_coef
+   :type heat_transfer_coefficient: Callable or float, optional
+   :param volume: Internal volume of the storage tank (m^3). The default is None.
+                  This value is required unless the set capacity and operating
+                  conditions are defined, in which case the volume is calculated from
+                  the capacity and operating conditions.
+   :type volume: float, optional
+   :param set_capacity: Set internal capacity of the storage tank (mol). The default is
+                        None. If specified, this will override the user-specified tank
+                        volume.
+   :type set_capacity: float, optional
+   :param full_pressure: Pressure (Pa) of the tank when it is considered full. The default
+                         is None.
+   :type full_pressure: float, optional
+   :param empty_pressure: Pressure (Pa) of the tank when it is considered empty. The default
+                          is None.
+   :type empty_pressure: float, optional
+   :param full_temperature: Temperature (K) of the tank when it is considered full. The
+                            default is None.
+   :type full_temperature: float, optional
+   :param empty_temperature: Temperature (K) of the tank when it is considered empty. The
+                             default is None.
+   :type empty_temperature: float, optional
+   :param full_quality: Vapor quality of the tank when it is considered full. The default
+                        is 1 (Gas).
+   :type full_quality: float, optional
+   :param empty_quality: Vapor quality of the tank when it is considered empty. The default
+                         is 1 (Gas).
+   :type empty_quality: float, optional
+
+   :raises ValueError: If any of the mass values provided are less than 0.
+   :raises ValueError: If the vent pressure set is higher than what can be calculated by
+       'CoolProp'.
+   :raises ValueError: If neither the volume nor the complete capacity and the pressure
+       and temperature swing conditions were provided.
+
+   :returns: A storage tank object which can be passed as arguments to dynamic
+             simulations and can calculate certain properties on its own.
+   :rtype: StorageTank
 
-   .. attribute:: Initialize a StorageTank object.
 
-      
-
-   .. attribute:: 
-
-      being stored.
-
-      :type: param stored_fluid: Object to calculate the thermophysical properties of the fluid
-
-   .. attribute:: 
-
-      
-
-      :type: type stored_fluid: StoredFluid
-
-   .. attribute:: 
-
-      
-      
-      0.
-
-      :type: param aluminum_mass: The mass of aluminum making up the tank walls (kg). The default is
-
-   .. attribute:: 
-
-      
-
-      :type: type aluminum_mass: float, optional
-
-   .. attribute:: 
-
-      is 0.
-
-      :type: param carbon_fiber_mass: The mass of carbon fiber making up the tank walls (kg). The default
-
-   .. attribute:: 
-
-      
-
-      :type: type carbon_fiber_mass: float, optional
-
-   .. attribute:: 
-
-      
-
-      :type: param steel_mass: The mass of steel making up the tank walls (kg). The default is 0.
-
-   .. attribute:: 
-
-      
-
-      :type: type steel_mass: float, optional
-
-   .. attribute:: 
-
-      The default is None. If None, the value will be taken as the
-      maximum value where the CoolProp backend can calculate the
-      properties of the fluid being stored.
-
-      :type: param vent_pressure: The pressure (Pa) at which the fluid being stored must be vented.
-
-   .. attribute:: 
-
-      
-
-      :type: type vent_pressure: float, optional
-
-   .. attribute:: 
-
-      default is 1E5.
-
-      :type: param min_supply_pressure: The minimum supply pressure (Pa) for discharging simulations.The
-
-   .. attribute:: 
-
-      
-
-      :type: type min_supply_pressure: float, optional
-
-   .. attribute:: 
-
-      If 0, the value will not be considered in simulations. If the
-      arguments 'surface_area' and 'heat_transfer' are passed,
-      'thermal_resistance' will be calculated based on those two
-      arguments as long as the user does not pass a value to
-      'thermal_resistance'.
-
-      :type: param thermal_resistance: The thermal resistance of the tank walls (K/W). The default is 0.
-
-   .. attribute:: 
-
-      
-
-      :type: type thermal_resistance: float, optional
-
-   .. attribute:: 
-
-      environment (m^2). The default is 0.
-
-      :type: param surface_area: The surface area of the tank that is in contact with the
-
-   .. attribute:: 
-
-      
-
-      :type: type surface_area: float, optional
-
-   .. attribute:: 
-
-      The default is 0.
-
-      :type: param heat_transfer_coefficient: The heat transfer coefficient of the tank surface (W/(m^2 K)).
-
-   .. attribute:: 
-
-      
-
-      :type: type heat_transfer_coefficient: float, optional
-
-   .. attribute:: 
-
-      This value is required unless the set capacity and operating
-      conditions are defined, in which case the volume is calculated from
-      the capacity and operating conditions.
-
-      :type: param volume: Internal volume of the storage tank (m^3). The default is None.
-
-   .. attribute:: 
-
-      
-
-      :type: type volume: float, optional
-
-   .. attribute:: 
-
-      None. If specified, this will override the user-specified tank
-      volume.
-
-      :type: param set_capacity: Set internal capacity of the storage tank (mol). The default is
-
-   .. attribute:: 
-
-      
-
-      :type: type set_capacity: float, optional
-
-   .. attribute:: 
-
-      is None.
-
-      :type: param full_pressure: Pressure (Pa) of the tank when it is considered full. The default
-
-   .. attribute:: 
-
-      
-
-      :type: type full_pressure: float, optional
-
-   .. attribute:: 
-
-      is None.
-
-      :type: param empty_pressure: Pressure (Pa) of the tank when it is considered empty. The default
-
-   .. attribute:: 
-
-      
-
-      :type: type empty_pressure: float, optional
-
-   .. attribute:: 
-
-      default is None.
-
-      :type: param full_temperature: Temperature (K) of the tank when it is considered full. The
-
-   .. attribute:: 
-
-      
-
-      :type: type full_temperature: float, optional
-
-   .. attribute:: 
-
-      default is None.
-
-      :type: param empty_temperature: Temperature (K) of the tank when it is considered empty. The
-
-   .. attribute:: 
-
-      
-
-      :type: type empty_temperature: float, optional
-
-   .. attribute:: 
-
-      is 1 (Gas).
-
-      :type: param full_quality: Vapor quality of the tank when it is considered full. The default
-
-   .. attribute:: 
-
-      
-
-      :type: type full_quality: float, optional
-
-   .. attribute:: 
-
-      is 1 (Gas).
-
-      :type: param empty_quality: Vapor quality of the tank when it is considered empty. The default
-
-   .. attribute:: 
-
-      
-
-      :type: type empty_quality: float, optional
-
-   .. attribute:: 
-
-      
-
-      :type: raises ValueError: If any of the mass values provided are less than 0.
-
-   .. attribute:: 
-
-      'CoolProp'.
-
-      :type: raises ValueError: If the vent pressure set is higher than what can be calculated by
-
-   .. attribute:: 
-
-      and temperature swing conditions were provided.
-
-      :type: raises ValueError: If neither the volume nor the complete capacity and the pressure
-
-   .. attribute:: 
-
-      simulations and can calculate certain properties on its own.
-
-      :type: returns: A storage tank object which can be passed as arguments to dynamic
-
-   .. attribute:: 
-
-      
-
-      :type: rtype: StorageTank
-
-
-   .. py:method:: capacity(p: float, T: float, q: float = 0, unit: str = 'mol') -> float
+   .. py:method:: capacity(p, T, q = 0, unit = 'mol')
 
       Return the amount of fluid stored in the tank at given conditions.
 
@@ -1665,7 +1624,7 @@ Package Contents
 
 
 
-   .. py:method:: capacity_bulk(p: float, T: float, q: float = 0, unit: str = 'mol') -> float
+   .. py:method:: capacity_bulk(p, T, q = 0, unit = 'mol')
 
       Calculate the amount of bulk fluid in the tank.
 
@@ -1685,7 +1644,7 @@ Package Contents
 
 
 
-   .. py:method:: find_quality_at_saturation_capacity(T: float, capacity: float) -> float
+   .. py:method:: find_quality_at_saturation_capacity(T, capacity)
 
       Find vapor quality at the given temperature and capacity.
 
@@ -1700,7 +1659,7 @@ Package Contents
 
 
 
-   .. py:method:: internal_energy(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy(p, T, q = 1)
 
       Calculate the internal energy of the fluid inside of the tank.
 
@@ -1716,7 +1675,7 @@ Package Contents
 
 
 
-   .. py:method:: conditions_at_capacity_temperature(cap: float, T: float, p_guess: float, q_guess: float) -> scipy.optimize.OptimizeResult
+   .. py:method:: conditions_at_capacity_temperature(cap, T, p_guess, q_guess)
 
       Find conditions corresponding to a given capacity and temperature.
 
@@ -1737,7 +1696,7 @@ Package Contents
 
 
 
-   .. py:method:: conditions_at_capacity_pressure(cap: float, p: float, T_guess: float, q_guess: float) -> scipy.optimize.OptimizeResult
+   .. py:method:: conditions_at_capacity_pressure(cap, p, T_guess, q_guess)
 
       Find conditions corresponding to a given capacity and temperature.
 
@@ -1758,7 +1717,7 @@ Package Contents
 
 
 
-   .. py:method:: calculate_dormancy(p: float, T: float, heating_power: float, q: float = 0) -> pandas.DataFrame
+   .. py:method:: calculate_dormancy(p, T, heating_power, q = 0)
 
       Calculate dormancy time given a constant heating rate.
 
@@ -1791,7 +1750,25 @@ Package Contents
 
 
 
-.. py:class:: SorbentTank(sorbent_material: pytanksim.classes.fluidsorbentclasses.SorbentMaterial, aluminum_mass: float = 0, carbon_fiber_mass: float = 0, steel_mass: float = 0, vent_pressure: float = None, min_supply_pressure: float = 100000.0, thermal_resistance: float = 0, surface_area: float = 0, heat_transfer_coefficient: float = 0, volume: float = None, set_capacity: float = None, full_pressure: float = None, empty_pressure: float = None, full_temperature: float = None, empty_temperature: float = None, full_quality: float = 1, empty_quality: float = 1, set_sorbent_fill: float = 1)
+   .. py:method:: thermal_res(p, T, time, env_temp)
+
+      Calculate the thermal resistance of the tank.
+
+      :param p: Pressure (Pa) of fluid inside tank.
+      :type p: float
+      :param T: Temperature (K) of fluid inside tank
+      :type T: float
+      :param time: Time elapsed in simulation (s).
+      :type time: float
+      :param env_temp: Temperature (K) of environment surrounding tank.
+      :type env_temp: float
+
+      :returns: Thermal resistance of the tank (K/W).
+      :rtype: float
+
+
+
+.. py:class:: SorbentTank(sorbent_material, aluminum_mass = 0, carbon_fiber_mass = 0, steel_mass = 0, vent_pressure = None, min_supply_pressure = 100000.0, thermal_resistance = 0, surface_area = 0, heat_transfer_coefficient = 0, volume = None, set_capacity = None, full_pressure = None, empty_pressure = None, full_temperature = None, empty_temperature = None, full_quality = 1, empty_quality = 1, set_sorbent_fill = 1)
 
    Bases: :py:obj:`StorageTank`
 
@@ -1848,13 +1825,8 @@ Package Contents
    .. attribute:: thermal_resistance
 
       The thermal resistance of the tank walls (K/W). The default is 0.
-      If 0, the value will not be considered in simulations. If the
-      arguments 'surface_area' and 'heat_transfer' are passed,
-      'thermal_resistance' will be calculated based on those two
-      arguments as long as the user does not pass a value to
-      'thermal_resistance'.
 
-      :type: float, optional
+      :type: Callable, optional
 
    .. attribute:: surface_area
 
@@ -1868,7 +1840,7 @@ Package Contents
       The heat transfer coefficient of the tank surface (W/(m^2 K)).
       The default is 0.
 
-      :type: float, optional
+      :type: Callable, optional
 
    Initialize a SorbentTank object.
 
@@ -1889,19 +1861,49 @@ Package Contents
    :param min_supply_pressure: The minimum supply pressure (Pa) for discharging simulations. The
                                default is 1E5.
    :type min_supply_pressure: float, optional
-   :param thermal_resistance: The thermal resistance of the tank walls (K/W). The default is 0.
-                              If 0, the value will not be considered in simulations. If the
-                              arguments 'surface_area' and 'heat_transfer' are passed,
-                              'thermal_resistance' will be calculated based on those two
-                              arguments as long as the user does not pass a value to
-                              'thermal_resistance'.
-   :type thermal_resistance: float, optional
+   :param thermal_resistance: A function which returns the thermal resistance of the tank
+                              walls (K/W) as a function of tank pressure (Pa), tank
+                              temperature (K), time (s), and temperature of surroundings (K). The
+                              default is 0. If a float is provided, it will be converted to a
+                              function which returns that value everywhere. If both this and
+                              the arguments 'surface_area' and 'heat_transfer_coefficient' are
+                              passed, two values of thermal resistance will be calculated and
+                              the highest value between the two will be taken at each time step.
+                              Thus, to avoid confusion, one should either: (a) use the other two
+                              arguments together, or (b) use this one, but not both at the same
+                              time.
+
+                              If a callable is passed, it must have the signature::
+
+                                  def tr_function(p, T, time, env_temp):
+                                      # 'p' is tank pressure (Pa)
+                                      # 'T' is tank temperature (K)
+                                      # 'time' is the time elapsed within the simulation (s)
+                                      # 'env_temp' is the temperature of surroundings (K)
+                                      ....
+                                      # Returned is the thermal resistance (K/W)
+                                      return tr_value
+   :type thermal_resistance: Callable or float, optional
    :param surface_area: Outer surface area of the tank in contact with the environment
                         (m^2). The default is 0.
    :type surface_area: float, optional
-   :param heat_transfer_coefficient: The heat transfer coefficient of the tank surface (W/(m^2 K)).
-                                     The default is 0.
-   :type heat_transfer_coefficient: float, optional
+   :param heat_transfer_coefficient: A function which returns the heat transfer coefficient of the tank
+                                     walls (W/(m^2 K)) as a function of tank pressure (Pa), tank
+                                     temperature (K), time (s), and temperature of surroundings (K). The
+                                     default is 0. If a float is  provided, it will be converted to a
+                                     function which returns that value everywhere.
+
+                                     If a callable is passed, it must have the signature::
+
+                                         def htc_function(p, T, time, env_temp):
+                                             # 'p' is tank pressure (Pa)
+                                             # 'T' is tank temperature (K)
+                                             # 'time' is the time elapsed within the simulation (s)
+                                             # 'env_temp' is the temperature of surroundings (K)
+                                             ....
+                                             # Returned is the heat transfer coefficient (W/(m^2 K))
+                                             return heat_transfer_coef
+   :type heat_transfer_coefficient: Callable or float, optional
    :param volume: Internal volume of the storage tank (m^3). The default is None.
                   This value is required unless the set capacity and operating
                   conditions are defined, in which case the volume is calculated from
@@ -1939,7 +1941,7 @@ Package Contents
    :rtype: SorbentTank
 
 
-   .. py:method:: bulk_fluid_volume(p: float, T: float) -> float
+   .. py:method:: bulk_fluid_volume(p, T)
 
       Calculate the volume of bulk fluid inside of the tank.
 
@@ -1953,7 +1955,7 @@ Package Contents
 
 
 
-   .. py:method:: capacity(p: float, T: float, q: float = 0) -> float
+   .. py:method:: capacity(p, T, q = 0)
 
       Return the amount of fluid stored in the tank at given conditions.
 
@@ -1970,7 +1972,7 @@ Package Contents
 
 
 
-   .. py:method:: capacity_bulk(p: float, T: float, q: float = 0) -> float
+   .. py:method:: capacity_bulk(p, T, q = 0)
 
       Calculate the amount of bulk fluid in the tank.
 
@@ -1987,7 +1989,7 @@ Package Contents
 
 
 
-   .. py:method:: internal_energy(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy(p, T, q = 1)
 
       Calculate the internal energy of the fluid inside of the tank.
 
@@ -2003,7 +2005,7 @@ Package Contents
 
 
 
-   .. py:method:: internal_energy_sorbent(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_sorbent(p, T, q = 1)
 
       Calculate the internal energy of the adsorbed fluid in the tank.
 
@@ -2019,7 +2021,7 @@ Package Contents
 
 
 
-   .. py:method:: internal_energy_bulk(p: float, T: float, q: float = 1) -> float
+   .. py:method:: internal_energy_bulk(p, T, q = 1)
 
       Calculate the internal energy of the bulk fluid in the tank.
 
@@ -2035,7 +2037,7 @@ Package Contents
 
 
 
-   .. py:method:: find_quality_at_saturation_capacity(T: float, capacity: float) -> float
+   .. py:method:: find_quality_at_saturation_capacity(T, capacity)
 
       Find vapor quality at the given temperature and capacity.
 
@@ -2050,7 +2052,7 @@ Package Contents
 
 
 
-   .. py:method:: find_temperature_at_saturation_quality(q: float, cap: float) -> scipy.optimize.OptimizeResult
+   .. py:method:: find_temperature_at_saturation_quality(q, cap)
 
       Find temperature at a given capacity and vapor quality value.
 
@@ -2066,7 +2068,7 @@ Package Contents
 
 
 
-   .. py:method:: calculate_dormancy(p: float, T: float, heating_power: float, q: float = 0) -> pandas.DataFrame
+   .. py:method:: calculate_dormancy(p, T, heating_power, q = 0)
 
       Calculate dormancy time given a constant heating rate.
 
@@ -2105,7 +2107,7 @@ Package Contents
 
 
 
-.. py:class:: SimResults(pressure: Union[List[float], numpy.ndarray], temperature: Union[List[float], numpy.ndarray], time: Union[List[float], numpy.ndarray], moles_adsorbed: Union[List[float], numpy.ndarray], moles_gas: Union[List[float], numpy.ndarray], moles_liquid: Union[List[float], numpy.ndarray], moles_supercritical: Union[List[float], numpy.ndarray], tank_params: Union[pytanksim.classes.storagetankclasses.StorageTank, pytanksim.classes.storagetankclasses.SorbentTank], sim_params: pytanksim.classes.basesimclass.SimParams, stop_reason: str, sim_type: str = None, inserted_amount: Union[List[float], numpy.ndarray] = 0, flow_energy_in: Union[List[float], numpy.ndarray] = 0, cooling_required: Union[List[float], numpy.ndarray] = 0, heating_required: Union[List[float], numpy.ndarray] = 0, cooling_additional: Union[List[float], numpy.ndarray] = 0, heating_additional: Union[List[float], numpy.ndarray] = 0, heat_leak_in: Union[List[float], numpy.ndarray] = 0, vented_amount: Union[List[float], numpy.ndarray] = 0, vented_energy: Union[List[float], numpy.ndarray] = 0)
+.. py:class:: SimResults(pressure, temperature, time, moles_adsorbed, moles_gas, moles_liquid, moles_supercritical, tank_params, sim_params, stop_reason, sim_type = None, inserted_amount = 0, flow_energy_in = 0, cooling_required = 0, heating_required = 0, cooling_additional = 0, heating_additional = 0, heat_leak_in = 0, vented_amount = 0, vented_energy = 0)
 
    Class for storing the results of dynamic simulations.
 
@@ -2246,7 +2248,7 @@ Package Contents
    :rtype: SimResults
 
 
-   .. py:method:: get_final_conditions(idx: int = -1) -> dict
+   .. py:method:: get_final_conditions(idx = -1)
 
       Output final tank conditions at the end of the simulation.
 
@@ -2260,7 +2262,7 @@ Package Contents
 
 
 
-   .. py:method:: to_csv(filename: str, verbose: bool = True)
+   .. py:method:: to_csv(filename, verbose = True)
 
       Export simulation results to a csv file.
 
@@ -2272,7 +2274,7 @@ Package Contents
 
 
 
-   .. py:method:: from_csv(filename: str, import_components: bool = False)
+   .. py:method:: from_csv(filename, import_components = False)
       :classmethod:
 
 
@@ -2292,7 +2294,7 @@ Package Contents
 
 
 
-   .. py:method:: interpolate(x_var: str = 't') -> dict[Callable[[float], float]]
+   .. py:method:: interpolate(x_var = 't')
 
       Interpolate simulation results between points.
 
@@ -2306,7 +2308,7 @@ Package Contents
 
 
 
-   .. py:method:: plot(x_axis: str, y_axes: Union[str, List[str]], colors: Union[str, List[str]] = ['r', 'b', 'g']) -> Union[numpy.ndarray, matplotlib.pyplot.Axes]
+   .. py:method:: plot(x_axis, y_axes, colors = ['r', 'b', 'g'])
 
       Plot the results of the simulation.
 
@@ -2389,7 +2391,7 @@ Package Contents
 
 
 
-   .. py:method:: combine(sim_results_list: List[SimResults]) -> SimResults
+   .. py:method:: combine(sim_results_list)
       :classmethod:
 
 
@@ -2403,7 +2405,7 @@ Package Contents
 
 
 
-.. py:function:: generate_simulation(storage_tank: Union[pytanksim.classes.storagetankclasses.StorageTank, pytanksim.classes.storagetankclasses.SorbentTank], boundary_flux: pytanksim.classes.basesimclass.BoundaryFlux, simulation_params: pytanksim.classes.basesimclass.SimParams, simulation_type: str = 'Default', phase: int = 1) -> pytanksim.classes.twophasefluidsimclasses.BaseSimulation
+.. py:function:: generate_simulation(storage_tank, boundary_flux, simulation_params, simulation_type = 'Default', phase = 1)
 
    Generate a dynamic simulation object.
 
@@ -2445,7 +2447,7 @@ Package Contents
    :rtype: A child class of BaseSimulation
 
 
-.. py:function:: automatic_simulation(storage_tank: Union[pytanksim.classes.storagetankclasses.StorageTank, pytanksim.classes.storagetankclasses.SorbentTank], boundary_flux: pytanksim.classes.basesimclass.BoundaryFlux, simulation_params: pytanksim.classes.basesimclass.SimParams, stop_at_max_pres: bool = False, stop_at_min_pres: bool = False, handle_max_pres: str = 'Cooled', handle_min_pres: str = 'Heated') -> pytanksim.classes.twophasefluidsimclasses.SimResults
+.. py:function:: automatic_simulation(storage_tank, boundary_flux, simulation_params, stop_at_max_pres = False, stop_at_min_pres = False, handle_max_pres = 'Cooled', handle_min_pres = 'Heated')
 
    Automatically run and restart simulations until a target is reached.
 

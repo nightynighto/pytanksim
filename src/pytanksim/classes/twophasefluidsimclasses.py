@@ -118,7 +118,7 @@ class TwoPhaseFluidDefault(TwoPhaseFluidSim):
         hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin - ndotout
         b2 = 0
@@ -357,7 +357,7 @@ class TwoPhaseFluidVenting(TwoPhaseFluidSim):
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin
         b2 = 0
@@ -543,7 +543,7 @@ class TwoPhaseFluidCooled(TwoPhaseFluidSim):
         hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin
         b2 = 0
@@ -728,7 +728,7 @@ class TwoPhaseFluidHeatedDischarge(TwoPhaseFluidSim):
         hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin - ndotout
         b2 = 0

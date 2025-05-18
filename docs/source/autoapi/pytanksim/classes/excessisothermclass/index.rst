@@ -20,7 +20,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: ExcessIsotherm(adsorbate: str, sorbent: str, temperature: float, loading: List[float], pressure: List[float])
+.. py:class:: ExcessIsotherm(adsorbate, sorbent, temperature, loading, pressure)
 
    Stores experimental excess isotherm measurement results.
 
@@ -78,7 +78,7 @@ Module Contents
    :rtype: ExcessIsotherm
 
 
-   .. py:method:: from_csv(filename: str, adsorbate: str, sorbent: str, temperature: float) -> ExcessIsotherm
+   .. py:method:: from_csv(filename, adsorbate, sorbent, temperature)
       :classmethod:
 
 

@@ -24,7 +24,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: OnePhaseFluidSim(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseFluidSim(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`pytanksim.classes.basesimclass.BaseSimulation`
 
@@ -53,7 +53,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-.. py:class:: OnePhaseFluidDefault(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseFluidDefault(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseFluidSim`
 
@@ -82,7 +82,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float, p: float, T: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time, p, T)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -98,7 +98,7 @@ Module Contents
 
 
 
-   .. py:method:: run() -> pytanksim.classes.simresultsclass.SimResults
+   .. py:method:: run()
 
       Run the dynamic simulation.
 
@@ -111,7 +111,7 @@ Module Contents
 
 
 
-.. py:class:: OnePhaseFluidVenting(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseFluidVenting(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseFluidSim`
 
@@ -140,7 +140,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float, T: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time, T)
 
       Solve for the right hand side of the governing ODE.
 
@@ -167,7 +167,7 @@ Module Contents
 
 
 
-.. py:class:: OnePhaseFluidCooled(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseFluidCooled(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseFluidSim`
 
@@ -196,7 +196,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float, T: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time, T)
 
       Solve for the right hand side of the governing ODE.
 
@@ -223,7 +223,7 @@ Module Contents
 
 
 
-.. py:class:: OnePhaseFluidHeatedDischarge(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseFluidHeatedDischarge(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseFluidSim`
 
@@ -252,7 +252,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float, T: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time, T)
 
       Solve for the right hand side of the governing ODE.
 

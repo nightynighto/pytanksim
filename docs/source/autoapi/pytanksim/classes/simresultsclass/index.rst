@@ -22,7 +22,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: SimResults(pressure: Union[List[float], numpy.ndarray], temperature: Union[List[float], numpy.ndarray], time: Union[List[float], numpy.ndarray], moles_adsorbed: Union[List[float], numpy.ndarray], moles_gas: Union[List[float], numpy.ndarray], moles_liquid: Union[List[float], numpy.ndarray], moles_supercritical: Union[List[float], numpy.ndarray], tank_params: Union[pytanksim.classes.storagetankclasses.StorageTank, pytanksim.classes.storagetankclasses.SorbentTank], sim_params: pytanksim.classes.basesimclass.SimParams, stop_reason: str, sim_type: str = None, inserted_amount: Union[List[float], numpy.ndarray] = 0, flow_energy_in: Union[List[float], numpy.ndarray] = 0, cooling_required: Union[List[float], numpy.ndarray] = 0, heating_required: Union[List[float], numpy.ndarray] = 0, cooling_additional: Union[List[float], numpy.ndarray] = 0, heating_additional: Union[List[float], numpy.ndarray] = 0, heat_leak_in: Union[List[float], numpy.ndarray] = 0, vented_amount: Union[List[float], numpy.ndarray] = 0, vented_energy: Union[List[float], numpy.ndarray] = 0)
+.. py:class:: SimResults(pressure, temperature, time, moles_adsorbed, moles_gas, moles_liquid, moles_supercritical, tank_params, sim_params, stop_reason, sim_type = None, inserted_amount = 0, flow_energy_in = 0, cooling_required = 0, heating_required = 0, cooling_additional = 0, heating_additional = 0, heat_leak_in = 0, vented_amount = 0, vented_energy = 0)
 
    Class for storing the results of dynamic simulations.
 
@@ -163,7 +163,7 @@ Module Contents
    :rtype: SimResults
 
 
-   .. py:method:: get_final_conditions(idx: int = -1) -> dict
+   .. py:method:: get_final_conditions(idx = -1)
 
       Output final tank conditions at the end of the simulation.
 
@@ -177,7 +177,7 @@ Module Contents
 
 
 
-   .. py:method:: to_csv(filename: str, verbose: bool = True)
+   .. py:method:: to_csv(filename, verbose = True)
 
       Export simulation results to a csv file.
 
@@ -189,7 +189,7 @@ Module Contents
 
 
 
-   .. py:method:: from_csv(filename: str, import_components: bool = False)
+   .. py:method:: from_csv(filename, import_components = False)
       :classmethod:
 
 
@@ -209,7 +209,7 @@ Module Contents
 
 
 
-   .. py:method:: interpolate(x_var: str = 't') -> dict[Callable[[float], float]]
+   .. py:method:: interpolate(x_var = 't')
 
       Interpolate simulation results between points.
 
@@ -223,7 +223,7 @@ Module Contents
 
 
 
-   .. py:method:: plot(x_axis: str, y_axes: Union[str, List[str]], colors: Union[str, List[str]] = ['r', 'b', 'g']) -> Union[numpy.ndarray, matplotlib.pyplot.Axes]
+   .. py:method:: plot(x_axis, y_axes, colors = ['r', 'b', 'g'])
 
       Plot the results of the simulation.
 
@@ -306,7 +306,7 @@ Module Contents
 
 
 
-   .. py:method:: combine(sim_results_list: List[SimResults]) -> SimResults
+   .. py:method:: combine(sim_results_list)
       :classmethod:
 
 

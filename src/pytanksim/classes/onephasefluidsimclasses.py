@@ -105,7 +105,7 @@ class OnePhaseFluidDefault(OnePhaseFluidSim):
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(prop_dict, p, T, time)
 
         b1 = ndotin - ndotout
@@ -362,7 +362,7 @@ class OnePhaseFluidVenting(OnePhaseFluidSim):
 
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin
         b2 = ndotin * hin + \
@@ -579,7 +579,7 @@ class OnePhaseFluidCooled(OnePhaseFluidSim):
         hout = self.enthalpy_out_calc(prop_dict, p, T, time)
         heating_additional = flux.heating_power(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin - ndotout
         b2 = ndotin * hin - ndotout * hout + \
@@ -798,7 +798,7 @@ class OnePhaseFluidHeatedDischarge(OnePhaseFluidSim):
 
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(prop_dict, p, T, time)
 
         b1 = ndotin - ndotout

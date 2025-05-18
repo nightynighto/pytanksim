@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../pytanksim'))
+sys.path.insert(0, os.path.abspath('../../src/pytanksim'))
 
 
 # -- Project information -----------------------------------------------------
@@ -22,7 +22,7 @@ copyright = '2024, Muhammad Irfan Maulana Kusdhany'
 author = 'Muhammad Irfan Maulana Kusdhany'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '1.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -37,7 +37,9 @@ extensions = [
     'autoapi.extension'
 ]
 
-autoapi_dirs = ['../../pytanksim']
+autodoc_typehints = "none"
+
+autoapi_dirs = ['../../src/pytanksim']
 autoapi_options = ['members', 'private-members', 'show-inheritance',
                    'show-module-summary', 'special-members',
                    'imported-members']

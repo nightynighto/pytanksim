@@ -137,7 +137,7 @@ class OnePhaseSorbentDefault(OnePhaseSorbentSim):
 
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(fluid_props, p, T, time)
 
         k1 = ndotin - ndotout
@@ -403,7 +403,7 @@ class OnePhaseSorbentVenting(OnePhaseSorbentSim):
 
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         m11 = self._dn_dT(p, T, q)
         m12 = 1
@@ -615,7 +615,7 @@ class OnePhaseSorbentCooled(OnePhaseSorbentSim):
         hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         m11 = self._dn_dT(p, T, q)
         m12 = 0
         m21 = self._dU_dT(p, T, q)
@@ -829,7 +829,7 @@ class OnePhaseSorbentHeatedDischarge(OnePhaseSorbentSim):
         hout = self.enthalpy_out_calc(fluid_props, p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         m11 = self._dn_dT(p, T, q)
         m12 = 0
         m21 = self._dU_dT(p, T, q)

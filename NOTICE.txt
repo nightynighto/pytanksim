@@ -28,6 +28,23 @@ International Journal of Hydrogen Energy, 33(17), 4622–4633.
 https://doi.org/10.1016/j.ijhydene.2008.05.090
 Copyright 2008 Elsevier.
 
+Purewal, J., Liu, D., Sudik, A., Veenstra, M., Yang, J., Maurer, S., Müller,
+U., & Siegel, D. J. (2012). Improved Hydrogen Storage and Thermal Conductivity
+in High-Density MOF-5 Composites. The Journal of Physical Chemistry C, 116(38),
+20199–20212. https://doi.org/10.1021/jp305524f
+Copyright 2012 American Chemical Society.
+
+Richard, M.-A., Bénard, P., & Chahine, R. (2009). Gas adsorption process
+in activated carbon over a wide temperature range above the critical point.
+Part 1: Modified Dubinin-Astakhov model. Adsorption, 15, 43–51.
+Copyright 2009 Springer.
+
+Richard, M.-A., Cossement, D., Chandonia, P.-A., Chahine, R., Mori, D.,
+& Hirose, K. (2009). Preliminary evaluation of the performance of an
+adsorption-based hydrogen storage system. AIChE Journal, 55(11),
+2985–2996. https://doi.org/10.1002/aic.11904
+Copyright 2009 Wiley. 
+
 Sahoo, P. K., John, M., Newalkar, B. L., Choudhary, N. V., &
 Ayappa, K. G. (2011). Filling Characteristics for an Activated Carbon
 Based Adsorbed Natural Gas Storage System. Industrial & Engineering
@@ -39,17 +56,6 @@ Lumped parameter model for charge–discharge cycle of adsorptive hydrogen
 storage system. International Journal of Heat and Mass Transfer, 64,
 245–253. https://doi.org/10.1016/j.ijheatmasstransfer.2013.04.029
 Copyright 2013 Elsevier.
-
-Richard, M.-A., Bénard, P., & Chahine, R. (2009). Gas adsorption process
-in activated carbon over a wide temperature range above the critical point.
-Part 1: Modified Dubinin-Astakhov model. Adsorption, 15, 43–51.
-Copyright 2009 Springer.
-
-Purewal, J., Liu, D., Sudik, A., Veenstra, M., Yang, J., Maurer, S., Müller,
-U., & Siegel, D. J. (2012). Improved Hydrogen Storage and Thermal Conductivity
-in High-Density MOF-5 Composites. The Journal of Physical Chemistry C, 116(38),
-20199–20212. https://doi.org/10.1021/jp305524f
-Copyright 2012 American Chemical Society.
 
 Zhou, W., Wu, H., Hartman, M. R., & Yildirim, T. (2007). Hydrogen and Methane
 Adsorption in Metal−Organic Frameworks: A High-Pressure Volumetric Study.

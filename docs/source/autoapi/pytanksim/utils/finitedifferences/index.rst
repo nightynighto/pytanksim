@@ -31,7 +31,7 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: pardev(func: Callable[[float], float], loc: float, stepsize: float) -> float
+.. py:function:: pardev(func, loc, stepsize)
 
    Calculate the first derivative using centered finite difference.
 
@@ -46,11 +46,11 @@ Module Contents
    :param stepsize: The stepsize for the finite difference approximation.
    :type stepsize: float
 
-   :returns: The first derivative of  `func` evaluated at `loc`.
+   :returns: The first derivative of `func` evaluated at `loc`.
    :rtype: float
 
 
-.. py:function:: partial_derivative(func: Callable[Ellipsis, float], var: int, point: List, stepsize: float = 0.001) -> float
+.. py:function:: partial_derivative(func, var, point, stepsize = 0.001)
 
    Calculate the first partial derivative using centered finite difference.
 
@@ -74,7 +74,7 @@ Module Contents
                should be 2.
    :type var: int
    :param point: A list of input values for `func`. These input values indicate the
-                 location where the partial derivative is to be evaluated.
+                 locations where the partial derivative is to be evaluated.
    :type point: List
    :param stepsize: The stepsize for the finite difference approximation. The default is
                     1e-3.
@@ -85,7 +85,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: backdev(func: Callable[[float], float], loc: float, stepsize: float) -> float
+.. py:function:: backdev(func, loc, stepsize)
 
    Calculate the first derivative using backwards finite difference.
 
@@ -104,7 +104,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: backward_partial_derivative(func: Callable[Ellipsis, float], var: int, point: List, stepsize: float = 0.001) -> float
+.. py:function:: backward_partial_derivative(func, var, point, stepsize = 0.001)
 
    Find the first partial derivative using backwards finite difference.
 
@@ -139,7 +139,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: fordev(func: Callable[[float], float], loc: float, stepsize: float) -> float
+.. py:function:: fordev(func, loc, stepsize)
 
    Calculate the first derivative using forwards finite difference.
 
@@ -158,7 +158,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: forward_partial_derivative(func: Callable[Ellipsis, float], var: int, point: List, stepsize: float = 0.001) -> float
+.. py:function:: forward_partial_derivative(func, var, point, stepsize = 0.001)
 
    Find the first partial derivative using forwards finite difference.
 
@@ -193,7 +193,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: second_derivative(func: Callable[Ellipsis, float], var: int, point: List, stepsize: float = 1e-06) -> float
+.. py:function:: second_derivative(func, var, point, stepsize = 1e-06)
 
    Find the second partial derivative using centered finite difference.
 
@@ -228,7 +228,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: secforder(function: Callable[[float], float], location: float, stepsize: float = 1e-06) -> float
+.. py:function:: secforder(function, location, stepsize = 1e-06)
 
    Calculate the second derivative using forwards finite difference.
 
@@ -248,7 +248,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: second_forward_derivative(func: Callable[Ellipsis, float], var: int, point: List, stepsize: float = 1e-06) -> float
+.. py:function:: second_forward_derivative(func, var, point, stepsize = 1e-06)
 
    Find the second partial derivative using forwards finite difference.
 
@@ -283,7 +283,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: secbackder(function: Callable[[float], float], location: float, stepsize: float = 1e-06) -> float
+.. py:function:: secbackder(function, location, stepsize = 1e-06)
 
    Calculate the second derivative using backwards finite difference.
 
@@ -303,7 +303,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: second_backward_derivative(func: Callable[Ellipsis, float], var: int, point: List, stepsize: float = 1e-06) -> float
+.. py:function:: second_backward_derivative(func, var, point, stepsize = 1e-06)
 
    Find the second partial derivative using backwards finite difference.
 
@@ -338,7 +338,7 @@ Module Contents
    :rtype: float
 
 
-.. py:function:: mixed_second_derivative(func: Callable[Ellipsis, float], var: List[int], point: List, stepsize: List[float] = [1000.0, 0.0001]) -> float
+.. py:function:: mixed_second_derivative(func, var, point, stepsize = [1000.0, 0.0001])
 
    Find the mixed second derivative using finite difference.
 

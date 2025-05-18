@@ -24,7 +24,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: OnePhaseSorbentSim(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseSorbentSim(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`pytanksim.classes.basesimclass.BaseSimulation`
 
@@ -55,7 +55,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-.. py:class:: OnePhaseSorbentDefault(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseSorbentDefault(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseSorbentSim`
 
@@ -84,7 +84,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(p: float, T: float, time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(p, T, time)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -100,7 +100,7 @@ Module Contents
 
 
 
-   .. py:method:: run() -> pytanksim.classes.simresultsclass.SimResults
+   .. py:method:: run()
 
       Run the dynamic simulation.
 
@@ -113,7 +113,7 @@ Module Contents
 
 
 
-.. py:class:: OnePhaseSorbentVenting(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseSorbentVenting(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseSorbentSim`
 
@@ -142,7 +142,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(T: float, time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(T, time)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -156,7 +156,7 @@ Module Contents
 
 
 
-   .. py:method:: run() -> pytanksim.classes.simresultsclass.SimResults
+   .. py:method:: run()
 
       Run the dynamic simulation.
 
@@ -169,7 +169,7 @@ Module Contents
 
 
 
-.. py:class:: OnePhaseSorbentCooled(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseSorbentCooled(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseSorbentSim`
 
@@ -198,7 +198,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(T: float, time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(T, time)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -225,7 +225,7 @@ Module Contents
 
 
 
-.. py:class:: OnePhaseSorbentHeatedDischarge(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: OnePhaseSorbentHeatedDischarge(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`OnePhaseSorbentSim`
 
@@ -254,7 +254,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(T: float, time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(T, time)
 
       Find the right hand side of the governing ODE at a given time step.
 

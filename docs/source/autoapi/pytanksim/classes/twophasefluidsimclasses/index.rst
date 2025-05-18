@@ -24,7 +24,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: TwoPhaseFluidSim(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: TwoPhaseFluidSim(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`pytanksim.classes.basesimclass.BaseSimulation`
 
@@ -55,7 +55,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-.. py:class:: TwoPhaseFluidDefault(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: TwoPhaseFluidDefault(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`TwoPhaseFluidSim`
 
@@ -84,7 +84,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float, ng: float, nl: float, T: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time, ng, nl, T)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -116,7 +116,7 @@ Module Contents
 
 
 
-.. py:class:: TwoPhaseFluidVenting(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: TwoPhaseFluidVenting(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`TwoPhaseFluidSim`
 
@@ -145,7 +145,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -171,7 +171,7 @@ Module Contents
 
 
 
-.. py:class:: TwoPhaseFluidCooled(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: TwoPhaseFluidCooled(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`TwoPhaseFluidSim`
 
@@ -200,7 +200,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time)
 
       Find the right hand side of the governing ODE at a given time step.
 
@@ -226,7 +226,7 @@ Module Contents
 
 
 
-.. py:class:: TwoPhaseFluidHeatedDischarge(simulation_params: SimParams, storage_tank: pytanksim.classes.storagetankclasses.StorageTank, boundary_flux: BoundaryFlux)
+.. py:class:: TwoPhaseFluidHeatedDischarge(simulation_params, storage_tank, boundary_flux)
 
    Bases: :py:obj:`TwoPhaseFluidSim`
 
@@ -255,7 +255,7 @@ Module Contents
    :rtype: BaseSimulation
 
 
-   .. py:method:: solve_differentials(time: float) -> numpy.ndarray
+   .. py:method:: solve_differentials(time)
 
       Find the right hand side of the governing ODE at a given time step.
 

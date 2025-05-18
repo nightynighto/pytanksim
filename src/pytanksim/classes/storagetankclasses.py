@@ -28,13 +28,13 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 from scipy.optimize import OptimizeResult
-from typing import Callable
+from typing import Callable, Union
 
 
 def Cs_gen(mads: float, mcarbon: float, malum: float,
            msteel: float, Tads: float = 1500,
            MWads: float = 12.01E-3, func: Callable[[float], float] = None
-           ) -> Callable[[float, float], float]:
+           ) -> Callable[[float], float]:
     """Generate a function to find the heat capacity at a given temperature.
 
     Based on Debye's model. Combines contributions from the various materials
@@ -68,7 +68,7 @@ def Cs_gen(mads: float, mcarbon: float, malum: float,
 
     Returns
     -------
-    (Callable[[float, float], float])
+    Callable[[float], float]
         A function which takes the tank's temperature as an input and returns
         the heat capacity of the tank (J/K)
 
@@ -81,7 +81,7 @@ def Cs_gen(mads: float, mcarbon: float, malum: float,
         y = np.zeros_like(grid)
 
         def integrand(x):
-            return(x**4) * np.exp(x) / ((np.exp(x)-1)**2)
+            return (x**4) * np.exp(x) / ((np.exp(x)-1)**2)
 
         for i in range(1, N):
             y[i] = integrand(grid[i])
@@ -141,20 +141,18 @@ class StorageTank:
         The minimum supply pressure (Pa) for discharging simulations.The
         default is 1E5.
 
-    thermal_resistance : float, optional
+    thermal_resistance : Callable, optional
         The thermal resistance of the tank walls (K/W). The default is 0.
-        If 0, the value will not be considered in simulations. If the
-        arguments 'surface_area' and 'heat_transfer' are passed,
-        'thermal_resistance' will be calculated based on those two arguments
-        as long as the user does not pass a value to 'thermal_resistance'.
+        If 0, the value will not be considered in simulations.
 
     surface_area : float, optional
         The surface area of the tank that is in contact with the
         environment (m^2). The default is 0.
 
-    heat_transfer_coefficient : float, optional
+    heat_transfer_coefficient : Callable, optional
         The heat transfer coefficient of the tank surface (W/(m^2 K)).
         The default is 0.
+
     """
 
     def __init__(self,
@@ -164,9 +162,12 @@ class StorageTank:
                  steel_mass: float = 0,
                  vent_pressure: float = None,
                  min_supply_pressure: float = 1E5,
-                 thermal_resistance: float = 0,
+                 thermal_resistance: Union[Callable[[float, float, float,
+                                                     float], float]] = 0,
                  surface_area: float = 0,
-                 heat_transfer_coefficient: float = 0,
+                 heat_transfer_coefficient: Union[Callable[[float, float,
+                                                            float, float],
+                                                           float]] = 0,
                  volume: float = None,
                  set_capacity: float = None,
                  full_pressure: float = None,
@@ -175,7 +176,7 @@ class StorageTank:
                  empty_temperature: float = None,
                  full_quality: float = 1,
                  empty_quality: float = 1
-                 ) -> "StorageTank":
+                 ):
         """Initialize a StorageTank object.
 
         Parameters
@@ -205,21 +206,51 @@ class StorageTank:
             The minimum supply pressure (Pa) for discharging simulations.The
             default is 1E5.
 
-        thermal_resistance : float, optional
-            The thermal resistance of the tank walls (K/W). The default is 0.
-            If 0, the value will not be considered in simulations. If the
-            arguments 'surface_area' and 'heat_transfer' are passed,
-            'thermal_resistance' will be calculated based on those two
-            arguments as long as the user does not pass a value to
-            'thermal_resistance'.
+        thermal_resistance : Callable or float, optional
+            A function which returns the thermal resistance of the tank
+            walls (K/W) as a function of tank pressure (Pa), tank
+            temperature (K), time (s), and temperature of surroundings (K). The
+            default is 0. If a float is provided, it will be converted to a
+            function which returns that value everywhere. If both this and
+            the arguments 'surface_area' and 'heat_transfer_coefficient' are
+            passed, two values of thermal resistance will be calculated and
+            the highest value between the two will be taken at each time step.
+            Thus, to avoid confusion, one should either: (a) use the other two
+            arguments together, or (b) use this one, but not both at the same
+            time.
+
+            If a callable is passed, it must have the signature::
+
+                def tr_function(p, T, time, env_temp):
+                    # 'p' is tank pressure (Pa)
+                    # 'T' is tank temperature (K)
+                    # 'time' is the time elapsed within the simulation (s)
+                    # 'env_temp' is the temperature of surroundings (K)
+                    ....
+                    # Returned is the thermal resistance (K/W)
+                    return tr_value
 
         surface_area : float, optional
             The surface area of the tank that is in contact with the
             environment (m^2). The default is 0.
 
-        heat_transfer_coefficient : float, optional
-            The heat transfer coefficient of the tank surface (W/(m^2 K)).
-            The default is 0.
+        heat_transfer_coefficient : Callable or float, optional
+            A function which returns the heat transfer coefficient of the tank
+            walls (W/(m^2 K)) as a function of tank pressure (Pa), tank
+            temperature (K), time (s), and temperature of surroundings (K). The
+            default is 0. If a float is  provided, it will be converted to a
+            function which returns that value everywhere.
+
+            If a callable is passed, it must have the signature::
+
+                def htc_function(p, T, time, env_temp):
+                    # 'p' is tank pressure (Pa)
+                    # 'T' is tank temperature (K)
+                    # 'time' is the time elapsed within the simulation (s)
+                    # 'env_temp' is the temperature of surroundings (K)
+                    ....
+                    # Returned is the heat transfer coefficient (W/(m^2 K))
+                    return heat_transfer_coef
 
         volume : float, optional
             Internal volume of the storage tank (m^3). The default is None.
@@ -276,6 +307,11 @@ class StorageTank:
             simulations and can calculate certain properties on its own.
 
         """
+        def float_function_generator(floatingvalue):
+            def float_function(p, T, time, env_temp):
+                return float(floatingvalue)
+            return float_function
+
         if (aluminum_mass or carbon_fiber_mass or steel_mass) < 0:
             raise ValueError("Please input valid values for the mass")
         if volume is None and (set_capacity or full_pressure or
@@ -313,12 +349,18 @@ class StorageTank:
 
         self.surface_area = surface_area
         self.heat_transfer_coefficient = heat_transfer_coefficient
-        if (self.surface_area and self.heat_transfer_coefficient) > 0 \
-                and thermal_resistance == 0:
-            self.thermal_resistance = 1 / \
-                (self.surface_area * self.heat_transfer_coefficient)
+        self.htc_original = heat_transfer_coefficient
+        if isinstance(self.heat_transfer_coefficient, (float, int)):
+            self.heat_transfer_coefficient = float_function_generator(
+                heat_transfer_coefficient)
+
+        self.tr_original = thermal_resistance
+        if isinstance(thermal_resistance, (float, int)):
+            self.thermal_resistance = float_function_generator(
+                thermal_resistance)
         else:
             self.thermal_resistance = thermal_resistance
+
         if set_capacity is not None:
             def min_func(vol):
                 self.volume = vol
@@ -626,6 +668,34 @@ class StorageTank:
                                  heat_capacity_change(T, vent_cond[0])},
                             index=[0])
 
+    def thermal_res(self, p: float, T: float, time: float, env_temp: float
+                    ) -> float:
+        """Calculate the thermal resistance of the tank.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa) of fluid inside tank.
+        T : float
+            Temperature (K) of fluid inside tank
+        time : float
+            Time elapsed in simulation (s).
+        env_temp : float
+            Temperature (K) of environment surrounding tank.
+
+        Returns
+        -------
+        float
+            Thermal resistance of the tank (K/W).
+
+        """
+        htc = self.heat_transfer_coefficient(p, T, time, env_temp)
+        if htc*self.surface_area > 0:
+            return max([1/(htc*self.surface_area),
+                        self.thermal_resistance(p, T, time, env_temp)])
+        else:
+            return self.thermal_resistance(p, T, time, env_temp)
+
 
 class SorbentTank(StorageTank):
     """Stores properties of a fluid storage tank filled with sorbents.
@@ -658,19 +728,14 @@ class SorbentTank(StorageTank):
         The minimum supply pressure (Pa) for discharging simulations. The
         default is 1E5.
 
-    thermal_resistance : float, optional
+    thermal_resistance : Callable, optional
         The thermal resistance of the tank walls (K/W). The default is 0.
-        If 0, the value will not be considered in simulations. If the
-        arguments 'surface_area' and 'heat_transfer' are passed,
-        'thermal_resistance' will be calculated based on those two
-        arguments as long as the user does not pass a value to
-        'thermal_resistance'.
 
     surface_area : float, optional
         Outer surface area of the tank in contact with the environment
         (m^2). The default is 0.
 
-    heat_transfer_coefficient : float, optional
+    heat_transfer_coefficient : Callable, optional
         The heat transfer coefficient of the tank surface (W/(m^2 K)).
         The default is 0.
 
@@ -695,7 +760,7 @@ class SorbentTank(StorageTank):
                  full_quality: float = 1,
                  empty_quality: float = 1,
                  set_sorbent_fill: float = 1
-                 ) -> "SorbentTank":
+                 ):
         """Initialize a SorbentTank object.
 
         Parameters
@@ -723,21 +788,51 @@ class SorbentTank(StorageTank):
             The minimum supply pressure (Pa) for discharging simulations. The
             default is 1E5.
 
-        thermal_resistance : float, optional
-            The thermal resistance of the tank walls (K/W). The default is 0.
-            If 0, the value will not be considered in simulations. If the
-            arguments 'surface_area' and 'heat_transfer' are passed,
-            'thermal_resistance' will be calculated based on those two
-            arguments as long as the user does not pass a value to
-            'thermal_resistance'.
+        thermal_resistance : Callable or float, optional
+            A function which returns the thermal resistance of the tank
+            walls (K/W) as a function of tank pressure (Pa), tank
+            temperature (K), time (s), and temperature of surroundings (K). The
+            default is 0. If a float is provided, it will be converted to a
+            function which returns that value everywhere. If both this and
+            the arguments 'surface_area' and 'heat_transfer_coefficient' are
+            passed, two values of thermal resistance will be calculated and
+            the highest value between the two will be taken at each time step.
+            Thus, to avoid confusion, one should either: (a) use the other two
+            arguments together, or (b) use this one, but not both at the same
+            time.
+
+            If a callable is passed, it must have the signature::
+
+                def tr_function(p, T, time, env_temp):
+                    # 'p' is tank pressure (Pa)
+                    # 'T' is tank temperature (K)
+                    # 'time' is the time elapsed within the simulation (s)
+                    # 'env_temp' is the temperature of surroundings (K)
+                    ....
+                    # Returned is the thermal resistance (K/W)
+                    return tr_value
 
         surface_area : float, optional
             Outer surface area of the tank in contact with the environment
             (m^2). The default is 0.
 
-        heat_transfer_coefficient : float, optional
-            The heat transfer coefficient of the tank surface (W/(m^2 K)).
-            The default is 0.
+        heat_transfer_coefficient : Callable or float, optional
+            A function which returns the heat transfer coefficient of the tank
+            walls (W/(m^2 K)) as a function of tank pressure (Pa), tank
+            temperature (K), time (s), and temperature of surroundings (K). The
+            default is 0. If a float is  provided, it will be converted to a
+            function which returns that value everywhere.
+
+            If a callable is passed, it must have the signature::
+
+                def htc_function(p, T, time, env_temp):
+                    # 'p' is tank pressure (Pa)
+                    # 'T' is tank temperature (K)
+                    # 'time' is the time elapsed within the simulation (s)
+                    # 'env_temp' is the temperature of surroundings (K)
+                    ....
+                    # Returned is the heat transfer coefficient (W/(m^2 K))
+                    return heat_transfer_coef
 
         volume : float, optional
             Internal volume of the storage tank (m^3). The default is None.
@@ -827,7 +922,7 @@ class SorbentTank(StorageTank):
                                           empty_quality)
                 return ((cap_full-cap_empty)-set_capacity)**2
             vol = sp.optimize.minimize_scalar(min_func, bounds=(0, 1E10),
-                                     method="Bounded")
+                                              method="Bounded")
             self.volume = vol.x
             sorbent_vol = set_sorbent_fill * self.volume
             self.sorbent_material.mass = sorbent_vol *\
@@ -889,8 +984,8 @@ class SorbentTank(StorageTank):
         else:
             fluid.update(CP.PT_INPUTS, p, T)
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
-        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
-            self.sorbent_material.mass
+        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T)\
+            * self.sorbent_material.mass
         return bulk_fluid_moles + adsorbed_moles
 
     def capacity_bulk(self, p: float, T: float, q: float = 0) -> float:
@@ -952,8 +1047,8 @@ class SorbentTank(StorageTank):
             fluid.update(CP.PT_INPUTS, p, T)
         ufluid = fluid.umolar()
         bulk_fluid_moles = fluid.rhomolar() * self.bulk_fluid_volume(p, T)
-        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
-            self.sorbent_material.mass
+        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T)\
+            * self.sorbent_material.mass
         uadsorbed = self.sorbent_material.model_isotherm.\
             internal_energy_adsorbed(p, T)
         return ufluid * bulk_fluid_moles + adsorbed_moles * (uadsorbed)
@@ -979,8 +1074,8 @@ class SorbentTank(StorageTank):
             Internal energy of the adsorbed fluid in the tank (J).
 
         """
-        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T) * \
-            self.sorbent_material.mass
+        adsorbed_moles = self.sorbent_material.model_isotherm.n_absolute(p, T)\
+            * self.sorbent_material.mass
         uadsorbed = self.sorbent_material.model_isotherm.\
             internal_energy_adsorbed(p, T)
         return adsorbed_moles * (uadsorbed)

@@ -21,7 +21,8 @@ and its derivatives.
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ["StoredFluid", "SorbentMaterial", "ModelIsotherm", "MDAModel", "DAModel"]
+__all__ = ["StoredFluid", "SorbentMaterial", "ModelIsotherm", "MDAModel",
+           "DAModel"]
 
 import numpy as np
 import CoolProp as CP
@@ -56,7 +57,7 @@ class StoredFluid:
     def __init__(self,
                  fluid_name: str,
                  EOS: str = "HEOS",
-                 mole_fractions : List = None) -> "StoredFluid":
+                 mole_fractions: List = None) -> "StoredFluid":
         """Initialize a StoredFluid object.
 
         Parameters
@@ -69,7 +70,7 @@ class StoredFluid:
         EOS : str, optional
             Name of the equation of state to be used for calculations.
             Default is the Helmholtz Equation of State (HEOS).
-        
+
         mole_fraction : List
             List of mole fractions of components in a mixture.
 
@@ -85,7 +86,6 @@ class StoredFluid:
         self.mole_fractions = mole_fractions
         if mole_fractions is not None:
             self.backend.set_mole_fractions(mole_fractions)
-            
 
     def fluid_property_dict(self, p: float, T: float) -> Dict[str, float]:
         """Generate a dictionary of fluid properties using CoolProp.
@@ -102,17 +102,29 @@ class StoredFluid:
         -------
         Dict[str, float]
             Dictionary containing several fluid properties needed for various
-            calculations in pytanksim. "hf" is the enthalpy (J/mol). "drho_dp"
-            is the first partial derivative of density (mol/m^3) w.r.t.
-            pressure (Pa). "drho_dT" is the first partial derivative of density
-            (mol/m^3) w.r.t. temperature (K). "rhof" is density (mol/m^3).
-            "dh_dp" is the first partial derivative of enthalpy (J/mol) w.r.t.
-            pressure (Pa). "dh_dT" is the first partial derivative of enthalpy
-            (J/mol) w.r.t. temperature (K). "uf" is the internal energy
-            (J/mol). "du_dp" is the first partial derivative of internal energy
-            (J/mol) w.r.t. pressure (Pa). "du_dT" is the first partial
-            derivative of internal energy (J/mol) w.r.t. temperature (K). "MW"
-            is molar mass (kg/mol).
+            calculations in pytanksim.
+
+        Notes
+        -----
+        Below is a list of keys and the variables they contain for the output
+        dictionary.
+
+        - ``hf``: enthalpy (J/mol)
+        - ``drho_dp``: first partial derivative of density (mol/m^3) w.r.t.
+          pressure (Pa)
+        - ``drho_dT``: first partial derivative of density (mol/m^3) w.r.t.
+          temperature (K)
+        - ``rhof``: density (mol/m^3)
+        - ``dh_dp``: first partial derivative of enthalpy (J/mol) w.r.t.
+          pressure (Pa)
+        - ``dh_dT``: first partial derivative of enthalpy (J/mol) w.r.t.
+          temperature (K)
+        - ``uf``: internal energy (J/mol)
+        - ``du_dp``: first partial derivative of internal energy (J/mol) w.r.t.
+          pressure (Pa)
+        - ``du_dT``: first partial derivative of internal energy (J/mol)
+          w.r.t. temperature (K)
+        - ``MW``: molar mass (kg/mol)
 
         """
         backend = self.backend
@@ -147,19 +159,32 @@ class StoredFluid:
         -------
         Dict[str, float]
             A dictionary containing the fluid properties at saturation
-            at a given temperature. "psat" is the saturation vapor pressure
-            (Pa). "dps_dT" is the first derivative of the saturation vapor
-            pressure (Pa) w.r.t. temperature (K). "hf" is the enthalpy (J/mol).
-            "drho_dp" is the first partial derivative of density (mol/m^3)
-            w.r.t. pressure (Pa). "drho_dT" is the first partial derivative of
-            density (mol/m^3) w.r.t. temperature (K). "rhof" is density
-            (mol/m^3). "dh_dp" is the first partial derivative of enthalpy
-            (J/mol) w.r.t. pressure (Pa). "dh_dT" is the first partial
-            derivative of enthalpy (J/mol) w.r.t. temperature (K). "uf" is the
-            internal energy (J/mol). "du_dp" is the first partial derivative of
-            internal energy (J/mol) w.r.t. pressure (Pa). "du_dT" is the first
-            partial derivative of internal energy (J/mol) w.r.t. temperature
-            (K). "MW" is molar mass (kg/mol).
+            at a given temperature.
+
+        Notes
+        -----
+        Below is a list of keys and the variables they contain for the output
+        dictionary.
+
+        - ``psat``: saturation vapor pressure (Pa)
+        - ``dps_dT``: first derivative of the saturation vapor pressure (Pa)
+          w.r.t. temperature (K).
+        - ``hf``: enthalpy (J/mol)
+        - ``drho_dp``: first partial derivative of density (mol/m^3) w.r.t.
+          pressure (Pa)
+        - ``drho_dT``: first partial derivative of density (mol/m^3) w.r.t.
+          temperature (K)
+        - ``rhof``: density (mol/m^3)
+        - ``dh_dp``: first partial derivative of enthalpy (J/mol) w.r.t.
+          pressure (Pa)
+        - ``dh_dT``: first partial derivative of enthalpy (J/mol) w.r.t.
+          temperature (K)
+        - ``uf``: internal energy (J/mol)
+        - ``du_dp``: first partial derivative of internal energy (J/mol) w.r.t.
+          pressure (Pa)
+        - ``du_dT``: first partial derivative of internal energy (J/mol)
+          w.r.t. temperature (K)
+        - ``MW``: molar mass (kg/mol)
 
         """
         backend = self.backend
@@ -749,6 +774,7 @@ class DAModel(ModelIsotherm):
         for the fugacity at saturation. The default is "Dubinin".
 
     """
+
     model_name = "Dubinin-Astakhov Model"
 
     key_attr = ["sorbent", "w0", "f0", "eps", "m", "k", "rhoa",
@@ -896,7 +922,6 @@ class DAModel(ModelIsotherm):
         if self.f0_mode == "Constant":
             f0 = self.f0
         if self.f0_mode == "Dubinin":
-            pc = self.stored_fluid.backend.p_critical()
             Tc = self.T_critical
             if T < Tc:
                 self.stored_fluid.backend.update(CP.QT_INPUTS, 0, T)
@@ -907,14 +932,27 @@ class DAModel(ModelIsotherm):
                 f0 = ((T/Tc)**self.k) * fc
         return f0
 
-    def dlnf0_dT(self, T):
+    def dlnf0_dT(self, T: float) -> float:
+        """Calculate derivative of log saturation fugacity w.r.t. temperature.
+
+        Parameters
+        ----------
+        T : float
+            Temperature (K)
+
+        Returns
+        -------
+        float
+            Derivative of log saturation fugacity w.r.t. temperature
+
+        """
         if self.f0_mode == "Constant":
             return 0
         elif T >= self.T_critical:
             return self.k/T
         else:
             return self.a * self.L / (self.Rv * (T**2))
-    
+
     def rhoa_calc(self, T: float) -> float:
         """Calculate the density of the adsorbed phase at a given temperature.
 
@@ -937,7 +975,7 @@ class DAModel(ModelIsotherm):
             except:
                 Ttrip = self.stored_fluid.backend.Ttriple()
                 Tcrit = self.stored_fluid.backend.T_critical()
-                if Ttrip < 298 and 298 < Tcrit:  
+                if Ttrip < 298 and 298 < Tcrit:
                     self.stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
                 else:
                     self.stored_fluid.backend.update(CP.QT_INPUTS,
@@ -1041,7 +1079,22 @@ class DAModel(ModelIsotherm):
         rhomolar = fluid.rhomolar()
         return self.n_absolute(p, T) - rhomolar * self.v_ads(p, T)
 
-    def differential_energy_na(self, na, T):
+    def differential_energy_na(self, na: float, T: float) -> float:
+        """Calculate differential energy of adsorption analytically.
+
+        Parameters
+        ----------
+        na : float
+            Amount adsorbed (mol/kg)
+        T : float
+            Temperature (K)
+
+        Returns
+        -------
+        float
+            Differential energy of adsorption (J/mol)
+
+        """
         f0 = self.f0_calc(T)
         n_max = self.n_absolute(f0, T)
         n_max = 0.99 * n_max
@@ -1051,7 +1104,7 @@ class DAModel(ModelIsotherm):
             na = n_max
         try:
             self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
-        except(ValueError):
+        except ValueError:
             self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
         h0_real = self.stored_fluid.backend.hmolar()
         h0_excess = self.stored_fluid.backend.hmolar_excess()
@@ -1076,7 +1129,24 @@ class DAModel(ModelIsotherm):
                 * ((np.log(self.w0*rhoa/na))**((1-self.m)/self.m))
         return diff_ene
 
-    def differential_energy(self, p, T, q):
+    def differential_energy(self, p: float, T: float, q: float) -> float:
+        """Calculate differential energy of adsorption analytically.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+        T : float
+            Temperature (K).
+        q : float
+            Vapor quality.
+
+        Returns
+        -------
+        float
+            Differential energy of adsorption (J/mol).
+
+        """
         na = self.n_absolute(p, T)
         return self.differential_energy_na(na, T)
 
@@ -1255,7 +1325,7 @@ class DAModel(ModelIsotherm):
             except:
                 Ttrip = stored_fluid.backend.Ttriple()
                 Tcrit = stored_fluid.backend.T_critical()
-                if Ttrip < 298 and 298 < Tcrit:  
+                if Ttrip < 298 and 298 < Tcrit:
                     stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
                 else:
                     stored_fluid.backend.update(CP.QT_INPUTS, Ttrip+Tcrit/2)
@@ -1275,10 +1345,11 @@ class DAModel(ModelIsotherm):
                 except:
                     Ttrip = stored_fluid.backend.Ttriple()
                     Tcrit = stored_fluid.backend.T_critical()
-                    if Ttrip < 298 and 298 < Tcrit:  
+                    if Ttrip < 298 and 298 < Tcrit:
                         stored_fluid.backend.update(CP.QT_INPUTS, 0, 298)
                     else:
-                        stored_fluid.backend.update(CP.QT_INPUTS, Ttrip+Tcrit/2)
+                        stored_fluid.backend.update(CP.QT_INPUTS,
+                                                    Ttrip+Tcrit/2)
                 Tb = stored_fluid.backend.T()
                 vb = 1/stored_fluid.backend.rhomolar()
                 ads_specific_volume = vb * np.exp((T-Tb)/T)
@@ -1540,7 +1611,20 @@ class MDAModel(ModelIsotherm):
         paramsdict = fitting.params.valuesdict()
         self.a = paramsdict["a"]
 
-    def dlnf0_dT(self, T):
+    def dlnf0_dT(self, T: float) -> float:
+        """Calculate derivative of log saturation fugacity w.r.t. temperature.
+
+        Parameters
+        ----------
+        T : float
+            Temperature (K)
+
+        Returns
+        -------
+        float
+            Derivative of log saturation fugacity w.r.t. temperature
+
+        """
         if self.f0_mode == "Constant":
             return 0
         elif T >= self.T_critical:
@@ -1548,7 +1632,20 @@ class MDAModel(ModelIsotherm):
         else:
             return self.a * self.L / (self.Rv * (T**2))
 
-    def f0_fun(self, T):
+    def f0_fun(self, T: float) -> float:
+        """Calculate saturation fugacity as a function of temperature.
+
+        Parameters
+        ----------
+        T : float
+            Temperature (K).
+
+        Returns
+        -------
+        float
+            Saturation fugacity (Pa).
+
+        """
         if self.f0_mode == "Constant":
             return self.f0
         elif self.f0_mode == "Dubinin":
@@ -1701,7 +1798,22 @@ class MDAModel(ModelIsotherm):
                               for na in n_grid])
         return sp.integrate.simps(heat_grid, n_grid) / n_abs
 
-    def differential_energy_na(self, na, T):
+    def differential_energy_na(self, na: float, T: float) -> float:
+        """Calculate differential energy of adsorption analytically.
+
+        Parameters
+        ----------
+        na : float
+            Amount adsorbed (mol/kg)
+        T : float
+            Temperature (K)
+
+        Returns
+        -------
+        float
+            Differential energy of adsorption (J/mol)
+
+        """
         n_max = 0.99 * self.nmax
         if na < n_max*1E-3:
             na = n_max*1E-3
@@ -1709,7 +1821,7 @@ class MDAModel(ModelIsotherm):
             na = n_max
         try:
             self.stored_fluid.backend.update(CP.PT_INPUTS, 1E5, T)
-        except(ValueError):
+        except ValueError:
             self.stored_fluid.backend.update(CP.PQ_INPUTS, 1E5, 1)
         h0_real = self.stored_fluid.backend.hmolar()
         h0_excess = self.stored_fluid.backend.hmolar_excess()
@@ -1718,7 +1830,24 @@ class MDAModel(ModelIsotherm):
         return - sp.constants.R * (T**2) * dlnf0_dT + h0_ideal - self.alpha \
             * ((np.log(self.nmax/na))**(1/self.m))
 
-    def differential_energy(self, p, T, q = 1):
+    def differential_energy(self, p: float, T: float, q: float = 1) -> float:
+        """Calculate differential energy of adsorption analytically.
+
+        Parameters
+        ----------
+        p : float
+            Pressure (Pa).
+        T : float
+            Temperature (K).
+        q : float
+            Vapor quality.
+
+        Returns
+        -------
+        float
+            Differential energy of adsorption (J/mol).
+
+        """
         na = self.n_absolute(p, T)
         return self.differential_energy_na(na, T)
 
@@ -1918,7 +2047,7 @@ class MDAModel(ModelIsotherm):
         if f0_mode == "Fit":
             params.add("f0", f0guess, True, 1E5)
         params.add("alpha", alphaguess, True, 500, 80000)
-        params.add("beta", betaguess, beta_mode == "Fit", 0,100)
+        params.add("beta", betaguess, beta_mode == "Fit", 0, 100)
         if va_mode == "Fit":
             params.add("va", vaguess, min=0, max=pore_volume)
         if m_mode == "Fit":

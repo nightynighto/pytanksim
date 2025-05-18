@@ -34,7 +34,7 @@ from ast import literal_eval
 from pytanksim.utils import logger
 if TYPE_CHECKING:
     from pytanksim.classes.basesimclass import SimParams
-
+import warnings
 
 class SimResults:
     """Class for storing the results of dynamic simulations.
@@ -415,6 +415,12 @@ class SimResults:
                         colname in list(df_export.columns)]
         df_export.columns = new_colnames
         sparams = self.sim_params
+        header_htc = "Callable" if callable(
+            self.tank_params.htc_original) else \
+            self.tank_params.htc_original
+        header_therm_res = "Callable" if callable(
+            self.tank_params.tr_original) else \
+            self.tank_params.tr_original
         header_info = [
             ["Fluid Name", self.tank_params.stored_fluid.fluid_name],
             ["EOS", self.tank_params.stored_fluid.EOS],
@@ -425,10 +431,9 @@ class SimResults:
             ["Minimum Supply Pressure (Pa)", self.tank_params.
              min_supply_pressure],
             ["Venting Pressure (Pa)", self.tank_params.vent_pressure],
-            ["Thermal Resistance (K/W)", self.tank_params.thermal_resistance],
+            ["Thermal Resistance (K/W)", header_therm_res],
             ["Surface Area (m^2)", self.tank_params.surface_area],
-            ["Heat Transfer Coefficient (W/(m^2 K))",
-             self.tank_params.heat_transfer_coefficient],
+            ["Heat Transfer Coefficient (W/(m^2 K))", header_htc],
             ["Stoppage Reason", self.stop_reason],
             ["Set Initial Time (s)", sparams.init_time],
             ["Set Final Time (s)", sparams.final_time],
@@ -534,6 +539,23 @@ class SimResults:
         def get_row(index):
             return conv(rows[index][1])
 
+        def check_callable(inputs, imp_comp):
+            inputnew = inputs.copy()
+            if inputs[6] == "Callable" and imp_comp:
+                warn_str = "Thermal resistance was a function. Since" + \
+                           " functions are not included in csv, default " + \
+                           "value of 0 was used to define the tank."
+                warnings.warn(warn_str)
+                inputnew[6] = 0
+
+            if inputs[8] == "Callable" and imp_comp:
+                warn_str = "Heat transfer coef. was a function. Since " + \
+                           "functions are not included in csv, default " + \
+                           "value of 0 was used to define the tank."
+                warnings.warn(warn_str)
+                inputnew[8] = 0
+            return inputnew
+
         if startdatarow > finishmainheadrow + 1:
             sorbentmass = rows[finishmainheadrow+2]
             debyetemp = rows[finishmainheadrow+3]
@@ -557,27 +579,32 @@ class SimResults:
                                           molar_mass=mw,
                                           Debye_temperature=debyetemp)
 
-            tank = SorbentTank(aluminum_mass=get_row(2),
-                               carbon_fiber_mass=get_row(3),
-                               steel_mass=get_row(4),
-                               volume=get_row(5),
-                               min_supply_pressure=get_row(6),
-                               vent_pressure=get_row(7),
-                               thermal_resistance=get_row(8),
-                               surface_area=get_row(9),
-                               heat_transfer_coefficient=get_row(10),
+            inputs = [get_row(i) for i in range(2, 11)]
+            inputs_chk = check_callable(inputs, import_components)
+
+            tank = SorbentTank(aluminum_mass=inputs_chk[0],
+                               carbon_fiber_mass=inputs_chk[1],
+                               steel_mass=inputs_chk[2],
+                               volume=inputs_chk[3],
+                               min_supply_pressure=inputs_chk[4],
+                               vent_pressure=inputs_chk[5],
+                               thermal_resistance=inputs_chk[6],
+                               surface_area=inputs_chk[7],
+                               heat_transfer_coefficient=inputs_chk[8],
                                sorbent_material=sorbent_mat)
 
         else:
-            tank = StorageTank(aluminum_mass=get_row(2),
-                               carbon_fiber_mass=get_row(3),
-                               steel_mass=get_row(4),
-                               volume=get_row(5),
-                               min_supply_pressure=get_row(6),
-                               vent_pressure=get_row(7),
-                               thermal_resistance=get_row(8),
-                               surface_area=get_row(9),
-                               heat_transfer_coefficient=get_row(10),
+            inputs = [get_row(i) for i in range(2, 11)]
+            inputs_chk = check_callable(inputs, import_components)
+            tank = StorageTank(aluminum_mass=inputs_chk[0],
+                               carbon_fiber_mass=inputs_chk[1],
+                               steel_mass=inputs_chk[2],
+                               volume=inputs_chk[3],
+                               min_supply_pressure=inputs_chk[4],
+                               vent_pressure=inputs_chk[5],
+                               thermal_resistance=inputs_chk[6],
+                               surface_area=inputs_chk[7],
+                               heat_transfer_coefficient=inputs_chk[8],
                                stored_fluid=stored_fluid)
 
         df = pd.read_csv(filename, skiprows=startdatarow, index_col=0)

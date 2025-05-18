@@ -4,21 +4,21 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pytanksim.classes.fluidsorbentclasses &mdash; pytanksim 1.0.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+  <title>pytanksim.classes.fluidsorbentclasses &mdash; pytanksim 1.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
 
   
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js?v=af2ce170"></script>
-        <script src="../../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -122,7 +122,7 @@ and its derivatives.</p>
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.StoredFluid">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">StoredFluid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fluid_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'HEOS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mole_fractions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">StoredFluid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fluid_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EOS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HEOS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mole_fractions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid" title="Permalink to this definition"></a></dt>
 <dd><p>A class to calculate the properties of the fluid being stored.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.StoredFluid.fluid_name">
@@ -181,7 +181,7 @@ Default is the Helmholtz Equation of State (HEOS).</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.StoredFluid.fluid_property_dict">
-<span class="sig-name descname"><span class="pre">fluid_property_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid.fluid_property_dict" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fluid_property_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid.fluid_property_dict" title="Permalink to this definition"></a></dt>
 <dd><p>Generate a dictionary of fluid properties using CoolProp.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -192,27 +192,38 @@ Default is the Helmholtz Equation of State (HEOS).</p></li>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Dictionary containing several fluid properties needed for various
-calculations in pytanksim. “hf” is the enthalpy (J/mol). “drho_dp”
-is the first partial derivative of density (mol/m^3) w.r.t.
-pressure (Pa). “drho_dT” is the first partial derivative of density
-(mol/m^3) w.r.t. temperature (K). “rhof” is density (mol/m^3).
-“dh_dp” is the first partial derivative of enthalpy (J/mol) w.r.t.
-pressure (Pa). “dh_dT” is the first partial derivative of enthalpy
-(J/mol) w.r.t. temperature (K). “uf” is the internal energy
-(J/mol). “du_dp” is the first partial derivative of internal energy
-(J/mol) w.r.t. pressure (Pa). “du_dT” is the first partial
-derivative of internal energy (J/mol) w.r.t. temperature (K). “MW”
-is molar mass (kg/mol).</p>
+calculations in pytanksim.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dict[str, float]</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Below is a list of keys and the variables they contain for the output
+dictionary.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hf</span></code>: enthalpy (J/mol)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">drho_dp</span></code>: first partial derivative of density (mol/m^3) w.r.t.
+pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">drho_dT</span></code>: first partial derivative of density (mol/m^3) w.r.t.
+temperature (K)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhof</span></code>: density (mol/m^3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dh_dp</span></code>: first partial derivative of enthalpy (J/mol) w.r.t.
+pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dh_dT</span></code>: first partial derivative of enthalpy (J/mol) w.r.t.
+temperature (K)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uf</span></code>: internal energy (J/mol)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">du_dp</span></code>: first partial derivative of internal energy (J/mol) w.r.t.
+pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">du_dT</span></code>: first partial derivative of internal energy (J/mol)
+w.r.t. temperature (K)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MW</span></code>: molar mass (kg/mol)</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.StoredFluid.saturation_property_dict">
-<span class="sig-name descname"><span class="pre">saturation_property_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid.saturation_property_dict" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">saturation_property_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid.saturation_property_dict" title="Permalink to this definition"></a></dt>
 <dd><p>Generate a dictionary of fluid properties at saturation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -223,29 +234,41 @@ is molar mass (kg/mol).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A dictionary containing the fluid properties at saturation
-at a given temperature. “psat” is the saturation vapor pressure
-(Pa). “dps_dT” is the first derivative of the saturation vapor
-pressure (Pa) w.r.t. temperature (K). “hf” is the enthalpy (J/mol).
-“drho_dp” is the first partial derivative of density (mol/m^3)
-w.r.t. pressure (Pa). “drho_dT” is the first partial derivative of
-density (mol/m^3) w.r.t. temperature (K). “rhof” is density
-(mol/m^3). “dh_dp” is the first partial derivative of enthalpy
-(J/mol) w.r.t. pressure (Pa). “dh_dT” is the first partial
-derivative of enthalpy (J/mol) w.r.t. temperature (K). “uf” is the
-internal energy (J/mol). “du_dp” is the first partial derivative of
-internal energy (J/mol) w.r.t. pressure (Pa). “du_dT” is the first
-partial derivative of internal energy (J/mol) w.r.t. temperature
-(K). “MW” is molar mass (kg/mol).</p>
+at a given temperature.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dict[str, float]</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Below is a list of keys and the variables they contain for the output
+dictionary.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">psat</span></code>: saturation vapor pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dps_dT</span></code>: first derivative of the saturation vapor pressure (Pa)
+w.r.t. temperature (K).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hf</span></code>: enthalpy (J/mol)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">drho_dp</span></code>: first partial derivative of density (mol/m^3) w.r.t.
+pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">drho_dT</span></code>: first partial derivative of density (mol/m^3) w.r.t.
+temperature (K)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhof</span></code>: density (mol/m^3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dh_dp</span></code>: first partial derivative of enthalpy (J/mol) w.r.t.
+pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dh_dT</span></code>: first partial derivative of enthalpy (J/mol) w.r.t.
+temperature (K)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uf</span></code>: internal energy (J/mol)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">du_dp</span></code>: first partial derivative of internal energy (J/mol) w.r.t.
+pressure (Pa)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">du_dT</span></code>: first partial derivative of internal energy (J/mol)
+w.r.t. temperature (K)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MW</span></code>: molar mass (kg/mol)</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.StoredFluid.determine_phase">
-<span class="sig-name descname"><span class="pre">determine_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid.determine_phase" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">determine_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid.determine_phase" title="Permalink to this definition"></a></dt>
 <dd><p>Determine the phase of the fluid being stored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -274,7 +297,7 @@ or “Saturated” depending on the bulk fluid phase.</p>
 the adsorbed phase.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.pressure_from_absolute_adsorption">
-<span class="sig-name descname"><span class="pre">pressure_from_absolute_adsorption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_abs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_max_guess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">35000000.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.pressure_from_absolute_adsorption" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">pressure_from_absolute_adsorption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_abs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_max_guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">35000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.pressure_from_absolute_adsorption" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate a pressure value corresponding to an adsorbed amount.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -299,7 +322,7 @@ and temperature value.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_enthalpy">
-<span class="sig-name descname"><span class="pre">isosteric_enthalpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_enthalpy" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">isosteric_enthalpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_enthalpy" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate isosteric adsorbed enthalpy (J/mol).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -321,7 +344,7 @@ The default is 1.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_internal_energy">
-<span class="sig-name descname"><span class="pre">isosteric_internal_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_internal_energy" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">isosteric_internal_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_internal_energy" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the isosteric internal energy of the adsorbed phase.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -343,7 +366,7 @@ The default is 1.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm._derivfunc">
-<span class="sig-name descname"><span class="pre">_derivfunc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm._derivfunc" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_derivfunc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepsize</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm._derivfunc" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the first partial derivative.</p>
 <p>It automatically decides the direction of the derivative so that the
 evaluations are done for fluids at the same phases. Otherwise, there
@@ -353,7 +376,7 @@ which causes the resulting derivative values to be invalid.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm._derivfunc_second">
-<span class="sig-name descname"><span class="pre">_derivfunc_second</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm._derivfunc_second" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_derivfunc_second</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepsize</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm._derivfunc_second" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the second partial derivative.</p>
 <p>It automatically decides the direction of the derivative so that the
 evaluations are done for fluids at the same phases. Otherwise, there
@@ -363,7 +386,7 @@ which causes the resulting derivative values to be invalid.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_energy_temperature_deriv">
-<span class="sig-name descname"><span class="pre">isosteric_energy_temperature_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepsize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_energy_temperature_deriv" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">isosteric_energy_temperature_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stepsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.isosteric_energy_temperature_deriv" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate first derivative of isosteric internal energy w.r.t. T.</p>
 <p>This function calculates the first partial derivative of the isosteric
 internal energy of the adsorbed phase (J/mol) w.r.t. temperature (K).</p>
@@ -389,9 +412,9 @@ of the adsorbed phase (J/mol) w.r.t. temperature (K).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.differential_energy">
-<span class="sig-name descname"><span class="pre">differential_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.differential_energy" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">differential_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.differential_energy" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the differential energy of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id16"><span class="problematic" id="id1">[1]_</span></a>.</p>
+<p>The calculation is based on Myers &amp; Monson <a href="#id12"><span class="problematic" id="id1">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -409,7 +432,6 @@ The default is 1.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
 <aside class="footnote brackets" id="id2" role="note">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
@@ -417,14 +439,13 @@ the case for absolute adsorption as the basis for thermodynamic
 analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
 doi: 10.1007/s10450-014-9604-1.</p>
 </aside>
-</aside>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.differential_heat">
-<span class="sig-name descname"><span class="pre">differential_heat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.differential_heat" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">differential_heat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.differential_heat" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the differential heat of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id17"><span class="problematic" id="id3">[1]_</span></a>.</p>
+<p>The calculation is based on Myers &amp; Monson <a href="#id13"><span class="problematic" id="id3">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -442,7 +463,6 @@ The default is 1.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
 <aside class="footnote brackets" id="id4" role="note">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
@@ -450,14 +470,13 @@ the case for absolute adsorption as the basis for thermodynamic
 analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
 doi: 10.1007/s10450-014-9604-1.</p>
 </aside>
-</aside>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.internal_energy_adsorbed">
-<span class="sig-name descname"><span class="pre">internal_energy_adsorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.internal_energy_adsorbed" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">internal_energy_adsorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.internal_energy_adsorbed" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the molar integral internal energy of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id18"><span class="problematic" id="id5">[1]_</span></a>.</p>
+<p>The calculation is based on Myers &amp; Monson <a href="#id14"><span class="problematic" id="id5">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -475,7 +494,6 @@ The default is 1.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
 <aside class="footnote brackets" id="id6" role="note">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
@@ -483,14 +501,13 @@ the case for absolute adsorption as the basis for thermodynamic
 analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
 doi: 10.1007/s10450-014-9604-1.</p>
 </aside>
-</aside>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.ModelIsotherm.areal_immersion_energy">
-<span class="sig-name descname"><span class="pre">areal_immersion_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.areal_immersion_energy" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">areal_immersion_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm.areal_immersion_energy" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the areal energy of immersion (J/m^2).</p>
-<p>The calculation is based on the one written in Rouquerol et al. <a href="#id19"><span class="problematic" id="id7">[1]_</span></a>.</p>
+<p>The calculation is based on the one written in Rouquerol et al. <a href="#id15"><span class="problematic" id="id7">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>T</strong> (<em>float</em>) – Temperature (K).</p>
@@ -508,7 +525,7 @@ doi: 10.1007/s10450-014-9604-1.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">DAModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sorbent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid" title="pytanksim.classes.fluidsorbentclasses.StoredFluid"><span class="pre">StoredFluid</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoa_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Dubinin'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">DAModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sorbent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoa_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Dubinin'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm" title="pytanksim.classes.fluidsorbentclasses.ModelIsotherm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelIsotherm</span></code></a></p>
 <p>A class for the Dubinin-Astakhov model for adsorption in micropores.</p>
 <dl class="py attribute">
@@ -706,7 +723,7 @@ the adsorbed phase.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.f0_calc">
-<span class="sig-name descname"><span class="pre">f0_calc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.f0_calc" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">f0_calc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.f0_calc" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the fugacity at saturation (Pa) at a given temperature.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -722,8 +739,25 @@ the adsorbed phase.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.dlnf0_dT">
+<span class="sig-name descname"><span class="pre">dlnf0_dT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.dlnf0_dT" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate derivative of log saturation fugacity w.r.t. temperature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> (<em>float</em>) – Temperature (K)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Derivative of log saturation fugacity w.r.t. temperature</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.rhoa_calc">
-<span class="sig-name descname"><span class="pre">rhoa_calc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.rhoa_calc" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">rhoa_calc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.rhoa_calc" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the density of the adsorbed phase at a given temperature.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -740,7 +774,7 @@ the adsorbed phase.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.v_ads">
-<span class="sig-name descname"><span class="pre">v_ads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.v_ads" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">v_ads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.v_ads" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the volume of the adsorbed phase (m^3/kg).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -760,7 +794,7 @@ the adsorbed phase.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.n_absolute">
-<span class="sig-name descname"><span class="pre">n_absolute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.n_absolute" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_absolute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.n_absolute" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the absolute adsorbed amount at a given condition.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -780,7 +814,7 @@ the adsorbed phase.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.n_excess">
-<span class="sig-name descname"><span class="pre">n_excess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.n_excess" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_excess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.n_excess" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the excess adsorbed amount at a given condition.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -801,10 +835,51 @@ The default is 1.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.differential_energy_na">
+<span class="sig-name descname"><span class="pre">differential_energy_na</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">na</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.differential_energy_na" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate differential energy of adsorption analytically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>na</strong> (<em>float</em>) – Amount adsorbed (mol/kg)</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature (K)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Differential energy of adsorption (J/mol)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.differential_energy">
 <span class="sig-name descname"><span class="pre">differential_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.differential_energy" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the differential energy of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id20"><span class="problematic" id="id8">[1]_</span></a>.</p>
+<dd><p>Calculate differential energy of adsorption analytically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<em>float</em>) – Pressure (Pa).</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature (K).</p></li>
+<li><p><strong>q</strong> (<em>float</em>) – Vapor quality.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Differential energy of adsorption (J/mol).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.internal_energy_adsorbed">
+<span class="sig-name descname"><span class="pre">internal_energy_adsorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.internal_energy_adsorbed" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the molar integral internal energy of adsorption (J/mol).</p>
+<p>The calculation is based on Myers &amp; Monson <a href="#id16"><span class="problematic" id="id8">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -822,7 +897,6 @@ The default is 1.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
 <aside class="footnote brackets" id="id9" role="note">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
@@ -830,45 +904,11 @@ the case for absolute adsorption as the basis for thermodynamic
 analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
 doi: 10.1007/s10450-014-9604-1.</p>
 </aside>
-</aside>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.internal_energy_adsorbed">
-<span class="sig-name descname"><span class="pre">internal_energy_adsorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.internal_energy_adsorbed" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the molar integral internal energy of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id21"><span class="problematic" id="id10">[1]_</span></a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>p</strong> (<em>float</em>) – Pressure (Pa).</p></li>
-<li><p><strong>T</strong> (<em>float</em>) – Temperature (K).</p></li>
-<li><p><strong>q</strong> (<em>float</em><em>, </em><em>optional</em>) – Vapor quality of the bulk fluid. Can vary between 0 to 1.
-The default is 1.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The differential energy of adsorption (J/mol).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id11" role="note">
-<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
-<p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-the case for absolute adsorption as the basis for thermodynamic
-analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-doi: 10.1007/s10450-014-9604-1.</p>
-</aside>
-</aside>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.DAModel.from_ExcessIsotherms">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ExcessIsotherms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ExcessIsotherms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../excessisothermclass/index.html#pytanksim.classes.excessisothermclass.ExcessIsotherm" title="pytanksim.classes.excessisothermclass.ExcessIsotherm"><span class="pre">pytanksim.classes.excessisothermclass.ExcessIsotherm</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid" title="pytanksim.classes.fluidsorbentclasses.StoredFluid"><span class="pre">StoredFluid</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorbent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w0guess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0guess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1470000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoaguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoa_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Excess'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pore_volume</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.003</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.DAModel" title="pytanksim.classes.fluidsorbentclasses.DAModel"><span class="pre">DAModel</span></a></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.from_ExcessIsotherms" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ExcessIsotherms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ExcessIsotherms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorbent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w0guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1470000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoaguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rhoa_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Excess'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pore_volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.003</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.DAModel.from_ExcessIsotherms" title="Permalink to this definition"></a></dt>
 <dd><p>Fit the DA model to a list of ExcessIsotherm data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -941,7 +981,7 @@ the adsorbed phase.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">MDAModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sorbent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid" title="pytanksim.classes.fluidsorbentclasses.StoredFluid"><span class="pre">StoredFluid</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Constant'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">MDAModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sorbent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Constant'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm" title="pytanksim.classes.fluidsorbentclasses.ModelIsotherm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelIsotherm</span></code></a></p>
 <p>A class for the Modified Dubinin-Astakhov model for adsorption.</p>
 <p>A key modification compared to the DA model is the use of the enthalpic and
@@ -984,8 +1024,42 @@ provide thermophysical properties of the adsorbed phase.</p>
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.dlnf0_dT">
+<span class="sig-name descname"><span class="pre">dlnf0_dT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.dlnf0_dT" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate derivative of log saturation fugacity w.r.t. temperature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> (<em>float</em>) – Temperature (K)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Derivative of log saturation fugacity w.r.t. temperature</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.f0_fun">
+<span class="sig-name descname"><span class="pre">f0_fun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.f0_fun" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate saturation fugacity as a function of temperature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>T</strong> (<em>float</em>) – Temperature (K).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Saturation fugacity (Pa).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.n_absolute">
-<span class="sig-name descname"><span class="pre">n_absolute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.n_absolute" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_absolute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.n_absolute" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the absolute adsorbed amount at given conditions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1005,7 +1079,7 @@ provide thermophysical properties of the adsorbed phase.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.v_ads">
-<span class="sig-name descname"><span class="pre">v_ads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.v_ads" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">v_ads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.v_ads" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the adsorbed phase volume at the given condtions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1025,7 +1099,7 @@ provide thermophysical properties of the adsorbed phase.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.n_excess">
-<span class="sig-name descname"><span class="pre">n_excess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.n_excess" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_excess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.n_excess" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the excess adsorbed amount at the given conditions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1047,9 +1121,9 @@ default is 1.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.internal_energy_adsorbed">
-<span class="sig-name descname"><span class="pre">internal_energy_adsorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.internal_energy_adsorbed" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">internal_energy_adsorbed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.internal_energy_adsorbed" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate the molar integral internal energy of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id22"><span class="problematic" id="id12">[1]_</span></a>.</p>
+<p>The calculation is based on Myers &amp; Monson <a href="#id17"><span class="problematic" id="id10">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1067,53 +1141,59 @@ The default is 1.</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id13" role="note">
+<aside class="footnote brackets" id="id11" role="note">
 <span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
 <p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
 the case for absolute adsorption as the basis for thermodynamic
 analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
 doi: 10.1007/s10450-014-9604-1.</p>
 </aside>
-</aside>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.differential_energy">
-<span class="sig-name descname"><span class="pre">differential_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.differential_energy" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the differential energy of adsorption (J/mol).</p>
-<p>The calculation is based on Myers &amp; Monson <a href="#id23"><span class="problematic" id="id14">[1]_</span></a>.</p>
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.differential_energy_na">
+<span class="sig-name descname"><span class="pre">differential_energy_na</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">na</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.differential_energy_na" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate differential energy of adsorption analytically.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>p</strong> (<em>float</em>) – Pressure (Pa).</p></li>
-<li><p><strong>T</strong> (<em>float</em>) – Temperature (K).</p></li>
-<li><p><strong>q</strong> (<em>float</em><em>, </em><em>optional</em>) – Vapor quality of the bulk fluid. Can vary between 0 to 1.
-The default is 1.</p></li>
+<li><p><strong>na</strong> (<em>float</em>) – Amount adsorbed (mol/kg)</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature (K)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The differential energy of adsorption (J/mol).</p>
+<dd class="field-even"><p>Differential energy of adsorption (J/mol)</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id15" role="note">
-<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
-<p>A. L. Myers and P. A. Monson, ‘Physical adsorption of gases:
-the case for absolute adsorption as the basis for thermodynamic
-analysis’, Adsorption, vol. 20, no. 4, pp. 591–622, May 2014,
-doi: 10.1007/s10450-014-9604-1.</p>
-</aside>
-</aside>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.differential_energy">
+<span class="sig-name descname"><span class="pre">differential_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.differential_energy" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate differential energy of adsorption analytically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<em>float</em>) – Pressure (Pa).</p></li>
+<li><p><strong>T</strong> (<em>float</em>) – Temperature (K).</p></li>
+<li><p><strong>q</strong> (<em>float</em>) – Vapor quality.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Differential energy of adsorption (J/mol).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.MDAModel.from_ExcessIsotherms">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ExcessIsotherms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ExcessIsotherms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../excessisothermclass/index.html#pytanksim.classes.excessisothermclass.ExcessIsotherm" title="pytanksim.classes.excessisothermclass.ExcessIsotherm"><span class="pre">pytanksim.classes.excessisothermclass.ExcessIsotherm</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.StoredFluid" title="pytanksim.classes.fluidsorbentclasses.StoredFluid"><span class="pre">StoredFluid</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorbent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmaxguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">71.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0guess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1470000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alphaguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3080</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betaguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">18.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.00143</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kguess</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pore_volume</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.003</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.MDAModel" title="pytanksim.classes.fluidsorbentclasses.MDAModel"><span class="pre">MDAModel</span></a></span></span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.from_ExcessIsotherms" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ExcessIsotherms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ExcessIsotherms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stored_fluid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorbent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nmaxguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">71.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0guess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1470000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alphaguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3080</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betaguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">18.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.00143</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kguess</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">va_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fit'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pore_volume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.003</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.MDAModel.from_ExcessIsotherms" title="Permalink to this definition"></a></dt>
 <dd><p>Fit the MDA model from a list of excess adsorption data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1183,7 +1263,7 @@ provide thermophysical properties of the adsorbed phase.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.SorbentMaterial">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">SorbentMaterial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skeletal_density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bulk_density</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_surface_area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_isotherm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#pytanksim.classes.fluidsorbentclasses.ModelIsotherm" title="pytanksim.classes.fluidsorbentclasses.ModelIsotherm"><span class="pre">ModelIsotherm</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_mass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01201</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Debye_temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_capacity_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.SorbentMaterial" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytanksim.classes.fluidsorbentclasses.</span></span><span class="sig-name descname"><span class="pre">SorbentMaterial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skeletal_density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bulk_density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specific_surface_area</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_isotherm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">molar_mass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01201</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Debye_temperature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heat_capacity_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pytanksim.classes.fluidsorbentclasses.SorbentMaterial" title="Permalink to this definition"></a></dt>
 <dd><p>Class containing the properties of a sorbent material.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pytanksim.classes.fluidsorbentclasses.SorbentMaterial.mass">

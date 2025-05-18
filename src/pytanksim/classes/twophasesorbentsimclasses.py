@@ -189,7 +189,7 @@ class TwoPhaseSorbentDefault(TwoPhaseSorbentSim):
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
 
         b1 = ndotin - ndotout
@@ -440,7 +440,7 @@ class TwoPhaseSorbentCooled(TwoPhaseSorbentSim):
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
 
         b1 = ndotin - ndotout
@@ -632,7 +632,7 @@ class TwoPhaseSorbentVenting(TwoPhaseSorbentSim):
         hin = self.enthalpy_in_calc(p, T, time) if ndotin else 0
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
 
         b1 = ndotin
         b2 = 0
@@ -830,7 +830,7 @@ class TwoPhaseSorbentHeatedDischarge(TwoPhaseSorbentSim):
         hin = 0 if ndotin == 0 else self.enthalpy_in_calc(p, T, time)
         cooling_additional = flux.cooling_power(p, T, time)
         heating_additional = flux.heating_power(p, T, time)
-        heat_leak = self.heat_leak_in(T)
+        heat_leak = self.heat_leak_in(p, T, time)
         hout = self.enthalpy_out_calc(satur_prop_gas, p, T, time)
 
         b1 = ndotin - ndotout

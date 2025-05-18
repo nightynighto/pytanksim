@@ -21,7 +21,7 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: generate_simulation(storage_tank: Union[pytanksim.classes.storagetankclasses.StorageTank, pytanksim.classes.storagetankclasses.SorbentTank], boundary_flux: pytanksim.classes.basesimclass.BoundaryFlux, simulation_params: pytanksim.classes.basesimclass.SimParams, simulation_type: str = 'Default', phase: int = 1) -> pytanksim.classes.twophasefluidsimclasses.BaseSimulation
+.. py:function:: generate_simulation(storage_tank, boundary_flux, simulation_params, simulation_type = 'Default', phase = 1)
 
    Generate a dynamic simulation object.
 
@@ -63,7 +63,7 @@ Module Contents
    :rtype: A child class of BaseSimulation
 
 
-.. py:function:: automatic_simulation(storage_tank: Union[pytanksim.classes.storagetankclasses.StorageTank, pytanksim.classes.storagetankclasses.SorbentTank], boundary_flux: pytanksim.classes.basesimclass.BoundaryFlux, simulation_params: pytanksim.classes.basesimclass.SimParams, stop_at_max_pres: bool = False, stop_at_min_pres: bool = False, handle_max_pres: str = 'Cooled', handle_min_pres: str = 'Heated') -> pytanksim.classes.twophasefluidsimclasses.SimResults
+.. py:function:: automatic_simulation(storage_tank, boundary_flux, simulation_params, stop_at_max_pres = False, stop_at_min_pres = False, handle_max_pres = 'Cooled', handle_min_pres = 'Heated')
 
    Automatically run and restart simulations until a target is reached.
 
