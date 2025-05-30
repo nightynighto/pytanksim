@@ -1,3 +1,5 @@
+sphinx_rtd_theme
+autoapi
 numpy
 scipy
 pandas
