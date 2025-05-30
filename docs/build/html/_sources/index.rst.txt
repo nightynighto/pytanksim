@@ -7,8 +7,7 @@ Welcome to pytanksim's documentation!
 =====================================
 
 .. image:: ToCDrawing.jpg
-   :width: 800px
-   :height: 320px
+   :width: 100pc
    :alt: A graphical abstract describing how pytanksim uses adsorption isotherm data to simulate processes in sorbent-filled tanks.
    :align: center
 
