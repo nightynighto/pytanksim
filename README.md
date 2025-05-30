@@ -61,7 +61,11 @@ As an alternative to working with Anaconda, you may also install assimulo direct
 ### Validation Case Studies
 
 Several case studies are available under the validation folder which illustrates pytanksim's various functionalities.
-First time users are recommended to go through the example case studies.
+First time users are recommended to go through the example case studies. Explanation of those case studies will be made available in the form of a journal article which will be linked here as soon as it is available.
+
+### Further Documentation
+
+Users who need more specific help on the different functions, classes, and methods available in pytanksim, including what the inputs and outputs are for each of the functions, can search for information on [pytanksim's documentation page hosted by ReadTheDocs.](https://pytanksim.readthedocs.io)
 
 #### Datasets
 
