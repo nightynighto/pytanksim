@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytanksim.classes.onephasefluidsimclasses &mdash; pytanksim 1.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/pytanksimlogo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pytanksim.classes.onephasefluidsimclasses</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pytanksim.classes.onephasefluidsimclasses</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Module for simulating one phase fluid storage tanks without sorbents.&quot;&quot;&quot;</span>
+<span class="c1"># This file is a part of the python package pytanksim.</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Muhammad Irfan Maulana Kusdhany, Kyushu University</span>
+<span class="c1">#</span>
+<span class="c1"># pytanksim is free software; you can redistribute it and/or modify it under</span>
+<span class="c1"># the terms of the GNU Lesser General Public License as published by the</span>
+<span class="c1"># Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;OnePhaseFluidSim&quot;</span><span class="p">,</span> <span class="s2">&quot;OnePhaseFluidDefault&quot;</span><span class="p">,</span> <span class="s2">&quot;OnePhaseFluidVenting&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;OnePhaseFluidCooled&quot;</span><span class="p">,</span> <span class="s2">&quot;OnePhaseFluidHeatedDischarge&quot;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">CoolProp</span> <span class="k">as</span> <span class="nn">CP</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">assimulo.problem</span> <span class="kn">import</span> <span class="n">Explicit_Problem</span>
+<span class="kn">from</span> <span class="nn">assimulo.solvers</span> <span class="kn">import</span> <span class="n">CVode</span>
+<span class="kn">from</span> <span class="nn">assimulo.exception</span> <span class="kn">import</span> <span class="n">TerminateSimulation</span>
+<span class="kn">from</span> <span class="nn">pytanksim.classes.simresultsclass</span> <span class="kn">import</span> <span class="n">SimResults</span>
+<span class="kn">from</span> <span class="nn">pytanksim.classes.basesimclass</span> <span class="kn">import</span> <span class="n">BaseSimulation</span>
+<span class="kn">from</span> <span class="nn">pytanksim.utils</span> <span class="kn">import</span> <span class="n">logger</span>
+
+
+<div class="viewcode-block" id="OnePhaseFluidSim"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidSim">[docs]</a><span class="k">class</span> <span class="nc">OnePhaseFluidSim</span><span class="p">(</span><span class="n">BaseSimulation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for one phase fluid simulations.&quot;&quot;&quot;</span>
+
+    <span class="n">sim_phase</span> <span class="o">=</span> <span class="s2">&quot;One Phase&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_dn_dp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fluid_prop_dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;drho_dp&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span>
+
+    <span class="k">def</span> <span class="nf">_dn_dT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fluid_prop_dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;drho_dT&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span>
+
+    <span class="k">def</span> <span class="nf">_du_dp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fluid_prop_dict</span><span class="p">):</span>
+        <span class="n">term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;drho_dp&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;uf&quot;</span><span class="p">]</span>
+        <span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;du_dp&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;rhof&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span> <span class="o">*</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">term</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_du_dT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">fluid_prop_dict</span><span class="p">):</span>
+        <span class="n">term</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;drho_dT&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;uf&quot;</span><span class="p">]</span>
+        <span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;du_dT&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">fluid_prop_dict</span><span class="p">[</span><span class="s2">&quot;rhof&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span> <span class="o">*</span>\
+            <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">term</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">heat_capacity</span><span class="p">(</span><span class="n">T</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OnePhaseFluidDefault"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidDefault">[docs]</a><span class="k">class</span> <span class="nc">OnePhaseFluidDefault</span><span class="p">(</span><span class="n">OnePhaseFluidSim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for simulating fluid storage dynamics in the one phase region.&quot;&quot;&quot;</span>
+
+    <span class="n">sim_type</span> <span class="o">=</span> <span class="s2">&quot;Default&quot;</span>
+
+<div class="viewcode-block" id="OnePhaseFluidDefault.solve_differentials"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidDefault.solve_differentials">[docs]</a>    <span class="k">def</span> <span class="nf">solve_differentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                            <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the right hand side of the governing ODE at a given time step.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Current time step (in s).</span>
+
+<span class="sd">        p : float</span>
+<span class="sd">            Current pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Current temperature (K).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            An array containing the right hand side of the ODE.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stored_fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">!=</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">fluid_property_dict</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">qinit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">saturation_property_dict</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">qinit</span><span class="p">)</span>
+
+        <span class="n">m11</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_dp</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m12</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_dT</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m21</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du_dp</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m22</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du_dT</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">prop_dict</span><span class="p">)</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">],</span>
+                      <span class="p">[</span><span class="n">m21</span><span class="p">,</span> <span class="n">m22</span><span class="p">]])</span>
+
+        <span class="n">MW</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">()</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span>
+        <span class="n">ndotin</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+        <span class="n">ndotout</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_out</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+        <span class="n">hin</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">ndotin</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_in_calc</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">cooling_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">cooling_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heating_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">heating_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heat_leak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">hout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_out_calc</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">-</span> <span class="n">ndotout</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span> <span class="o">-</span> <span class="n">ndotout</span> <span class="o">*</span> <span class="n">hout</span> <span class="o">+</span> \
+            <span class="n">heating_additional</span> <span class="o">-</span>\
+            <span class="n">cooling_additional</span>\
+            <span class="o">+</span> <span class="n">heat_leak</span>
+
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">])</span>
+        <span class="n">soln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">soln</span><span class="p">,</span>
+                         <span class="p">[</span><span class="n">ndotin</span><span class="p">,</span>
+                          <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span><span class="p">,</span>
+                          <span class="n">ndotout</span><span class="p">,</span>
+                          <span class="n">ndotout</span> <span class="o">*</span> <span class="n">hout</span><span class="p">,</span>
+                          <span class="n">cooling_additional</span><span class="p">,</span>
+                          <span class="n">heating_additional</span><span class="p">,</span>
+                          <span class="n">heat_leak</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="OnePhaseFluidDefault.run"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidDefault.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimResults</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the dynamic simulation.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TerminateSimulation</span>
+<span class="sd">            Stops the simulation when it detects an event such as hitting the</span>
+<span class="sd">            saturation line, or hitting the maximum pressure limit of the tank.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults</span>
+<span class="sd">            An object for storing and manipulating the results of the dynamic</span>
+<span class="sd">            simulation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;‰&quot;</span><span class="p">,</span>
+                    <span class="n">disable</span><span class="o">=</span><span class="ow">not</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">))</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="o">/</span><span class="mi">1000</span><span class="p">]</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">Tcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+        <span class="n">pcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p_critical</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">rhs</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="n">last_t</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">state</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="n">last_t</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_t</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">n</span>
+            <span class="n">p</span><span class="p">,</span> <span class="n">T</span> <span class="o">=</span> <span class="n">w</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">solve_differentials</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">events</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="n">satstatus</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pcrit</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">satpres</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">satpres</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mf">1E-6</span> <span class="o">*</span> <span class="n">satpres</span><span class="p">):</span>
+                    <span class="n">satstatus</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">satpres</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">satstatus</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">capacity_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span> <span class="o">-</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_capacity</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">vent_pressure</span> <span class="o">-</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">satstatus</span><span class="p">,</span>
+                             <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">min_supply_pressure</span><span class="p">,</span>
+                             <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_pres</span><span class="p">,</span>
+                             <span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_temp</span><span class="p">,</span>
+                             <span class="n">capacity_event</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">handle_event</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">event_info</span><span class="p">):</span>
+            <span class="n">state_info</span> <span class="o">=</span> <span class="n">event_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;MaxPresReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit maximum pressure!&quot;</span>
+                                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> Switch to venting or cooling simulation&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solver</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;SaturLineReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit the saturation line!&quot;</span>
+                                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Switch to two-phase simulation&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;MinPresReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit min supply pressure!&quot;</span>
+                                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Switch to heated discharge simulation&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solver</span><span class="o">.</span><span class="n">sw</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetPresReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Target pressure reached&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solver</span><span class="o">.</span><span class="n">sw</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetTempReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Target temperature reached&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetCondsReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Target conditions reached&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetCapReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Target capacity reached&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+        <span class="n">w0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_temperature</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">inserted_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">flow_energy_in</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_energy</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">cooling_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heating_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">])</span>
+
+        <span class="n">sw0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">stop_at_target_pressure</span>
+        <span class="n">sw1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">stop_at_target_temp</span>
+
+        <span class="n">switches0</span> <span class="o">=</span> <span class="p">[</span><span class="n">sw0</span><span class="p">,</span> <span class="n">sw1</span><span class="p">]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Explicit_Problem</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_time</span><span class="p">,</span>
+                                 <span class="n">sw0</span><span class="o">=</span><span class="n">switches0</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">state_events</span> <span class="o">=</span> <span class="n">events</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">handle_event</span> <span class="o">=</span> <span class="n">handle_event</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;1 Phase Dynamics&quot;</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">CVode</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">discr</span> <span class="o">=</span> <span class="s2">&quot;BDF&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1E-10</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="mi">30</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="mi">50</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">displayed_points</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving results...&quot;</span><span class="p">)</span>
+
+        <span class="n">n_phase</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Gas&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Liquid&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)}</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)):</span>
+            <span class="n">iterable</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span>\
+                <span class="n">determine_phase</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                <span class="k">while</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span> <span class="ow">and</span> <span class="n">iterable</span> <span class="o">&gt;</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">iterable</span> <span class="o">=</span> <span class="n">iterable</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span>\
+                        <span class="n">determine_phase</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                                        <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="s2">&quot;Gas&quot;</span> <span class="k">if</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;Liquid&quot;</span>
+                <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">Tcrit</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Liquid&quot;</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">nfluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span>
+            <span class="n">n_phase</span><span class="p">[</span><span class="n">phase</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nfluid</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;FinishedNormally&quot;</span>
+
+        <span class="k">return</span> <span class="n">SimResults</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
+                          <span class="n">pressure</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                          <span class="n">temperature</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                          <span class="n">moles_adsorbed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">moles_gas</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Gas&quot;</span><span class="p">],</span>
+                          <span class="n">moles_liquid</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Liquid&quot;</span><span class="p">],</span>
+                          <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Supercritical&quot;</span><span class="p">],</span>
+                          <span class="n">inserted_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                          <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span>
+                          <span class="n">vented_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span>
+                          <span class="n">vented_energy</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">],</span>
+                          <span class="n">cooling_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">],</span>
+                          <span class="n">heating_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">],</span>
+                          <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">],</span>
+                          <span class="n">cooling_required</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                          <span class="n">cooling_required</span><span class="p">,</span>
+                          <span class="n">heating_required</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                          <span class="n">heating_required</span><span class="p">,</span>
+                          <span class="n">sim_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_type</span><span class="p">,</span>
+                          <span class="n">tank_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="p">,</span>
+                          <span class="n">sim_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="p">,</span>
+                          <span class="n">stop_reason</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="OnePhaseFluidVenting"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidVenting">[docs]</a><span class="k">class</span> <span class="nc">OnePhaseFluidVenting</span><span class="p">(</span><span class="n">OnePhaseFluidSim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate the dynamics of a fluid tank venting at constant pressure.&quot;&quot;&quot;</span>
+
+    <span class="n">sim_type</span> <span class="o">=</span> <span class="s2">&quot;Venting&quot;</span>
+
+<div class="viewcode-block" id="OnePhaseFluidVenting.solve_differentials"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidVenting.solve_differentials">[docs]</a>    <span class="k">def</span> <span class="nf">solve_differentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve for the right hand side of the governing ODE.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Current time step in the simulation (s).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Current temperature (K).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Numpy array containing values for the RHS of the governing ODE.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span>
+        <span class="n">stored_fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span>
+        <span class="n">MW</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">()</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span>
+
+        <span class="n">ndotin</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+
+        <span class="n">hin</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">ndotin</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_in_calc</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">qinit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">!=</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">fluid_property_dict</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">saturation_property_dict</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">qinit</span><span class="p">)</span>
+
+        <span class="n">hout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_out_calc</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="n">m11</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_dT</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m12</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">m21</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du_dT</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m22</span> <span class="o">=</span> <span class="n">hout</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">],</span>
+                      <span class="p">[</span><span class="n">m21</span><span class="p">,</span> <span class="n">m22</span><span class="p">]])</span>
+
+        <span class="n">heating_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">heating_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">cooling_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">cooling_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heat_leak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">ndotin</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span> <span class="o">+</span> \
+            <span class="n">heating_additional</span> <span class="o">-</span> <span class="n">cooling_additional</span>\
+            <span class="o">+</span> <span class="n">heat_leak</span>
+
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">])</span>
+        <span class="n">soln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">soln</span><span class="p">,</span>
+                         <span class="p">[</span><span class="n">soln</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">hout</span><span class="p">,</span>
+                          <span class="n">ndotin</span><span class="p">,</span>
+                          <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span><span class="p">,</span>
+                          <span class="n">cooling_additional</span><span class="p">,</span>
+                          <span class="n">heating_additional</span><span class="p">,</span>
+                          <span class="n">heat_leak</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="OnePhaseFluidVenting.run"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidVenting.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the dynamic simulation.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TerminateSimulation</span>
+<span class="sd">            Stops the simulation when it detects an event such as hitting the</span>
+<span class="sd">            saturation line, or hitting the maximum pressure limit of the tank.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults</span>
+<span class="sd">            An object for storing and manipulating the results of the dynamic</span>
+<span class="sd">            simulation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;‰&quot;</span><span class="p">,</span>
+                    <span class="n">disable</span><span class="o">=</span><span class="ow">not</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">))</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="o">/</span><span class="mi">1000</span><span class="p">]</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">Tcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Tcrit</span><span class="p">)</span>
+        <span class="n">pcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span>
+
+        <span class="k">def</span> <span class="nf">rhs</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="n">last_t</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">state</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="n">last_t</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_t</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">n</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">solve_differentials</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">events</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="n">satstatus</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">-</span> <span class="n">pcrit</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">satpres</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">p0</span><span class="o">-</span><span class="n">satpres</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mf">1E-6</span> <span class="o">*</span> <span class="n">satpres</span><span class="p">):</span>
+                    <span class="n">satstatus</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">-</span> <span class="n">satpres</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">satstatus</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">capacity_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span> <span class="o">-</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_capacity</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">satstatus</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_temp</span><span class="p">,</span>
+                             <span class="n">capacity_event</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">handle_event</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">event_info</span><span class="p">):</span>
+            <span class="n">state_info</span> <span class="o">=</span> <span class="n">event_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solver</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;SaturLineReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit the saturation line!&quot;</span>
+                                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Switch to two-phase simulation&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetTempReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit target temperature.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetCapReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Target capacity reached.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+        <span class="n">w0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_temperature</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_energy</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">inserted_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">flow_energy_in</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">cooling_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heating_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">])</span>
+
+        <span class="n">switches0</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Explicit_Problem</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_time</span><span class="p">,</span>
+                                 <span class="n">sw0</span><span class="o">=</span><span class="n">switches0</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">state_events</span> <span class="o">=</span> <span class="n">events</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">handle_event</span> <span class="o">=</span> <span class="n">handle_event</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;1 Phase Dynamics&quot;</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">CVode</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">discr</span> <span class="o">=</span> <span class="s2">&quot;BDF&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1E-10</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="mi">30</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="mi">50</span>
+        <span class="n">t</span><span class="p">,</span>  <span class="n">y</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="p">,</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">displayed_points</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving results...&quot;</span><span class="p">)</span>
+
+        <span class="n">n_phase</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Gas&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Liquid&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)}</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)):</span>
+            <span class="n">iterable</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                <span class="k">while</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                    <span class="n">iterable</span> <span class="o">=</span> <span class="n">iterable</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span>\
+                        <span class="n">determine_phase</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">Tcrit</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Liquid&quot;</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">nfluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span>
+            <span class="n">n_phase</span><span class="p">[</span><span class="n">phase</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nfluid</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;FinishedNormally&quot;</span>
+
+        <span class="k">return</span> <span class="n">SimResults</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
+                          <span class="n">pressure</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
+                          <span class="n">temperature</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                          <span class="n">moles_adsorbed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">moles_gas</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Gas&quot;</span><span class="p">],</span>
+                          <span class="n">moles_liquid</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Liquid&quot;</span><span class="p">],</span>
+                          <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Supercritical&quot;</span><span class="p">],</span>
+                          <span class="n">inserted_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span>
+                          <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span>
+                          <span class="n">cooling_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">],</span>
+                          <span class="n">heating_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">],</span>
+                          <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">],</span>
+                          <span class="n">cooling_required</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                          <span class="n">cooling_required</span><span class="p">,</span>
+                          <span class="n">heating_required</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                          <span class="n">heating_required</span><span class="p">,</span>
+                          <span class="n">vented_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                          <span class="n">vented_energy</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                          <span class="n">sim_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_type</span><span class="p">,</span>
+                          <span class="n">tank_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="p">,</span>
+                          <span class="n">sim_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="p">,</span>
+                          <span class="n">stop_reason</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="OnePhaseFluidCooled"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidCooled">[docs]</a><span class="k">class</span> <span class="nc">OnePhaseFluidCooled</span><span class="p">(</span><span class="n">OnePhaseFluidSim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates a tank being cooled to maintain constant pressure.&quot;&quot;&quot;</span>
+
+    <span class="n">sim_type</span> <span class="o">=</span> <span class="s2">&quot;Cooled&quot;</span>
+
+<div class="viewcode-block" id="OnePhaseFluidCooled.solve_differentials"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidCooled.solve_differentials">[docs]</a>    <span class="k">def</span> <span class="nf">solve_differentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve for the right hand side of the governing ODE.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Current time step in the simulation (s).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Current temperature (K).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Numpy array containing values for the RHS of the governing ODE.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stored_fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span>
+        <span class="n">MW</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">()</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span>
+        <span class="n">ndotin</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+        <span class="n">hin</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">ndotin</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_in_calc</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">!=</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">fluid_property_dict</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">saturation_property_dict</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+
+        <span class="n">m11</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_dT</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m12</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">m21</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du_dT</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m22</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">],</span>
+                      <span class="p">[</span><span class="n">m21</span><span class="p">,</span> <span class="n">m22</span><span class="p">]])</span>
+
+        <span class="n">ndotout</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_out</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+        <span class="n">hout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_out_calc</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heating_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">heating_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">cooling_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">cooling_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heat_leak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">-</span> <span class="n">ndotout</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span> <span class="o">-</span> <span class="n">ndotout</span> <span class="o">*</span> <span class="n">hout</span> <span class="o">+</span> \
+            <span class="n">heating_additional</span> <span class="o">-</span> <span class="n">cooling_additional</span> \
+            <span class="o">+</span> <span class="n">heat_leak</span>
+
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">])</span>
+
+        <span class="n">diffresults</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">diffresults</span><span class="p">,</span> <span class="p">[</span>
+            <span class="n">ndotin</span><span class="p">,</span>
+            <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span><span class="p">,</span>
+            <span class="n">ndotout</span><span class="p">,</span>
+            <span class="n">ndotout</span> <span class="o">*</span> <span class="n">hout</span><span class="p">,</span>
+            <span class="n">cooling_additional</span><span class="p">,</span>
+            <span class="n">heating_additional</span><span class="p">,</span>
+            <span class="n">heat_leak</span>
+            <span class="p">])</span></div>
+
+<div class="viewcode-block" id="OnePhaseFluidCooled.run"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidCooled.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the dynamic simulation.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TerminateSimulation</span>
+<span class="sd">            Stops the simulation when it detects an event such as hitting the</span>
+<span class="sd">            saturation line, or hitting the maximum pressure limit of the tank.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults</span>
+<span class="sd">            An object for storing and manipulating the results of the dynamic</span>
+<span class="sd">            simulation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;‰&quot;</span><span class="p">,</span>
+                    <span class="n">disable</span><span class="o">=</span><span class="ow">not</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">))</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="o">/</span><span class="mi">1000</span><span class="p">]</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">Tcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Tcrit</span><span class="p">)</span>
+        <span class="n">pcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span>
+
+        <span class="k">def</span> <span class="nf">rhs</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="n">last_t</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">state</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="n">last_t</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_t</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">n</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">solve_differentials</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">events</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="n">satstatus</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">-</span> <span class="n">pcrit</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">satpres</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">p0</span><span class="o">-</span><span class="n">satpres</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mf">1E-6</span> <span class="o">*</span> <span class="n">satpres</span><span class="p">):</span>
+                    <span class="n">satstatus</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">-</span> <span class="n">satpres</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">satstatus</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">capacity_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span> <span class="o">-</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_capacity</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">satstatus</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                             <span class="n">target_temp</span><span class="p">,</span>
+                             <span class="n">capacity_event</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">handle_event</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">event_info</span><span class="p">):</span>
+            <span class="n">state_info</span> <span class="o">=</span> <span class="n">event_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solver</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;SaturLineReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit the saturation line!&quot;</span>
+                                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Switch to two-phase simulation&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetTempReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit target temperature.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetCapReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit target capacity.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+        <span class="n">w0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_temperature</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">cooling_required</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">inserted_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">flow_energy_in</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_energy</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">cooling_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heating_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">])</span>
+
+        <span class="n">switches0</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Explicit_Problem</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_time</span><span class="p">,</span>
+                                 <span class="n">sw0</span><span class="o">=</span><span class="n">switches0</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">state_events</span> <span class="o">=</span> <span class="n">events</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">handle_event</span> <span class="o">=</span> <span class="n">handle_event</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;1 Phase Dynamics Cooled at Constant Pressure&quot;</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">CVode</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">discr</span> <span class="o">=</span> <span class="s2">&quot;BDF&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1E-10</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="mi">30</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="mi">50</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">displayed_points</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving results...&quot;</span><span class="p">)</span>
+        <span class="n">n_phase</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Gas&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Liquid&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)}</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)):</span>
+            <span class="n">iterable</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                <span class="k">while</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                    <span class="n">iterable</span> <span class="o">=</span> <span class="n">iterable</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span>\
+                        <span class="n">determine_phase</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">Tcrit</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Liquid&quot;</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">nfluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span>
+            <span class="n">n_phase</span><span class="p">[</span><span class="n">phase</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nfluid</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Simulation finished normally.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;FinishedNormally&quot;</span>
+        <span class="k">return</span> <span class="n">SimResults</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
+                          <span class="n">pressure</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
+                          <span class="n">temperature</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                          <span class="n">moles_adsorbed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">moles_gas</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Gas&quot;</span><span class="p">],</span>
+                          <span class="n">moles_liquid</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Liquid&quot;</span><span class="p">],</span>
+                          <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Supercritical&quot;</span><span class="p">],</span>
+                          <span class="n">inserted_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                          <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span>
+                          <span class="n">vented_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span>
+                          <span class="n">vented_energy</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">],</span>
+                          <span class="n">cooling_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">],</span>
+                          <span class="n">heating_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">],</span>
+                          <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">],</span>
+                          <span class="n">cooling_required</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                          <span class="n">heating_required</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                          <span class="n">heating_required</span><span class="p">,</span>
+                          <span class="n">sim_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_type</span><span class="p">,</span>
+                          <span class="n">tank_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="p">,</span>
+                          <span class="n">sim_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="p">,</span>
+                          <span class="n">stop_reason</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="OnePhaseFluidHeatedDischarge"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidHeatedDischarge">[docs]</a><span class="k">class</span> <span class="nc">OnePhaseFluidHeatedDischarge</span><span class="p">(</span><span class="n">OnePhaseFluidSim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulates a tank being heated to discharge at a constant pressure.&quot;&quot;&quot;</span>
+
+    <span class="n">sim_type</span> <span class="o">=</span> <span class="s2">&quot;Heated&quot;</span>
+
+<div class="viewcode-block" id="OnePhaseFluidHeatedDischarge.solve_differentials"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidHeatedDischarge.solve_differentials">[docs]</a>    <span class="k">def</span> <span class="nf">solve_differentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve for the right hand side of the governing ODE.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Current time step in the simulation (s).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Current temperature (K).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Numpy array containing values for the RHS of the governing ODE.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span>
+        <span class="n">stored_fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span>
+        <span class="n">MW</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">()</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span>
+        <span class="n">ndotin</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+        <span class="n">ndotout</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">mass_flow_out</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">MW</span>
+        <span class="n">hin</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">ndotin</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_in_calc</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">!=</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">fluid_property_dict</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">prop_dict</span> <span class="o">=</span> <span class="n">stored_fluid</span><span class="o">.</span><span class="n">saturation_property_dict</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+
+        <span class="n">m11</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_dT</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m12</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">m21</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_du_dT</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">prop_dict</span><span class="p">)</span>
+        <span class="n">m22</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">],</span>
+                      <span class="p">[</span><span class="n">m21</span><span class="p">,</span> <span class="n">m22</span><span class="p">]])</span>
+
+        <span class="n">cooling_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">cooling_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heating_additional</span> <span class="o">=</span> <span class="n">flux</span><span class="o">.</span><span class="n">heating_power</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">heat_leak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">hout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_out_calc</span><span class="p">(</span><span class="n">prop_dict</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">-</span> <span class="n">ndotout</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span> <span class="o">-</span> <span class="n">ndotout</span> <span class="o">*</span> <span class="n">hout</span> <span class="o">+</span> \
+            <span class="o">-</span> <span class="n">cooling_additional</span> <span class="o">+</span> <span class="n">heating_additional</span>\
+            <span class="o">+</span> <span class="n">heat_leak</span>
+
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">])</span>
+
+        <span class="n">diffresults</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">diffresults</span><span class="p">,</span> <span class="p">[</span>
+            <span class="n">ndotin</span><span class="p">,</span>
+            <span class="n">ndotin</span> <span class="o">*</span> <span class="n">hin</span><span class="p">,</span>
+            <span class="n">ndotout</span><span class="p">,</span>
+            <span class="n">ndotout</span> <span class="o">*</span> <span class="n">hout</span><span class="p">,</span>
+            <span class="n">cooling_additional</span><span class="p">,</span>
+            <span class="n">heating_additional</span><span class="p">,</span>
+            <span class="n">heat_leak</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="OnePhaseFluidHeatedDischarge.run"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/onephasefluidsimclasses/index.html#pytanksim.classes.OnePhaseFluidHeatedDischarge.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the dynamic simulation.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TerminateSimulation</span>
+<span class="sd">            Stops the simulation when it detects an event such as hitting the</span>
+<span class="sd">            saturation line, or hitting the maximum pressure limit of the tank.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults</span>
+<span class="sd">            An object for storing and manipulating the results of the dynamic</span>
+<span class="sd">            simulation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;‰&quot;</span><span class="p">,</span>
+                    <span class="n">disable</span><span class="o">=</span><span class="ow">not</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">))</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="o">/</span><span class="mi">1000</span><span class="p">]</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">Tcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Tcrit</span><span class="p">)</span>
+        <span class="n">pcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_pressure</span>
+        <span class="k">if</span> <span class="n">p0</span> <span class="o">&lt;=</span> <span class="n">pcrit</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PQ_INPUTS</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">Tsat</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Tsat</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Tsat</span> <span class="o">-=</span> <span class="mf">1E-5</span><span class="o">*</span><span class="n">Tsat</span>
+
+        <span class="k">def</span> <span class="nf">rhs</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="n">last_t</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">state</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">t</span> <span class="o">-</span> <span class="n">last_t</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">last_t</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">n</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">solve_differentials</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">events</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">sw</span><span class="p">):</span>
+            <span class="n">satstatus</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">Tsat</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+            <span class="n">capacity_event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">q</span><span class="p">)</span> <span class="o">-</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">target_capacity</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">satstatus</span><span class="p">,</span> <span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                             <span class="n">target_temp</span><span class="p">,</span>
+                             <span class="n">capacity_event</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">handle_event</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">event_info</span><span class="p">):</span>
+            <span class="n">state_info</span> <span class="o">=</span> <span class="n">event_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">solver</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;SaturLineReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation has hit the saturation line!&quot;</span>
+                                <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Switch to two-phase simulation&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetTempReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The simulation hit target temperature.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+            <span class="k">if</span> <span class="n">state_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;TargetCapReached&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Target capacity reached.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">TerminateSimulation</span>
+
+        <span class="n">w0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_temperature</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heating_required</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">inserted_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">flow_energy_in</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_amount</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">vented_energy</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">cooling_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heating_additional</span><span class="p">,</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">])</span>
+
+        <span class="n">switches0</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Explicit_Problem</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_time</span><span class="p">,</span>
+                                 <span class="n">sw0</span><span class="o">=</span><span class="n">switches0</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">state_events</span> <span class="o">=</span> <span class="n">events</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">handle_event</span> <span class="o">=</span> <span class="n">handle_event</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;1 Phase Dynamics Heated at Constant Pressure&quot;</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">CVode</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">discr</span> <span class="o">=</span> <span class="s2">&quot;BDF&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1E-10</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="mi">30</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span> <span class="k">else</span> <span class="mi">50</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">final_time</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">displayed_points</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tqdm</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving results...&quot;</span><span class="p">)</span>
+
+        <span class="n">n_phase</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Gas&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+                   <span class="s2">&quot;Liquid&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)}</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)):</span>
+            <span class="n">iterable</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                <span class="k">while</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span> <span class="ow">and</span> <span class="n">iterable</span> <span class="o">&gt;</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">iterable</span> <span class="o">=</span> <span class="n">iterable</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span>\
+                        <span class="n">determine_phase</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span>
+                                        <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span><span class="n">init_q</span>
+                    <span class="n">phase</span> <span class="o">=</span> <span class="s2">&quot;Liquid&quot;</span> <span class="k">if</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;Gas&quot;</span>
+                <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">iterable</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">Tcrit</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Liquid&quot;</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">nfluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">volume</span>
+            <span class="n">n_phase</span><span class="p">[</span><span class="n">phase</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nfluid</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="s2">&quot;FinishedNormally&quot;</span>
+        <span class="k">return</span> <span class="n">SimResults</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
+                          <span class="n">pressure</span><span class="o">=</span><span class="n">p0</span><span class="p">,</span>
+                          <span class="n">temperature</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                          <span class="n">moles_adsorbed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">moles_gas</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Gas&quot;</span><span class="p">],</span>
+                          <span class="n">moles_liquid</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Liquid&quot;</span><span class="p">],</span>
+                          <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">n_phase</span><span class="p">[</span><span class="s2">&quot;Supercritical&quot;</span><span class="p">],</span>
+                          <span class="n">inserted_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                          <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span>
+                          <span class="n">vented_amount</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span>
+                          <span class="n">vented_energy</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">],</span>
+                          <span class="n">cooling_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">],</span>
+                          <span class="n">heating_additional</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">],</span>
+                          <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">],</span>
+                          <span class="n">cooling_required</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="o">.</span>
+                          <span class="n">cooling_required</span><span class="p">,</span>
+                          <span class="n">heating_required</span><span class="o">=</span><span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                          <span class="n">sim_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim_type</span><span class="p">,</span>
+                          <span class="n">tank_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="p">,</span>
+                          <span class="n">sim_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span><span class="p">,</span>
+                          <span class="n">stop_reason</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

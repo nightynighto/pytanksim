@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytanksim.utils.finitedifferences &mdash; pytanksim 1.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/pytanksimlogo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pytanksim.utils.finitedifferences</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pytanksim.utils.finitedifferences</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Module for calculating derivatives numerically.&quot;&quot;&quot;</span>
+
+<span class="c1"># This file is a part of the python package pytanksim.</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Muhammad Irfan Maulana Kusdhany, Kyushu University</span>
+<span class="c1">#</span>
+<span class="c1"># pytanksim is free software; you can redistribute it and/or modify it under</span>
+<span class="c1"># the terms of the GNU Lesser General Public License as published by the</span>
+<span class="c1"># Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;partial_derivative&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;second_derivative&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mixed_second_derivative&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;backward_partial_derivative&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;forward_partial_derivative&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pardev&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;backdev&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fordev&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;secbackder&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;secforder&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;second_backward_derivative&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;second_forward_derivative&quot;</span>
+    <span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+
+<div class="viewcode-block" id="pardev"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.pardev">[docs]</a><span class="k">def</span> <span class="nf">pardev</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+           <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the first derivative using centered finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only one</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[[float], float]</span>
+<span class="sd">        A function that takes in a floating point number and outputs a floating</span>
+<span class="sd">        point number.</span>
+
+<span class="sd">    loc : float</span>
+<span class="sd">        Location where the first derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first derivative of `func` evaluated at `loc`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loc1</span> <span class="o">=</span> <span class="p">(</span><span class="n">loc</span> <span class="o">+</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">loc2</span> <span class="o">=</span> <span class="p">(</span><span class="n">loc</span> <span class="o">-</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc1</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">-</span> <span class="n">term2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">loc1</span> <span class="o">-</span> <span class="n">loc2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="partial_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.partial_derivative">[docs]</a><span class="k">def</span> <span class="nf">partial_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                       <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the first partial derivative using centered finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (one or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least one</span>
+<span class="sd">        argument which is a floating point number.</span>
+
+<span class="sd">    var : int</span>
+<span class="sd">        The integer showing the input order of the independent variable with</span>
+<span class="sd">        respect to which the derivative of `func` is to be approximated. It</span>
+<span class="sd">        uses python&#39;s convention for indexing (i.e., it counts from 0, 1, 2, 3,</span>
+<span class="sd">        ...). For example, if the function `func` has the following</span>
+<span class="sd">        signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the partial derivative w.r.t. `x3`, then `var`</span>
+<span class="sd">        should be 2.</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        locations where the partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-3.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first partial derivative of `func` w.r.t. the variable specified</span>
+<span class="sd">        by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pardev</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="backdev"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.backdev">[docs]</a><span class="k">def</span> <span class="nf">backdev</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the first derivative using backwards finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only one</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[[float], float]</span>
+<span class="sd">        A function that takes in a floating point number and outputs a floating</span>
+<span class="sd">        point number.</span>
+
+<span class="sd">    loc : float</span>
+<span class="sd">        Location where the first derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first derivative of `func` evaluated at `loc`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loc2</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">-</span> <span class="n">stepsize</span>
+    <span class="n">loc3</span> <span class="o">=</span> <span class="n">loc2</span> <span class="o">-</span> <span class="n">stepsize</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc2</span><span class="p">)</span>
+    <span class="n">term3</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">term1</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">loc</span><span class="o">-</span><span class="n">loc3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="backward_partial_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.backward_partial_derivative">[docs]</a><span class="k">def</span> <span class="nf">backward_partial_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                                <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the first partial derivative using backwards finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (one or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least one</span>
+<span class="sd">        argument which is a floating point number.</span>
+
+<span class="sd">    var : int</span>
+<span class="sd">        The integer showing the input order of the independent variable with</span>
+<span class="sd">        respect to which the derivative of `func` is to be approximated. It</span>
+<span class="sd">        uses python&#39;s convention for indexing (i.e., it counts from 0, 1, 2, 3,</span>
+<span class="sd">        ...). For example, if the function `func` has the following</span>
+<span class="sd">        signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the partial derivative w.r.t. `x3`, then `var`</span>
+<span class="sd">        should be 2.</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        location where the partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-3.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first partial derivative of `func` w.r.t. the variable specified</span>
+<span class="sd">        by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">backdev</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fordev"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.fordev">[docs]</a><span class="k">def</span> <span class="nf">fordev</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+           <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the first derivative using forwards finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only one</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[[float], float]</span>
+<span class="sd">        A function that takes in a floating point number and outputs a floating</span>
+<span class="sd">        point number.</span>
+
+<span class="sd">    loc : float</span>
+<span class="sd">        Location where the first derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first derivative of `func` evaluated at `loc`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loc2</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">+</span> <span class="n">stepsize</span>
+    <span class="n">loc3</span> <span class="o">=</span> <span class="n">loc2</span> <span class="o">+</span> <span class="n">stepsize</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc2</span><span class="p">)</span>
+    <span class="n">term3</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">loc3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="o">-</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">term1</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">term2</span> <span class="o">-</span> <span class="n">term3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">loc3</span> <span class="o">-</span> <span class="n">loc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="forward_partial_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.forward_partial_derivative">[docs]</a><span class="k">def</span> <span class="nf">forward_partial_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                               <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the first partial derivative using forwards finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (one or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least one</span>
+<span class="sd">        argument which is a floating point number.</span>
+
+<span class="sd">    var : int</span>
+<span class="sd">        The integer showing the input order of the independent variable with</span>
+<span class="sd">        respect to which the derivative of `func` is to be approximated. It</span>
+<span class="sd">        uses python&#39;s convention for indexing (i.e., it counts from 0, 1, 2, 3,</span>
+<span class="sd">        ...). For example, if the function `func` has the following</span>
+<span class="sd">        signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the partial derivative w.r.t. `x3`, then `var`</span>
+<span class="sd">        should be 2.</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        location where the partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-3.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first partial derivative of `func` w.r.t. the variable specified</span>
+<span class="sd">        by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fordev</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="n">point</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">secder</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">location</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+           <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the second derivative using centered finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only one</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    function : Callable[[float], float]</span>
+<span class="sd">        A function that takes in a floating point number and outputs a floating</span>
+<span class="sd">        point number.</span>
+
+<span class="sd">    location : float</span>
+<span class="sd">        Location where the second derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-6.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The second derivative of `function` evaluated at `location`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loc1</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span> <span class="o">-</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">loc2</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span> <span class="o">+</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">loc1</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+    <span class="n">term3</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">loc2</span><span class="p">)</span>
+    <span class="n">stepsize</span> <span class="o">=</span> <span class="p">(</span><span class="n">loc2</span><span class="o">-</span><span class="n">loc1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">stepsize</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="second_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.second_derivative">[docs]</a><span class="k">def</span> <span class="nf">second_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                      <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the second partial derivative using centered finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (one or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least one</span>
+<span class="sd">        argument which is a floating point number.</span>
+
+<span class="sd">    var : int</span>
+<span class="sd">        The integer showing the input order of the independent variable with</span>
+<span class="sd">        respect to which the derivative of `func` is to be approximated. It</span>
+<span class="sd">        uses python&#39;s convention for indexing (i.e., it counts from 0, 1, 2, 3,</span>
+<span class="sd">        ...). For example, if the function `func` has the following</span>
+<span class="sd">        signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the second partial derivative w.r.t. `x3`, then</span>
+<span class="sd">        `var` should be 2.</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        location where the second partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-6.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The second partial derivative of `func` w.r.t. the variable specified</span>
+<span class="sd">        by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">secder</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="secforder"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.secforder">[docs]</a><span class="k">def</span> <span class="nf">secforder</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">location</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+              <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the second derivative using forwards finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only one</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    function : Callable[[float], float]</span>
+<span class="sd">        A function that takes in a floating point number and outputs a floating</span>
+<span class="sd">        point number.</span>
+
+<span class="sd">    location : float</span>
+<span class="sd">        Location where the second derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-6.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The second derivative of `function` evaluated at `location`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loc1</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span> <span class="o">+</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">loc2</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">function</span><span class="p">(</span><span class="n">loc1</span><span class="p">)</span>
+    <span class="n">term3</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">loc2</span><span class="p">)</span>
+    <span class="n">stepsize</span> <span class="o">=</span> <span class="p">(</span><span class="n">loc2</span><span class="o">-</span><span class="n">location</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">stepsize</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="second_forward_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.second_forward_derivative">[docs]</a><span class="k">def</span> <span class="nf">second_forward_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                              <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the second partial derivative using forwards finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (one or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least one</span>
+<span class="sd">        argument which is a floating point number.</span>
+
+<span class="sd">    var : int</span>
+<span class="sd">        The integer showing the input order of the independent variable with</span>
+<span class="sd">        respect to which the derivative of `func` is to be approximated. It</span>
+<span class="sd">        uses python&#39;s convention for indexing (i.e., it counts from 0, 1, 2, 3,</span>
+<span class="sd">        ...). For example, if the function `func` has the following</span>
+<span class="sd">        signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the second partial derivative w.r.t. `x3`, then</span>
+<span class="sd">        `var` should be 2.</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        location where the second partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-6.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The second partial derivative of `func` w.r.t. the variable specified</span>
+<span class="sd">        by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">secforder</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="secbackder"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.secbackder">[docs]</a><span class="k">def</span> <span class="nf">secbackder</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">location</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+               <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the second derivative using backwards finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only one</span>
+<span class="sd">    argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    function : Callable[[float], float]</span>
+<span class="sd">        A function that takes in a floating point number and outputs a floating</span>
+<span class="sd">        point number.</span>
+
+<span class="sd">    location : float</span>
+<span class="sd">        Location where the second derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default</span>
+<span class="sd">        is 1e-6.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The first derivative of `function` evaluated at `location`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loc1</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span> <span class="o">-</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">loc2</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">term1</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+    <span class="n">term2</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">function</span><span class="p">(</span><span class="n">loc1</span><span class="p">)</span>
+    <span class="n">term3</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">loc2</span><span class="p">)</span>
+    <span class="n">stepsize</span> <span class="o">=</span> <span class="p">(</span><span class="n">location</span><span class="o">-</span><span class="n">loc2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">term1</span> <span class="o">+</span> <span class="n">term2</span> <span class="o">+</span> <span class="n">term3</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">stepsize</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="second_backward_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.second_backward_derivative">[docs]</a><span class="k">def</span> <span class="nf">second_backward_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                               <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the second partial derivative using backwards finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (one or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least one</span>
+<span class="sd">        argument which is a floating point number.</span>
+
+<span class="sd">    var : int</span>
+<span class="sd">        The integer showing the input order of the independent variable with</span>
+<span class="sd">        respect to which the derivative of `func` is to be approximated. It</span>
+<span class="sd">        uses python&#39;s convention for indexing (i.e., it counts from 0, 1, 2, 3,</span>
+<span class="sd">        ...). For example, if the function `func` has the following</span>
+<span class="sd">        signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the second partial derivative w.r.t. `x3`, then</span>
+<span class="sd">        `var` should be 2.</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        location where the second partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : float</span>
+<span class="sd">        The stepsize for the finite difference approximation. The default is</span>
+<span class="sd">        1e-6.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The second partial derivative of `func` w.r.t. the variable specified</span>
+<span class="sd">        by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">secbackder</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">mixsecder</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">location</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+              <span class="n">stepsize</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1E3</span><span class="p">,</span> <span class="mf">1E-4</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate a mixed variable second derivative using finite difference.</span>
+
+<span class="sd">    This function in particular only works with functions which have only two</span>
+<span class="sd">    arguments.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    function : Callable[[float, float], float]</span>
+<span class="sd">        A function that takes in two floating point numbers and outputs a</span>
+<span class="sd">        floating point number.</span>
+
+<span class="sd">    location : List[float]</span>
+<span class="sd">        Location where the mixed second derivative is to be evaluated. It is a</span>
+<span class="sd">        list of two floating point numbers.</span>
+
+<span class="sd">    stepsize : List[float]</span>
+<span class="sd">        The stepsizes for the finite difference approximation. It is a list</span>
+<span class="sd">        of two floating point numbers. The default is [1E3, 1E-4].</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The mixed second derivative of `function` evaluated at `location`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fpospos</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">fposmin</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">fminpos</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">fminmin</span> <span class="o">=</span> <span class="n">function</span><span class="p">(</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">fpospos</span> <span class="o">-</span> <span class="n">fposmin</span> <span class="o">-</span> <span class="n">fminpos</span> <span class="o">+</span> <span class="n">fminmin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">stepsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                                                           <span class="o">*</span> <span class="n">stepsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+
+<div class="viewcode-block" id="mixed_second_derivative"><a class="viewcode-back" href="../../../autoapi/pytanksim/utils/index.html#pytanksim.utils.finitedifferences.mixed_second_derivative">[docs]</a><span class="k">def</span> <span class="nf">mixed_second_derivative</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">var</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+                            <span class="n">point</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span>
+                            <span class="n">stepsize</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1E3</span><span class="p">,</span> <span class="mf">1E-4</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the mixed second derivative using finite difference.</span>
+
+<span class="sd">    This version of the function works for functions which have an arbitrary</span>
+<span class="sd">    number of arguments (two or more).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Callable[... , float]</span>
+<span class="sd">        A function that outputs a floating point number, and has at least two</span>
+<span class="sd">        arguments which are floating point numbers.</span>
+
+<span class="sd">    var : List[int]</span>
+<span class="sd">        A list of integers showing the input order of the two variables</span>
+<span class="sd">        with respect to which the mixed second derivative of `func` is to be</span>
+<span class="sd">        approximated. It uses python&#39;s convention for indexing (i.e., it counts</span>
+<span class="sd">        from 0, 1, 2, 3, ...). For example, if the function `func` has the</span>
+<span class="sd">        following signature::</span>
+
+<span class="sd">            def some_function(x1, x2, x3):</span>
+<span class="sd">                ....</span>
+<span class="sd">                return y</span>
+
+<span class="sd">        If we want to find the mixed second partial derivative w.r.t. `x1` and</span>
+<span class="sd">        `x3`, then `var` should be [0, 2].</span>
+
+<span class="sd">    point : List</span>
+<span class="sd">        A list of input values for `func`. These input values indicate the</span>
+<span class="sd">        location where the mixed second partial derivative is to be evaluated.</span>
+
+<span class="sd">    stepsize : List[float]</span>
+<span class="sd">        The stepsizes for the finite difference approximation. It is a list</span>
+<span class="sd">        of two floating point numbers. The default is [1E3, 1E-4].</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The mixed second partial derivative of `func` w.r.t. the two variables</span>
+<span class="sd">        specified by `var` evaluated at `point`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">func_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x_perturbed</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x_perturbed</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">x_perturbed</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mixsecder</span><span class="p">(</span><span class="n">func_at_point</span><span class="p">,</span> <span class="p">[</span><span class="n">point</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">point</span><span class="p">[</span><span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]]],</span> <span class="n">stepsize</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

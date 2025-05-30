@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytanksim.classes.basesimclass &mdash; pytanksim 1.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/pytanksimlogo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pytanksim.classes.basesimclass</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pytanksim.classes.basesimclass</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Contains classes related exclusively to the dynamic simulations.</span>
+
+<span class="sd">This includes SimParams, BoundaryFlux, and BaseSimulation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># This file is a part of the python package pytanksim.</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Muhammad Irfan Maulana Kusdhany, Kyushu University</span>
+<span class="c1">#</span>
+<span class="c1"># pytanksim is free software; you can redistribute it and/or modify it under</span>
+<span class="c1"># the terms of the GNU Lesser General Public License as published by the</span>
+<span class="c1"># Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SimParams&quot;</span><span class="p">,</span> <span class="s2">&quot;BoundaryFlux&quot;</span><span class="p">,</span> <span class="s2">&quot;BaseSimulation&quot;</span><span class="p">]</span>
+
+
+<span class="kn">from</span> <span class="nn">pytanksim.classes.simresultsclass</span> <span class="kn">import</span> <span class="n">SimResults</span>
+<span class="kn">from</span> <span class="nn">pytanksim.classes.storagetankclasses</span> <span class="kn">import</span> <span class="n">StorageTank</span><span class="p">,</span> <span class="n">SorbentTank</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">CoolProp</span> <span class="k">as</span> <span class="nn">CP</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="nd">@dataclass</span>
+<div class="viewcode-block" id="SimParams"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.basesimclass.SimParams">[docs]</a><span class="k">class</span> <span class="nc">SimParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to store simulation parameters.</span>
+
+<span class="sd">    This data class stores the parameters of the tank at the start of the</span>
+<span class="sd">    simulation as well as the conditions specified to stop the simulation.</span>
+<span class="sd">    Additionally, it also stores the setting for the number of data points</span>
+<span class="sd">    to be reported at the end of the simulation.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    init_temperature : float</span>
+<span class="sd">        The temperature (K) of the tank being simulated at the beginning of</span>
+<span class="sd">        the simulation.</span>
+
+<span class="sd">    init_pressure : float, optional</span>
+<span class="sd">        The pressure of the tank being simulated (Pa) at the beginning of the</span>
+<span class="sd">        simulation. The default value is 1E5. This parameter was made optional</span>
+<span class="sd">        as the two-phase simulations did not require it to be filled, rather</span>
+<span class="sd">        pytanksim will automatically calculate the saturation pressure given</span>
+<span class="sd">        a starting temperature.</span>
+
+<span class="sd">    final_time : float</span>
+<span class="sd">        The time (seconds) at which the simulation is to be stopped.</span>
+
+<span class="sd">    init_time : float, optional</span>
+<span class="sd">        The time (seconds) at which the beginning of the simulation is set to.</span>
+<span class="sd">        The default value is set to 0 seconds.</span>
+
+<span class="sd">    displayed_points : int, optional</span>
+<span class="sd">        The number of data points to be reported at the end of the simulation.</span>
+<span class="sd">        The default is 200.</span>
+
+<span class="sd">    target_temp : float, optional</span>
+<span class="sd">        The target temperature (K) at which the simulation is to be stopped.</span>
+<span class="sd">        The default value is 0, which effectively means the simulation</span>
+<span class="sd">        does not have a set temperature at which the simulation is stopped.</span>
+
+<span class="sd">    target_pres : float, optional</span>
+<span class="sd">        The target pressure (Pa) at which the simulation is to be stopped.</span>
+<span class="sd">        The default value is 0, which effectively means the simulation does</span>
+<span class="sd">        not have a set pressure at which the simulation is stopped.</span>
+
+<span class="sd">    stop_at_target_pressure : bool, optional</span>
+<span class="sd">        If True, it will stop the simulation when the target pressure is met.</span>
+<span class="sd">        The default is False.</span>
+
+<span class="sd">    stop_at_target_temp : bool, optional</span>
+<span class="sd">        If True, it will stop the simulation when the target temperature is</span>
+<span class="sd">        met. The default is False.</span>
+
+<span class="sd">    target_capacity : float, optional</span>
+<span class="sd">        The amount of fluid (moles) stored in the tank at which the simulation</span>
+<span class="sd">        is to be stopped. The default is 0.</span>
+
+<span class="sd">    init_ng : float, optional</span>
+<span class="sd">        The initial amount of gas (moles) stored in the tank at the beginning</span>
+<span class="sd">        of the simulation. The default value is 0.</span>
+
+<span class="sd">    init_nl : float, optional</span>
+<span class="sd">        The initial amount of liquid (moles) stored in the tank at the</span>
+<span class="sd">        beginning of the simulation. The default value is 0.</span>
+
+<span class="sd">    init_q : float, optional</span>
+<span class="sd">        The initial quality of the fluid being stored. It can vary between 0</span>
+<span class="sd">        and 1. The default is None.</span>
+
+<span class="sd">    Other Parameters</span>
+<span class="sd">    ----------------</span>
+<span class="sd">    inserted_amount : float, optional</span>
+<span class="sd">        The amount of fluid which has been previously inserted into the tank</span>
+<span class="sd">        (moles) at the beginning of the simulation. Used to track refueling</span>
+<span class="sd">        processes across multiple simulations. The default value is 0.</span>
+
+<span class="sd">    vented_amount : float, optional</span>
+<span class="sd">        The amount of fluid which has been previously vented from the tank</span>
+<span class="sd">        (moles) at the beginning of the simulation. Used to track discharging</span>
+<span class="sd">        and boil-off processes across multiple simulations. The default value</span>
+<span class="sd">        is 0.</span>
+
+<span class="sd">    cooling_required : float, optional</span>
+<span class="sd">        The cumulative amount of required cooling (J) to maintain a constant</span>
+<span class="sd">        pressure prior to the start of a simulation. The default value is 0.</span>
+<span class="sd">        Useful when restarting a stopped cooled refuel simulation.</span>
+
+<span class="sd">    heating_required : float, optional</span>
+<span class="sd">        The cumulative amount of required heating (J) to maintain a constant</span>
+<span class="sd">        pressure prior to the start of a simulation. The default value is 0.</span>
+<span class="sd">        Useful when restarting a stopped heated discharge simulation.</span>
+
+<span class="sd">    vented_energy : float, optional</span>
+<span class="sd">        Cumulative amount of enthalpy (J) contained in the fluid vented prior</span>
+<span class="sd">        to the start of the simulation. The default is 0. Useful when</span>
+<span class="sd">        stopping and restarting discharge simulations.</span>
+
+<span class="sd">    flow_energy_in : float, optional</span>
+<span class="sd">        Cumulative amount of enthalpy (J) contained in the fluid inserted</span>
+<span class="sd">        prior to the start of the simulation. The default is 0. Useful when</span>
+<span class="sd">        stopping and restarting refueling simulations.</span>
+
+<span class="sd">    cooling_additional : float, optional</span>
+<span class="sd">        The cumulative amount of user-specified cooling (J) prior to the start</span>
+<span class="sd">        of a simulation. The default value is 0. Useful when stopping and</span>
+<span class="sd">        restarting simulations with user-specified cooling.</span>
+
+<span class="sd">    heating_additional : float, optional</span>
+<span class="sd">        The cumulative amount of user-specified cooling (J) prior to the start</span>
+<span class="sd">        of a simulation. The default value is 0. Useful when stopping and</span>
+<span class="sd">        restarting simulations with user-specified heating.</span>
+
+<span class="sd">    heat_leak_in : float, optional</span>
+<span class="sd">        The cumulative amount of heat (J) which has leaked into the tank prior</span>
+<span class="sd">        to the start of a simulation. The default value is 0. Useful when</span>
+<span class="sd">        stopping and restarting simulations involving heat leakage.</span>
+
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether or not the simulation will print out its progress bars and</span>
+<span class="sd">        give a notification once it has finished. The default value is True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SimParams.init_temperature"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.init_temperature">[docs]</a>    <span class="n">init_temperature</span><span class="p">:</span> <span class="nb">float</span></div>
+<div class="viewcode-block" id="SimParams.final_time"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.final_time">[docs]</a>    <span class="n">final_time</span><span class="p">:</span> <span class="nb">float</span></div>
+<div class="viewcode-block" id="SimParams.init_time"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.init_time">[docs]</a>    <span class="n">init_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="SimParams.init_pressure"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.init_pressure">[docs]</a>    <span class="n">init_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1E5</span></div>
+<div class="viewcode-block" id="SimParams.displayed_points"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.displayed_points">[docs]</a>    <span class="n">displayed_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span></div>
+<div class="viewcode-block" id="SimParams.target_temp"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.target_temp">[docs]</a>    <span class="n">target_temp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="SimParams.target_pres"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.target_pres">[docs]</a>    <span class="n">target_pres</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="SimParams.stop_at_target_pressure"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.stop_at_target_pressure">[docs]</a>    <span class="n">stop_at_target_pressure</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+<div class="viewcode-block" id="SimParams.stop_at_target_temp"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.stop_at_target_temp">[docs]</a>    <span class="n">stop_at_target_temp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+<div class="viewcode-block" id="SimParams.target_capacity"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.target_capacity">[docs]</a>    <span class="n">target_capacity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="SimParams.init_ng"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.init_ng">[docs]</a>    <span class="n">init_ng</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="SimParams.init_nl"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.init_nl">[docs]</a>    <span class="n">init_nl</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="SimParams.init_q"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.SimParams.init_q">[docs]</a>    <span class="n">init_q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">inserted_amount</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">vented_amount</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">cooling_required</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">heating_required</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">vented_energy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">flow_energy_in</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">cooling_additional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">heating_additional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">heat_leak_in</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="SimParams.from_SimResults"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.basesimclass.SimParams.from_SimResults">[docs]</a>    <span class="k">def</span> <span class="nf">from_SimResults</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                        <span class="n">sim_results</span><span class="p">:</span> <span class="n">SimResults</span><span class="p">,</span>
+                        <span class="n">displayed_points</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">init_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">final_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">target_pres</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">target_temp</span><span class="p">:</span>  <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">stop_at_target_pressure</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">stop_at_target_temp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">target_capacity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">verbose</span><span class="p">:</span>  <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SimParams&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Take final conditions from a previous simulation as new parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sim_results : SimResults</span>
+<span class="sd">            An object containing previous simulation results.</span>
+
+<span class="sd">        displayed_points : float, optional</span>
+<span class="sd">            The number of data points to be reported at the end of the</span>
+<span class="sd">            simulation. The default is 200.</span>
+
+<span class="sd">        init_time : float, optional</span>
+<span class="sd">            The time (seconds) at which the beginning of the simulation is set.</span>
+<span class="sd">            The default value is None.</span>
+
+<span class="sd">        final_time : float, optional</span>
+<span class="sd">            The time (seconds) at which the simulation is to be stopped. If</span>
+<span class="sd">            None, then the final_time setting from the previous simulation is</span>
+<span class="sd">            used. The default is None.</span>
+
+<span class="sd">        target_pres : float, optional</span>
+<span class="sd">            The target pressure (Pa) at which the simulation is to be stopped.</span>
+<span class="sd">            If None, then the target_pres setting from the previous simulation</span>
+<span class="sd">            is used. The default is None.</span>
+
+<span class="sd">        target_temp : float, optional</span>
+<span class="sd">            The target temperature (K) at which the simulation is to be</span>
+<span class="sd">            stopped. If None, then the target_temp setting from the previous</span>
+<span class="sd">            simulation is used. The default is None.</span>
+
+<span class="sd">        stop_at_target_pressure : bool, optional</span>
+<span class="sd">            If True, it will stop the simulation when the target pressure is</span>
+<span class="sd">            met. If None, then the stop_at_target_pressure setting from the</span>
+<span class="sd">            previous simulation is used. The default is None.</span>
+
+<span class="sd">        stop_at_target_temp : bool, optional</span>
+<span class="sd">            If True, it will stop the simulation when the target temperature</span>
+<span class="sd">            is  met. If None, then the stop_at_target_temp setting from the</span>
+<span class="sd">            previous simulation is used. The default is None.</span>
+
+<span class="sd">        target_capacity : float, optional</span>
+<span class="sd">           The amount of fluid (moles) stored in the tank at which the</span>
+<span class="sd">           simulation is to be stopped. If None, then the target_capacity</span>
+<span class="sd">           value from the previous simulation is used. The default is None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimParams</span>
+<span class="sd">            A SimParams object containing the final conditions taken from</span>
+<span class="sd">            sim_results set as the new starting parameters.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">final_conditions</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">get_final_conditions</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">target_temp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_temp</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">target_temp</span>
+        <span class="k">if</span> <span class="n">target_pres</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_pres</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">target_pres</span>
+        <span class="k">if</span> <span class="n">stop_at_target_temp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stop_at_target_temp</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">stop_at_target_temp</span>
+        <span class="k">if</span> <span class="n">stop_at_target_pressure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stop_at_target_pressure</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span>\
+                <span class="n">stop_at_target_pressure</span>
+        <span class="k">if</span> <span class="n">target_capacity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_capacity</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">target_capacity</span>
+        <span class="k">if</span> <span class="n">final_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">final_time</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">final_time</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">verbose</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">verbose</span>
+        <span class="k">if</span> <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_gas&quot;</span><span class="p">]</span>\
+                <span class="o">==</span> <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_liquid&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fluid</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+            <span class="n">Tcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+            <span class="n">final_minus_one</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">get_final_conditions</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">final_minus_one</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_gas&quot;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_supercritical&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_liquid&quot;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_supercritical&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">displayed_points</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prev_finish_time</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">final_time</span>
+            <span class="n">prev_init_time</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">init_time</span>
+            <span class="n">actual_finish_time</span> <span class="o">=</span> <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span>
+            <span class="n">prev_displayed_points</span> <span class="o">=</span> <span class="n">sim_results</span><span class="o">.</span><span class="n">sim_params</span><span class="o">.</span><span class="n">displayed_points</span>
+            <span class="n">displayed_points</span> <span class="o">=</span> <span class="n">prev_displayed_points</span> <span class="o">*</span> <span class="p">(</span><span class="n">prev_finish_time</span> <span class="o">-</span>
+                                                        <span class="n">actual_finish_time</span><span class="p">)</span> <span class="o">/</span>\
+                <span class="p">(</span><span class="n">prev_finish_time</span> <span class="o">-</span> <span class="n">prev_init_time</span><span class="p">)</span>
+            <span class="n">displayed_points</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">displayed_points</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">init_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">init_time</span> <span class="o">=</span> <span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">init_pressure</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;pressure&quot;</span><span class="p">],</span>
+            <span class="n">init_temperature</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">],</span>
+            <span class="n">init_time</span><span class="o">=</span><span class="n">init_time</span><span class="p">,</span>
+            <span class="n">init_ng</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_gas&quot;</span><span class="p">],</span>
+            <span class="n">init_nl</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;moles_liquid&quot;</span><span class="p">],</span>
+            <span class="n">inserted_amount</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;inserted_amount&quot;</span><span class="p">],</span>
+            <span class="n">vented_amount</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;vented_amount&quot;</span><span class="p">],</span>
+            <span class="n">cooling_required</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;cooling_required&quot;</span><span class="p">],</span>
+            <span class="n">heating_required</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;heating_required&quot;</span><span class="p">],</span>
+            <span class="n">vented_energy</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;vented_energy&quot;</span><span class="p">],</span>
+            <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;flow_energy_in&quot;</span><span class="p">],</span>
+            <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;heat_leak_in&quot;</span><span class="p">],</span>
+            <span class="n">cooling_additional</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;cooling_additional&quot;</span><span class="p">],</span>
+            <span class="n">heating_additional</span><span class="o">=</span><span class="n">final_conditions</span><span class="p">[</span><span class="s2">&quot;heating_additional&quot;</span><span class="p">],</span>
+            <span class="n">final_time</span><span class="o">=</span><span class="n">final_time</span><span class="p">,</span>
+            <span class="n">target_temp</span><span class="o">=</span><span class="n">target_temp</span><span class="p">,</span>
+            <span class="n">target_pres</span><span class="o">=</span><span class="n">target_pres</span><span class="p">,</span>
+            <span class="n">stop_at_target_pressure</span><span class="o">=</span><span class="n">stop_at_target_pressure</span><span class="p">,</span>
+            <span class="n">stop_at_target_temp</span><span class="o">=</span><span class="n">stop_at_target_temp</span><span class="p">,</span>
+            <span class="n">target_capacity</span><span class="o">=</span><span class="n">target_capacity</span><span class="p">,</span>
+            <span class="n">displayed_points</span><span class="o">=</span><span class="n">displayed_points</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="BoundaryFlux"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.basesimclass.BoundaryFlux">[docs]</a><span class="k">class</span> <span class="nc">BoundaryFlux</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stores information of the mass and energy fluxes on the tank boundaries.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mass_flow_in : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns mass flow into the tank (kg/s) as a function</span>
+<span class="sd">        of tank pressure (Pa), tank temperature (K), and time (s). The default</span>
+<span class="sd">        is a function which returns 0 everywhere.</span>
+
+<span class="sd">    mass_flow_out : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns mass flow exiting the tank (kg/s) as a</span>
+<span class="sd">        function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">        The default is a function which returns 0 everywhere.</span>
+
+<span class="sd">    heating_power : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns heating power added to the tank (W) as a</span>
+<span class="sd">        function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">        The default is a function which returns 0 everywhere.</span>
+
+<span class="sd">    cooling_power : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns cooling power added to the tank (W) as a</span>
+<span class="sd">        function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">        The default is a function which returns 0 everywhere.</span>
+
+<span class="sd">    pressure_in : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns the pressure (Pa) of the fluid being inserted</span>
+<span class="sd">        into the tank as a  function of tank pressure (Pa), tank temperature</span>
+<span class="sd">        (K), and time (s). The default is None.</span>
+
+<span class="sd">    temperature_in : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns the temperature (K) of the fluid being</span>
+<span class="sd">        inserted into the tank as a  function of tank pressure (Pa), tank</span>
+<span class="sd">        temperature (K), and time (s). The default is None.</span>
+
+<span class="sd">    environment_temp : float, optional</span>
+<span class="sd">        The temperature (K) of the environment surrounding the tank.</span>
+<span class="sd">        This value is used in the dynamic simulation to calculate heat leakage</span>
+<span class="sd">        into the tank. The default is 0, in which case heat leakage into the</span>
+<span class="sd">        tank is not considered.</span>
+
+<span class="sd">    enthalpy_in : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns the enthalpy (J/mol) of the fluid being</span>
+<span class="sd">        inserted into the tank as a  function of tank pressure (Pa), tank</span>
+<span class="sd">        temperature (K), and time (s). The default is None.</span>
+
+<span class="sd">    enthalpy_out : Callable[[float, float, float], float], optional</span>
+<span class="sd">        A function which returns the enthalpy (J/mol) of the fluid exiting</span>
+<span class="sd">        the tank as a  function of tank pressure (Pa), tank temperature (K),</span>
+<span class="sd">        and time (s). The default is None.</span>
+
+<span class="sd">    heat_leak_in : Callable[[float, float, float,float], float], optional</span>
+<span class="sd">        A function which returns the heat (J/mol) leaking into the tank as a</span>
+<span class="sd">        function of tank pressure (Pa), tank temperature (K), time (s), and</span>
+<span class="sd">        temperature of tank surroundings (K). The default is None.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">mass_flow_in</span><span class="p">:</span>  <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                      <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">mass_flow_out</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                      <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">heating_power</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                      <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">cooling_power</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                      <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">pressure_in</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                    <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">temperature_in</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                       <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">environment_temp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">enthalpy_in</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                    <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">enthalpy_out</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+                                     <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">heat_leak_in</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+                                              <span class="nb">float</span><span class="p">],</span>
+                                     <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BoundaryFlux&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a BoundaryFlux object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mass_flow_in : Callable or float, optional</span>
+<span class="sd">            A function which returns mass flow into the tank (kg/s) as a</span>
+<span class="sd">            function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">            The default is a function which returns 0 everywhere. If a float is</span>
+<span class="sd">            provided, it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def mass_flow_in_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    #Returned is the mass flow going into the tank (kg/s)</span>
+<span class="sd">                    return mass_flow_in</span>
+
+<span class="sd">        mass_flow_out : Callable or float, optional</span>
+<span class="sd">            A function which returns mass flow exiting the tank (kg/s) as a</span>
+<span class="sd">            function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">            The default is a function which returns 0 everywhere. If a float is</span>
+<span class="sd">            provided it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def mass_flow_out_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the mass flow going out of the tank (kg/s)</span>
+<span class="sd">                    return mass_flow_out</span>
+
+<span class="sd">        heating_power : Callable or float, optional</span>
+<span class="sd">            A function which returns heating power added to the tank (W) as a</span>
+<span class="sd">            function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">            The default is a function which returns 0 everywhere. If a float is</span>
+<span class="sd">            provided, it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def heating_power_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the heat put into the tank (W)</span>
+<span class="sd">                    return heating_power</span>
+
+<span class="sd">        cooling_power : Callable or float, optional</span>
+<span class="sd">            A function which returns cooling power added to the tank (W) as a</span>
+<span class="sd">            function of tank pressure (Pa), tank temperature (K), and time (s).</span>
+<span class="sd">            The default is a function which returns 0 everywhere. If a float is</span>
+<span class="sd">            provided,it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def cooling_power_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the heat taken out of the tank (W)</span>
+<span class="sd">                    return cooling_power</span>
+
+<span class="sd">        pressure_in : Callable or float, optional</span>
+<span class="sd">            A function which returns the pressure (Pa) of the fluid being</span>
+<span class="sd">            inserted into the tank as a  function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), and time (s). The default is None. If a float is</span>
+<span class="sd">            provided,it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def pressure_in_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the pressure (Pa) of the fluid going into</span>
+<span class="sd">                    # the tank.</span>
+<span class="sd">                    return pressure_in</span>
+
+<span class="sd">        temperature_in : Callable or float, optional</span>
+<span class="sd">            A function which returns the temperature (K) of the fluid being</span>
+<span class="sd">            inserted into the tank as a  function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), and time (s). The default is None. If a float is</span>
+<span class="sd">            provided,it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def temperature_in_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the temperature (K) of the fluid going into</span>
+<span class="sd">                    # the tank.</span>
+<span class="sd">                    return temperature_in</span>
+
+<span class="sd">        environment_temp : Callable or float, optional</span>
+<span class="sd">            The temperature (K) of the environment surrounding the tank. This</span>
+<span class="sd">            value is used in the dynamic simulation to calculate heat leakage</span>
+<span class="sd">            into the tank. It can be provided either as a float or as a</span>
+<span class="sd">            function of tank pressure (Pa), tank temperature (K). The default</span>
+<span class="sd">            is 0, in which case heat leakage into the tank is not considered.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def env_temp_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the temperature of the surroundings in the</span>
+<span class="sd">                    # unit of K.</span>
+<span class="sd">                    return enthalpy_in</span>
+
+<span class="sd">        enthalpy_in : Callable or float, optional</span>
+<span class="sd">            A function which returns the enthalpy (J/mol) of the fluid being</span>
+<span class="sd">            inserted into the tank as a  function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), and time (s). The default is None. If a float is</span>
+<span class="sd">            provided,it will be converted to a function which returns that</span>
+<span class="sd">            value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def enthalpy_in_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the enthalpy (J/mol) of the fluid going into</span>
+<span class="sd">                    # the tank.</span>
+<span class="sd">                    return enthalpy_in</span>
+
+<span class="sd">        enthalpy_out : Callable or float, optional</span>
+<span class="sd">            A function which returns the enthalpy (J/mol) of the fluid exiting</span>
+<span class="sd">            the tank as a  function of tank pressure (Pa), tank temperature</span>
+<span class="sd">            (K), and time (s). The default is None. If a float is provided, it</span>
+<span class="sd">            will be converted to a function which returns that value</span>
+<span class="sd">            everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def enthalpy_out_function(p, T, time):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the enthalpy (J/mol) of the fluid going out</span>
+<span class="sd">                    # of the tank.</span>
+<span class="sd">                    return enthalpy_out</span>
+
+<span class="sd">        heat_leak_in : Callable or float, optional</span>
+<span class="sd">            A function which returns the amount of heat leakage into the tank</span>
+<span class="sd">            (W) as a  function of tank pressure (Pa), tank temperature</span>
+<span class="sd">            (K), time (s), and temperature of surroundings (K). The default is</span>
+<span class="sd">            None, which will use the thermal resistance calculation from the</span>
+<span class="sd">            storage tank. Otherwise, it will override that calculation. If a</span>
+<span class="sd">            float is  provided, it will be converted to a function which</span>
+<span class="sd">            returns that value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def enthalpy_out_function(p, T, time, env_temp):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    # &#39;env_temp&#39; is the temperature of surroundings (K)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the enthalpy (J/mol) of the fluid going out</span>
+<span class="sd">                    # of the tank.</span>
+<span class="sd">                    return enthalpy_out</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the mass flow going in is specified but the parameters that</span>
+<span class="sd">            specify its enthalpy (i.e., either pressure and temperature or</span>
+<span class="sd">            its enthalpy value) are not specified.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BoundaryFlux</span>
+<span class="sd">            An object which stores information of the mass and energy fluxes on</span>
+<span class="sd">            the tank boundaries.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">float_function_generator</span><span class="p">(</span><span class="n">floatingvalue</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">float_function</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">floatingvalue</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">float_function</span>
+
+        <span class="k">def</span> <span class="nf">float_function_generator_4var</span><span class="p">(</span><span class="n">floatingvalue</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">float_function</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">floatingvalue</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">float_function</span>
+
+        <span class="k">if</span> <span class="n">mass_flow_in</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="p">((</span><span class="n">pressure_in</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+                                     <span class="n">temperature_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span>
+                                    <span class="n">enthalpy_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please specify the pressure and temperature of&quot;</span>
+                             <span class="s2">&quot; the flow going in&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">environment_temp</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">environment_temp</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">environment_temp</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pressure_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">pressure_in</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">pressure_in</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">temperature_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">temperature_in</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">temperature_in</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mass_flow_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">mass_flow_in</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">mass_flow_in</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mass_flow_out</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">mass_flow_out</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">mass_flow_out</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enthalpy_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">enthalpy_in</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">enthalpy_in</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enthalpy_out</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">enthalpy_out</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">enthalpy_out</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">heating_power</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">heating_power</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">heating_power</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cooling_power</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">cooling_power</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span><span class="n">cooling_power</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">heat_leak_in</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">heat_leak_in</span> <span class="o">=</span> <span class="n">float_function_generator_4var</span><span class="p">(</span><span class="n">heat_leak_in</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BoundaryFlux.mass_flow_in"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.mass_flow_in">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">mass_flow_in</span> <span class="o">=</span> <span class="n">mass_flow_in</span></div>
+<div class="viewcode-block" id="BoundaryFlux.mass_flow_out"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.mass_flow_out">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">mass_flow_out</span> <span class="o">=</span> <span class="n">mass_flow_out</span></div>
+<div class="viewcode-block" id="BoundaryFlux.heating_power"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.heating_power">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">heating_power</span> <span class="o">=</span> <span class="n">heating_power</span></div>
+<div class="viewcode-block" id="BoundaryFlux.cooling_power"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.cooling_power">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">cooling_power</span> <span class="o">=</span> <span class="n">cooling_power</span></div>
+<div class="viewcode-block" id="BoundaryFlux.pressure_in"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.pressure_in">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">pressure_in</span> <span class="o">=</span> <span class="n">pressure_in</span></div>
+<div class="viewcode-block" id="BoundaryFlux.temperature_in"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.temperature_in">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">temperature_in</span> <span class="o">=</span> <span class="n">temperature_in</span></div>
+<div class="viewcode-block" id="BoundaryFlux.environment_temp"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.environment_temp">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">environment_temp</span> <span class="o">=</span> <span class="n">environment_temp</span></div>
+<div class="viewcode-block" id="BoundaryFlux.enthalpy_in"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.enthalpy_in">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_in</span> <span class="o">=</span> <span class="n">enthalpy_in</span></div>
+<div class="viewcode-block" id="BoundaryFlux.enthalpy_out"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.enthalpy_out">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_out</span> <span class="o">=</span> <span class="n">enthalpy_out</span></div>
+<div class="viewcode-block" id="BoundaryFlux.heat_leak_in"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BoundaryFlux.heat_leak_in">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">heat_leak_in</span> <span class="o">=</span> <span class="n">heat_leak_in</span></div></div>
+
+
+<div class="viewcode-block" id="BaseSimulation"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/index.html#pytanksim.classes.basesimclass.BaseSimulation">[docs]</a><span class="k">class</span> <span class="nc">BaseSimulation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract base class for dynamic simulations.</span>
+
+<span class="sd">    Other simulation classes inherit some attributes and methods from this</span>
+<span class="sd">    class.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_type : str</span>
+<span class="sd">        Type of simulation (default, heated discharge, cooled refuel, etc.)</span>
+
+<span class="sd">    sim_phase : int</span>
+<span class="sd">        1 or 2 phases.</span>
+
+<span class="sd">    simulation_params : SimParams</span>
+<span class="sd">        Object which stores simulation parameters.</span>
+
+<span class="sd">    storage_tank : StorageTank</span>
+<span class="sd">        Object which stores the properties of the tank being simulated.</span>
+
+<span class="sd">    boundary_flux: BoundaryFlux</span>
+<span class="sd">        Object which stores the amount of energy entering and exiting the tank.</span>
+
+<span class="sd">    stop_reason : str</span>
+<span class="sd">        A string stating the reason for the simulation to have stopped.</span>
+<span class="sd">        It will be passed to the SimResults object once the simulation</span>
+<span class="sd">        finishes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BaseSimulation.sim_type"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BaseSimulation.sim_type">[docs]</a>    <span class="n">sim_type</span> <span class="o">=</span> <span class="kc">None</span></div>
+<div class="viewcode-block" id="BaseSimulation.sim_phase"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BaseSimulation.sim_phase">[docs]</a>    <span class="n">sim_phase</span> <span class="o">=</span> <span class="kc">None</span></div>
+<div class="viewcode-block" id="BaseSimulation.stop_reason"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BaseSimulation.stop_reason">[docs]</a>    <span class="n">stop_reason</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">simulation_params</span><span class="p">:</span> <span class="n">SimParams</span><span class="p">,</span>
+                 <span class="n">storage_tank</span><span class="p">:</span> <span class="n">StorageTank</span><span class="p">,</span>
+                 <span class="n">boundary_flux</span><span class="p">:</span> <span class="n">BoundaryFlux</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseSimulation&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the BaseSimulation class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        simulation_params : SimParams</span>
+<span class="sd">            Object containing simulation-specific parameters.</span>
+
+<span class="sd">        storage_tank : StorageTank</span>
+<span class="sd">            Object containing attributes and methods specific to the</span>
+<span class="sd">            storage tank being simulated.</span>
+
+<span class="sd">        boundary_flux : BoundaryFlux</span>
+<span class="sd">            Object containing information on the mass and energy going in</span>
+<span class="sd">            and out of the tank during the simulation.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the simulation is set to begin on the saturation line but the</span>
+<span class="sd">            initial values for liquid and gas in the tank, or, alternatively,</span>
+<span class="sd">            the initial vapor quality, was not specified.</span>
+
+<span class="sd">        ValueError</span>
+<span class="sd">            If both the initial values for liquid and gas in the tank is</span>
+<span class="sd">            specified as well as the initial vapor quality, but the values</span>
+<span class="sd">            don&#39;t match each other.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BaseSimulation</span>
+<span class="sd">            A simulation object which can be run to get results.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BaseSimulation.simulation_params"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BaseSimulation.simulation_params">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span> <span class="o">=</span> <span class="n">simulation_params</span></div>
+<div class="viewcode-block" id="BaseSimulation.storage_tank"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BaseSimulation.storage_tank">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span> <span class="o">=</span> <span class="n">storage_tank</span></div>
+<div class="viewcode-block" id="BaseSimulation.boundary_flux"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/basesimclass/index.html#pytanksim.classes.basesimclass.BaseSimulation.boundary_flux">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span> <span class="o">=</span> <span class="n">boundary_flux</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_sorbent</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="p">,</span> <span class="n">SorbentTank</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_sorbent</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">spr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_params</span>
+        <span class="n">init_p</span> <span class="o">=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_pressure</span>
+        <span class="n">init_T</span> <span class="o">=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_temperature</span>
+        <span class="n">Tcrit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+        <span class="n">init_phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span>\
+            <span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">init_p</span><span class="p">,</span> <span class="n">init_T</span><span class="p">)</span>
+        <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="k">if</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span> <span class="o">=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span> <span class="k">if</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">init_phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">psat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">saturation_property_dict</span><span class="p">(</span>
+                <span class="n">init_T</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">init_p</span> <span class="o">=</span> <span class="n">psat</span>
+        <span class="k">if</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">init_phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">==</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Starting point is saturated,&quot;</span>
+                                     <span class="s2">&quot; must input the initial amount of liquid&quot;</span>
+                                     <span class="s2">&quot; and gas in the tank or the vapor &quot;</span>
+                                     <span class="s2">&quot;quality.&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span> <span class="o">=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span><span class="o">/</span><span class="p">(</span><span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">+</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">init_phase</span> <span class="o">==</span> <span class="s2">&quot;Gas&quot;</span><span class="p">:</span>
+                <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">init_phase</span> <span class="o">==</span> <span class="s2">&quot;Liquid&quot;</span><span class="p">:</span>
+                <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="n">init_phase</span> <span class="o">==</span> <span class="s2">&quot;Supercritical&quot;</span><span class="p">:</span>
+                <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">init_T</span> <span class="o">&gt;</span> <span class="n">Tcrit</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">init_phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">==</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">amount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">capacity_bulk</span><span class="p">(</span><span class="n">init_p</span><span class="p">,</span> <span class="n">init_T</span><span class="p">,</span>
+                                                             <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span><span class="p">)</span>
+                    <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">=</span> <span class="n">amount</span> <span class="o">*</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span>
+                    <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span> <span class="o">=</span> <span class="n">amount</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">spr</span><span class="o">.</span><span class="n">init_q</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">qfrominitvals</span> <span class="o">=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span><span class="o">/</span><span class="p">(</span><span class="n">spr</span><span class="o">.</span><span class="n">init_ng</span> <span class="o">+</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_nl</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">qfrominitvals</span> <span class="o">!=</span> <span class="n">spr</span><span class="o">.</span><span class="n">init_q</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Vapor quality does not match &quot;</span>
+                                         <span class="s2">&quot;inputted initial amounts for gas and&quot;</span>
+                                         <span class="s2">&quot; liquid! </span><span class="se">\n</span><span class="s2">&quot;</span>
+                                         <span class="s2">&quot;Try inputting either only the &quot;</span>
+                                         <span class="s2">&quot;initial amounts or only the&quot;</span>
+                                         <span class="s2">&quot; quality.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseSimulation.heat_leak_in"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/index.html#pytanksim.classes.basesimclass.BaseSimulation.heat_leak_in">[docs]</a>    <span class="k">def</span> <span class="nf">heat_leak_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the heat leakage rate from the environment into the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa) of the storage tank.</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K) of the storage tank.</span>
+
+<span class="sd">        time : float</span>
+<span class="sd">            Simulation time (s)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The rate of heat leakage into the tank from the environment (W).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">env_temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">environment_temp</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">heat_leak_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_leak_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">env_temp</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">thermal_res</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span>
+                                                      <span class="n">env_temp</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">env_temp</span> <span class="o">-</span> <span class="n">T</span><span class="p">)</span> <span class="o">/</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">thermal_res</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseSimulation.run"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/index.html#pytanksim.classes.basesimclass.BaseSimulation.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract function which will be defined in the child classes.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        NotImplementedError</span>
+<span class="sd">            Raises an error since it is not implemented in this abstract base</span>
+<span class="sd">            class.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="BaseSimulation.enthalpy_in_calc"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/index.html#pytanksim.classes.basesimclass.BaseSimulation.enthalpy_in_calc">[docs]</a>    <span class="k">def</span> <span class="nf">enthalpy_in_calc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the enthalpy (J/mol) of fluid going into the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure inside of the tank (Pa)</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature inside of the tank (K)</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Time (s) in the simulation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Enthalpy of the fluid going into the tank (J/mol).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">enthalpy_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">pressure_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+            <span class="n">Tin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">temperature_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+            <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_tank</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+            <span class="n">Tcrit</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">Tin</span> <span class="o">&lt;=</span> <span class="n">Tcrit</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Tin</span><span class="p">)</span>
+                <span class="n">psat</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">pin</span><span class="o">-</span><span class="n">psat</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1E-6</span> <span class="o">*</span> <span class="n">psat</span><span class="p">:</span>
+                    <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Tin</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">fluid</span><span class="o">.</span><span class="n">hmolar</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="n">Tin</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">fluid</span><span class="o">.</span><span class="n">hmolar</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="n">Tin</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">fluid</span><span class="o">.</span><span class="n">hmolar</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">enthalpy_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseSimulation.enthalpy_out_calc"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/index.html#pytanksim.classes.basesimclass.BaseSimulation.enthalpy_out_calc">[docs]</a>    <span class="k">def</span> <span class="nf">enthalpy_out_calc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fluid_property_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+                          <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the enthalpy (J/mol) of fluid going out of the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fluid_property_dict : Dict[str,float]</span>
+<span class="sd">            A dictionary of properties of the fluid being stored inside of the</span>
+<span class="sd">            tank. In the case of the two phase simulation, it is the properties</span>
+<span class="sd">            of the gas and not the liquid. For this function, this dictionary</span>
+<span class="sd">            must return an enthalpy (J/mol) value given the key &quot;hf&quot;.</span>
+
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure inside of the tank (Pa)</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature inside of the tank (K)</span>
+
+<span class="sd">        time : float</span>
+<span class="sd">            Time (s) in the simulation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Enthalpy of the fluid going out of the tank (J/mol).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">enthalpy_out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fluid_property_dict</span><span class="p">[</span><span class="s2">&quot;hf&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_flux</span><span class="o">.</span><span class="n">enthalpy_out</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytanksim.classes.simresultsclass &mdash; pytanksim 1.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/pytanksimlogo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pytanksim.classes.simresultsclass</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pytanksim.classes.simresultsclass</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Contains the SimResults class.</span>
+
+<span class="sd">It is used for storing and post-processing the results of dynamic simulations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># This file is a part of the python package pytanksim.</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Muhammad Irfan Maulana Kusdhany, Kyushu University</span>
+<span class="c1">#</span>
+<span class="c1"># pytanksim is free software; you can redistribute it and/or modify it under</span>
+<span class="c1"># the terms of the GNU Lesser General Public License as published by the</span>
+<span class="c1"># Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SimResults&quot;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">pytanksim.classes.storagetankclasses</span> <span class="kn">import</span> <span class="n">StorageTank</span><span class="p">,</span> <span class="n">SorbentTank</span>
+<span class="kn">from</span> <span class="nn">pytanksim.classes.fluidsorbentclasses</span> <span class="kn">import</span> <span class="n">MDAModel</span><span class="p">,</span> <span class="n">StoredFluid</span><span class="p">,</span>\
+    <span class="n">SorbentMaterial</span><span class="p">,</span> <span class="n">DAModel</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">make_interp_spline</span>
+<span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">literal_eval</span>
+<span class="kn">from</span> <span class="nn">pytanksim.utils</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pytanksim.classes.basesimclass</span> <span class="kn">import</span> <span class="n">SimParams</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<div class="viewcode-block" id="SimResults"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults">[docs]</a><span class="k">class</span> <span class="nc">SimResults</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for storing the results of dynamic simulations.</span>
+
+<span class="sd">    It comes with methods for exporting the results to csv, plotting the</span>
+<span class="sd">    results, and for combining the results of multiple simulations.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pd.DataFrame</span>
+<span class="sd">        A dataframe containing the results of dynamic simulations. See notes</span>
+<span class="sd">        for the column names and the variables each column has.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Below is a list of the pandas DataFrame column names and a short</span>
+<span class="sd">    description of the variable stored inside each series.</span>
+
+<span class="sd">        - ``t``: time (seconds)</span>
+<span class="sd">        - ``p``: pressure (Pa)</span>
+<span class="sd">        - ``T``: temperature (K)</span>
+<span class="sd">        - ``na``: amount of fluid adsorbed (moles)</span>
+<span class="sd">        - ``ng``: amount of fluid in gaseous form (moles)</span>
+<span class="sd">        - ``nl``: amount of fluid in liquid form (moles)</span>
+<span class="sd">        - ``ns``: amount of fluid in supercritical form (moles)</span>
+<span class="sd">        - ``Qcoolreq``: cumulative amount of cooling required (J)</span>
+<span class="sd">        - ``Qheatreq``: cumulative amount of heating required (J)</span>
+<span class="sd">        - ``nout``: cumulative amount of fluid vented (moles)</span>
+<span class="sd">        - ``Hout``: cumulative amount of vented fluid enthalpy (J)</span>
+<span class="sd">        - ``nin``: cumulative amount of fluid inserted (moles)</span>
+<span class="sd">        - ``Hin``: cumulative amount of inserted fluid enthalpy (J)</span>
+<span class="sd">        - ``Qcooladd``: cumulative amount of user specified cooling (J)</span>
+<span class="sd">        - ``Qheatadd``: cumulative amount of user specified heating (J)</span>
+<span class="sd">        - ``Qleak``: cumulative amount of heat leakage into the tank (J)</span>
+<span class="sd">        - ``ma``: mass of fluid adsorbed (kg)</span>
+<span class="sd">        - ``mg``: mass of fluid in gaseous form (kg)</span>
+<span class="sd">        - ``ml``: mass of fluid in liquid form (kg)</span>
+<span class="sd">        - ``ms``: mass of fluid in supercritical form (kg)</span>
+<span class="sd">        - ``mout``: cumulative mass of fluid vented (kg)</span>
+<span class="sd">        - ``min``: cumulative mass of fluid inserted (kg)</span>
+<span class="sd">        - ``na_dot``: the amount of fluid (moles) being adsorbed per</span>
+<span class="sd">          second.</span>
+<span class="sd">        - ``ng_dot``: the first derivative of the amount of fluid in</span>
+<span class="sd">          gaseous form w.r.t. time. Its unit is mol/s.</span>
+<span class="sd">        - ``nl_dot``: the first derivative of the amount of fluid in</span>
+<span class="sd">          liquid form w.r.t. time. Its unit is mol/s</span>
+<span class="sd">        - ``ns_dot``: the first derivative of the amount of fluid in</span>
+<span class="sd">          supercritical form w.r.t. time. Its unit is mol/s.</span>
+<span class="sd">        - ``Qcoolreq_dot``: the cooling power (W) required to maintain a</span>
+<span class="sd">          constant pressure during refuel.</span>
+<span class="sd">        - ``Qheatreq_dot``: the heating power (W) required to maintain a</span>
+<span class="sd">          constant pressure during discharge.</span>
+<span class="sd">        - ``nout_dot``: the rate at which fluid is being vented from the</span>
+<span class="sd">          tank (mol/s).</span>
+<span class="sd">        - ``Hout_dot``: the rate at which enthalpy is taken away by fluid</span>
+<span class="sd">          leaving the tank (W).</span>
+<span class="sd">        - ``nin_dot``: the rate at which fluid is entering the tank</span>
+<span class="sd">          (mol/s).</span>
+<span class="sd">        - ``Hin_dot``: the rate at which enthalpy is added by fluid</span>
+<span class="sd">          fluid entering the tank (W).</span>
+<span class="sd">        - ``Qcooladd_dot``: the user specified cooling power (W).</span>
+<span class="sd">        - ``Qheatadd_dot``: the user specified heating power (W).</span>
+<span class="sd">        - ``Qleak_dot``: the rate of heat leakage into the tank (W).</span>
+<span class="sd">        - ``ma_dot``: the mass of fluid (kg) being adsorbed per second.</span>
+<span class="sd">        - ``mg_dot``: the first derivative of the mass of fluid in</span>
+<span class="sd">          gaseous form w.r.t. time. Its unit is kg/s.</span>
+<span class="sd">        - ``ml_dot``: the first derivative of the mass of fluid in</span>
+<span class="sd">          liquid form w.r.t. time. Its unit is kg/s.</span>
+<span class="sd">        - ``ms_dot``: the first derivative of the mass of fluid in</span>
+<span class="sd">          supercritical form w.r.t. time. Its unit is kg/s.</span>
+<span class="sd">        - ``mout_dot``: the rate at which fluid is being vented from the</span>
+<span class="sd">          tank (kg/s).</span>
+<span class="sd">        - ``min_dot``: the rate at which fluid is being inserted into the</span>
+<span class="sd">          tank (kg/s).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fancy_colnames_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="s2">&quot;Time (s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pressure&quot;</span><span class="p">:</span> <span class="s2">&quot;Pressure (Pa)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="s2">&quot;Temperature (K)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_adsorbed&quot;</span><span class="p">:</span> <span class="s2">&quot;Amount Adsorbed (mol)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_gas&quot;</span><span class="p">:</span> <span class="s2">&quot;Vapor Amount (mol)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_liquid&quot;</span><span class="p">:</span> <span class="s2">&quot;Liquid Amount (mol)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_supercritical&quot;</span><span class="p">:</span> <span class="s2">&quot;Supercritical Amount (mol)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_required&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Cooling Energy Required (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_required&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Heating Energy Required (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_amount&quot;</span><span class="p">:</span> <span class="s2">&quot;Amount Vented (mol)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_energy&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Fluid Enthalpy Out (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_amount&quot;</span><span class="p">:</span> <span class="s2">&quot;Amount Inserted (mol)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;flow_energy_in&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Fluid Enthalpy In (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_additional&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Additional Cooling Provided (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_additional&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Additional Heating Provided (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heat_leak_in&quot;</span><span class="p">:</span> <span class="s2">&quot;Cumulative Heat Leakage (J)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_adsorbed&quot;</span><span class="p">:</span> <span class="s2">&quot;Amount Adsorbed (kg)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_gas&quot;</span><span class="p">:</span> <span class="s2">&quot;Vapor Amount (kg)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_liquid&quot;</span><span class="p">:</span> <span class="s2">&quot;Liquid Amount (kg)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_supercritical&quot;</span><span class="p">:</span> <span class="s2">&quot;Supercritical Amount (kg)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_kg&quot;</span><span class="p">:</span> <span class="s2">&quot;Amount Vented (kg)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_kg&quot;</span><span class="p">:</span> <span class="s2">&quot;Amount Inserted (kg)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_adsorbed_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;d(Adsorbed Amount)/dt (mol/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_gas_per_s&quot;</span><span class="p">:</span>  <span class="s2">&quot;d(Vapor Amount)/dt (mol/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_liquid_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;d(Liquid Amount)/dt (mol/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_supercritical_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;d(Supercritical Amount)/dt (mol/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_required_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Cooling Power Required (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_required_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Heating Power Required (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_amount_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;Venting Rate (mol/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_energy_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Rate of Fluid Enthalpy Flow Out (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_amount_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;Refueling Rate (mol/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;flow_energy_in_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Rate of Fluid Enthalpy Flow In (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_additional_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Additional Cooling Power (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_additional_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Additional Cooling Power (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heat_leak_in_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Heat Leakage Rate (W)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_adsorbed_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;d(Adsorbed Amount)/dt (kg/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_gas_per_s&quot;</span><span class="p">:</span>  <span class="s2">&quot;d(Vapor Amount)/dt (kg/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_liquid_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;d(Liquid Amount)/dt (kg/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_supercritical_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;d(Supercritical Amount)/dt (kg/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_kg_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;Venting Rate (kg/s)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_kg_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;Refueling Rate (kg/s)&quot;</span>
+        <span class="p">}</span>
+
+    <span class="n">short_colnames_inv</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="s2">&quot;t&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pressure&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="s2">&quot;T&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_adsorbed&quot;</span><span class="p">:</span> <span class="s2">&quot;na&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_gas&quot;</span><span class="p">:</span> <span class="s2">&quot;ng&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_liquid&quot;</span><span class="p">:</span> <span class="s2">&quot;nl&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_supercritical&quot;</span><span class="p">:</span> <span class="s2">&quot;ns&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_required&quot;</span><span class="p">:</span> <span class="s2">&quot;Qcoolreq&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_required&quot;</span><span class="p">:</span> <span class="s2">&quot;Qheatreq&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_amount&quot;</span><span class="p">:</span> <span class="s2">&quot;nout&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_energy&quot;</span><span class="p">:</span> <span class="s2">&quot;Hout&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_amount&quot;</span><span class="p">:</span> <span class="s2">&quot;nin&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;flow_energy_in&quot;</span><span class="p">:</span> <span class="s2">&quot;Hin&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_additional&quot;</span><span class="p">:</span> <span class="s2">&quot;Qcooladd&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_additional&quot;</span><span class="p">:</span> <span class="s2">&quot;Qheatadd&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heat_leak_in&quot;</span><span class="p">:</span> <span class="s2">&quot;Qleak&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_adsorbed&quot;</span><span class="p">:</span> <span class="s2">&quot;ma&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_gas&quot;</span><span class="p">:</span> <span class="s2">&quot;mg&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_liquid&quot;</span><span class="p">:</span> <span class="s2">&quot;ml&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_supercritical&quot;</span><span class="p">:</span> <span class="s2">&quot;ms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_kg&quot;</span><span class="p">:</span> <span class="s2">&quot;mout&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_kg&quot;</span><span class="p">:</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_adsorbed_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;na_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_gas_per_s&quot;</span><span class="p">:</span>  <span class="s2">&quot;ng_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_liquid_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;nl_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moles_supercritical_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;ns_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_required_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Qcoolreq_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_required_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Qheatreq_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_amount_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;nout_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_energy_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Hout_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_amount_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;nin_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;flow_energy_in_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Hin_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cooling_additional_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Qcooladd_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heating_additional_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Qheatadd_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;heat_leak_in_W&quot;</span><span class="p">:</span> <span class="s2">&quot;Qleak_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_adsorbed_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;ma_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_gas_per_s&quot;</span><span class="p">:</span>  <span class="s2">&quot;mg_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_liquid_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;ml_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kg_supercritical_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;ms_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;vented_kg_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;mout_dot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inserted_kg_per_s&quot;</span><span class="p">:</span> <span class="s2">&quot;min_dot&quot;</span>
+        <span class="p">}</span>
+
+    <span class="n">short_colnames</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">short_colnames_inv</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">pressure</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">temperature</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">time</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">moles_adsorbed</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">moles_gas</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">moles_liquid</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">moles_supercritical</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+                 <span class="n">tank_params</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">StorageTank</span><span class="p">,</span> <span class="n">SorbentTank</span><span class="p">],</span>
+                 <span class="n">sim_params</span><span class="p">:</span> <span class="s2">&quot;SimParams&quot;</span><span class="p">,</span>
+                 <span class="n">stop_reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">sim_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">inserted_amount</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">flow_energy_in</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">cooling_required</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">heating_required</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">cooling_additional</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">heating_additional</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">heat_leak_in</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">vented_amount</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">vented_energy</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SimResults&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a SimResults object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pressure : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the pressure values inside of the</span>
+<span class="sd">            tank (Pa) as it changes over time.</span>
+
+<span class="sd">        temperature : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the temperature values inside of</span>
+<span class="sd">            the tank (K) as it changes over time.</span>
+
+<span class="sd">        time : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the simulation time points (s) at</span>
+<span class="sd">            which results are reported.</span>
+
+<span class="sd">        moles_adsorbed : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the amount of fluid that is</span>
+<span class="sd">            adsorbed (moles) at given points in time.</span>
+
+<span class="sd">        moles_gas : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the amount of fluid stored in</span>
+<span class="sd">            gaseous form (moles) at given points in time.</span>
+
+<span class="sd">        moles_liquid : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the amount of fluid stored in</span>
+<span class="sd">            liquid form (moles) at given points in time.</span>
+
+<span class="sd">        moles_supercritical : Union[List[float], np.ndarray]</span>
+<span class="sd">            A list or numpy array containing the amount of supercritical fluid</span>
+<span class="sd">            in the tank (moles) at given points in time.</span>
+
+<span class="sd">        tank_params : Union[StorageTank, SorbentTank]</span>
+<span class="sd">            An object containing the parameters of the storage tank used for</span>
+<span class="sd">            the dynamic simulation.</span>
+
+<span class="sd">        sim_type : str</span>
+<span class="sd">            A string describing the type of simulation that was conducted.</span>
+
+<span class="sd">        sim_params : SimParams</span>
+<span class="sd">            An object containing the parameters used for the simulation.</span>
+
+<span class="sd">        stop_reason : str</span>
+<span class="sd">            A string describing why the simulation was terminated.</span>
+
+<span class="sd">        inserted_amount: Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of fluid inserted into the tank (moles)</span>
+<span class="sd">            throughout the dynamic simulation. The default is 0.</span>
+
+<span class="sd">        flow_energy_in : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of enthalpy brought by fluid flowing into the</span>
+<span class="sd">            tank (J) throughout the dynamic simulation. The default is 0.</span>
+
+<span class="sd">        cooling_required : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of cooling required (J) to maintain a</span>
+<span class="sd">            constant pressure during refueling. The default is 0.</span>
+
+<span class="sd">        heating_required : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of heating required (J) to maintain a</span>
+<span class="sd">            constant pressure during discharging. The default is 0.</span>
+
+<span class="sd">        cooling_additional : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of additional cooling (J) inputted to the</span>
+<span class="sd">            simulation via a user-defined function. The default is 0.</span>
+
+<span class="sd">        heating_additional : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of additional heating (J) inputted to the</span>
+<span class="sd">            simulation via a user-defined function. The default is 0.</span>
+
+<span class="sd">        heat_leak_in : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of heat (J) which has leaked into the tank</span>
+<span class="sd">            from the environment. The default is 0.</span>
+
+<span class="sd">        vented_amount : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of fluid vented (moles) throughout the</span>
+<span class="sd">            dynamic simulation. The default is 0.</span>
+
+<span class="sd">        vented_energy : Union[List[float], np.ndarray], optional</span>
+<span class="sd">            The cumulative amount of enthalpy taken by fluid flowing out of the</span>
+<span class="sd">            tank (J) throughout the dynamic simulation. The default is 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults</span>
+<span class="sd">            An object containing the results of a dynamic simulation run by</span>
+<span class="sd">            pytanksim. It has functions for exporting and plotting.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">time</span><span class="p">,</span>
+            <span class="s2">&quot;pressure&quot;</span><span class="p">:</span> <span class="n">pressure</span><span class="p">,</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="n">temperature</span><span class="p">,</span>
+            <span class="s2">&quot;moles_adsorbed&quot;</span><span class="p">:</span> <span class="n">moles_adsorbed</span><span class="p">,</span>
+            <span class="s2">&quot;moles_gas&quot;</span><span class="p">:</span> <span class="n">moles_gas</span><span class="p">,</span>
+            <span class="s2">&quot;moles_liquid&quot;</span><span class="p">:</span> <span class="n">moles_liquid</span><span class="p">,</span>
+            <span class="s2">&quot;moles_supercritical&quot;</span><span class="p">:</span> <span class="n">moles_supercritical</span><span class="p">,</span>
+            <span class="s2">&quot;cooling_required&quot;</span><span class="p">:</span> <span class="n">cooling_required</span><span class="p">,</span>
+            <span class="s2">&quot;heating_required&quot;</span><span class="p">:</span> <span class="n">heating_required</span><span class="p">,</span>
+            <span class="s2">&quot;vented_amount&quot;</span><span class="p">:</span> <span class="n">vented_amount</span><span class="p">,</span>
+            <span class="s2">&quot;vented_energy&quot;</span><span class="p">:</span> <span class="n">vented_energy</span><span class="p">,</span>
+            <span class="s2">&quot;inserted_amount&quot;</span><span class="p">:</span> <span class="n">inserted_amount</span><span class="p">,</span>
+            <span class="s2">&quot;flow_energy_in&quot;</span><span class="p">:</span> <span class="n">flow_energy_in</span><span class="p">,</span>
+            <span class="s2">&quot;cooling_additional&quot;</span><span class="p">:</span> <span class="n">cooling_additional</span><span class="p">,</span>
+            <span class="s2">&quot;heating_additional&quot;</span><span class="p">:</span> <span class="n">heating_additional</span><span class="p">,</span>
+            <span class="s2">&quot;heat_leak_in&quot;</span><span class="p">:</span> <span class="n">heat_leak_in</span>
+            <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim_params</span> <span class="o">=</span> <span class="n">sim_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span> <span class="o">=</span> <span class="n">tank_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim_type</span> <span class="o">=</span> <span class="n">sim_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;series&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span> <span class="o">=</span> <span class="n">stop_reason</span>
+
+        <span class="n">df_diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">time_diff</span><span class="p">(</span><span class="n">colname</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">df_diff</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span><span class="o">/</span><span class="n">df_diff</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;moles_adsorbed_per_s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;moles_adsorbed&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;moles_gas_per_s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;moles_gas&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;moles_liquid_per_s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;moles_liquid&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;moles_supercritical_per_s&quot;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;moles_supercritical&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;cooling_required_W&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;cooling_required&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;heating_required_W&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;heating_required&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;vented_amount_per_s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;vented_amount&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;vented_energy_W&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;vented_energy&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;inserted_amount_per_s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;inserted_amount&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;flow_energy_in_W&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;flow_energy_in&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;cooling_additional_W&quot;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;cooling_additional&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;heating_additional_W&quot;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;heating_additional&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="s2">&quot;heat_leak_in_W&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_diff</span><span class="p">(</span><span class="s2">&quot;heat_leak_in&quot;</span><span class="p">)</span>
+        <span class="n">df_export</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">molarmass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">()</span>
+        <span class="n">overwrite_df</span> <span class="o">=</span> <span class="n">df_export</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s2">&quot;moles|amount&quot;</span><span class="p">)</span>
+        <span class="n">overwrite_df</span> <span class="o">=</span> <span class="n">overwrite_df</span> <span class="o">*</span> <span class="n">molarmass</span>
+        <span class="n">column_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">overwrite_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">column_names_new</span> <span class="o">=</span> <span class="p">[</span><span class="n">sub</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;amount&quot;</span><span class="p">,</span> <span class="s2">&quot;kg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;moles&quot;</span><span class="p">,</span> <span class="s2">&quot;kg&quot;</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">column_names</span><span class="p">]</span>
+        <span class="n">overwrite_df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">column_names_new</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df_export</span><span class="p">,</span> <span class="n">overwrite_df</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                   <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="n">limit_direction</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span>
+                                    <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="viewcode-block" id="SimResults.df"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/simresultsclass/index.html#pytanksim.classes.SimResults.df">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span>\
+            <span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">short_colnames_inv</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SimResults.get_final_conditions"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults.get_final_conditions">[docs]</a>    <span class="k">def</span> <span class="nf">get_final_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Output final tank conditions at the end of the simulation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        idx : int, optional</span>
+<span class="sd">            The index of the simulation results array from which the values are</span>
+<span class="sd">            to be taken. The default is -1 (the last time point in the</span>
+<span class="sd">            simulation).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary containing tank conditions at&#39;idx&#39;.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">final_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">final_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">final_dict</span></div>
+
+<div class="viewcode-block" id="SimResults.to_csv"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults.to_csv">[docs]</a>    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export simulation results to a csv file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The desired filepath for the csv file to be created.</span>
+
+<span class="sd">        verbose : bool, optional</span>
+<span class="sd">            Whether or nor to report the completion of the export. The default</span>
+<span class="sd">            value is True.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df_export</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">new_colnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">colname</span><span class="p">]</span> <span class="k">for</span>
+                        <span class="n">colname</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">df_export</span><span class="o">.</span><span class="n">columns</span><span class="p">)]</span>
+        <span class="n">df_export</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">new_colnames</span>
+        <span class="n">sparams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_params</span>
+        <span class="n">header_htc</span> <span class="o">=</span> <span class="s2">&quot;Callable&quot;</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">htc_original</span><span class="p">)</span> <span class="k">else</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">htc_original</span>
+        <span class="n">header_therm_res</span> <span class="o">=</span> <span class="s2">&quot;Callable&quot;</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">tr_original</span><span class="p">)</span> <span class="k">else</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">tr_original</span>
+        <span class="n">header_info</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;Fluid Name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">fluid_name</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;EOS&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">EOS</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Aluminum Mass (kg)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">aluminum_mass</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Carbon Fiber Mass (kg)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">carbon_fiber_mass</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Steel Mass (kg)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">steel_mass</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Tank Volume (m^3)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">volume</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Minimum Supply Pressure (Pa)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span>
+             <span class="n">min_supply_pressure</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Venting Pressure (Pa)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Thermal Resistance (K/W)&quot;</span><span class="p">,</span> <span class="n">header_therm_res</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Surface Area (m^2)&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">surface_area</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Heat Transfer Coefficient (W/(m^2 K))&quot;</span><span class="p">,</span> <span class="n">header_htc</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Stoppage Reason&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Set Initial Time (s)&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">init_time</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Set Final Time (s)&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">final_time</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Set Displayed Points&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">displayed_points</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Target Pressure (Pa)&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">target_pres</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Target Temperature (K)&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">target_temp</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Target Capacity&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">target_capacity</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Stop at Target Pressure&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">stop_at_target_pressure</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Stop at Target Temperature&quot;</span><span class="p">,</span> <span class="n">sparams</span><span class="o">.</span><span class="n">stop_at_target_temp</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;Simulation Type&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim_type</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">mole_fractions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fracs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">mole_fractions</span>
+            <span class="n">header_info</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;Fluid Mole Fractions&quot;</span><span class="p">,</span> <span class="n">fracs</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="p">,</span> <span class="n">SorbentTank</span><span class="p">):</span>
+            <span class="n">sorbent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tank_params</span><span class="o">.</span><span class="n">sorbent_material</span>
+            <span class="n">isotherm</span> <span class="o">=</span> <span class="n">sorbent</span><span class="o">.</span><span class="n">model_isotherm</span>
+            <span class="n">header_extra</span> <span class="o">=</span> <span class="p">[[</span><span class="s2">&quot;Sorbent Name&quot;</span><span class="p">,</span> <span class="n">isotherm</span><span class="o">.</span><span class="n">sorbent</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;Sorbent Mass (kg)&quot;</span><span class="p">,</span> <span class="n">sorbent</span><span class="o">.</span><span class="n">mass</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;Sorbent Debye Temperature (K)&quot;</span><span class="p">,</span>
+                             <span class="n">sorbent</span><span class="o">.</span><span class="n">Debye_temperature</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;Skeletal Density (kg/m^3)&quot;</span><span class="p">,</span>
+                             <span class="n">sorbent</span><span class="o">.</span><span class="n">skeletal_density</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;Bulk Density (kg/m^3)&quot;</span><span class="p">,</span> <span class="n">sorbent</span><span class="o">.</span><span class="n">bulk_density</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;SSA (m^2/g)&quot;</span><span class="p">,</span> <span class="n">sorbent</span><span class="o">.</span><span class="n">specific_surface_area</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;Molar Mass (kg/mol)&quot;</span><span class="p">,</span> <span class="n">sorbent</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">],</span>
+                            <span class="p">[</span><span class="s2">&quot;Isotherm Model&quot;</span><span class="p">,</span> <span class="n">isotherm</span><span class="o">.</span><span class="n">model_name</span><span class="p">]</span>
+                            <span class="p">]</span>
+            <span class="n">keyattrlist</span> <span class="o">=</span> <span class="n">isotherm</span><span class="o">.</span><span class="n">key_attr</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">keyattrlist</span><span class="p">:</span>
+                <span class="n">header_extra</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">isotherm</span><span class="p">,</span> <span class="n">attr</span><span class="p">)])</span>
+            <span class="n">header_info</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">header_extra</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">header_info</span><span class="p">)</span>
+        <span class="n">df_export</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dataframe exported to &quot;</span><span class="o">+</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">df_export</span><span class="p">)</span></div>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="SimResults.from_csv"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults.from_csv">[docs]</a>    <span class="k">def</span> <span class="nf">from_csv</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">import_components</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Import simulation results from a csv file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Path to a csv file which was exported by pytanksim.</span>
+
+<span class="sd">        import_components : bool</span>
+<span class="sd">            If True, this function will return a tuple with contents as</span>
+<span class="sd">            follows: SimResults, StorageTank, SimParams.</span>
+<span class="sd">            If False, this function will only return the SimResults object.</span>
+<span class="sd">            The default option is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults|Tuple</span>
+<span class="sd">            A single object containing the simulation results, or a tuple</span>
+<span class="sd">            with SimResults, StorageTank, and SimParams objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">iso_class_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Modified Dubinin-Astakhov Model&quot;</span><span class="p">:</span> <span class="n">MDAModel</span><span class="p">,</span>
+                          <span class="s2">&quot;Dubinin-Astakhov Model&quot;</span><span class="p">:</span> <span class="n">DAModel</span><span class="p">}</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">csvreader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">csvreader</span><span class="p">):</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Time (s)&quot;</span><span class="p">:</span>
+                    <span class="n">startdatarow</span> <span class="o">=</span> <span class="n">i</span>
+                    <span class="k">break</span>
+                <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Simulation Type&quot;</span><span class="p">:</span>
+                    <span class="n">finishmainheadrow</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Isotherm Model&quot;</span><span class="p">:</span>
+                    <span class="n">startisorow</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="n">fluid_name</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">EOS</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Fluid Mole Fractions&quot;</span><span class="p">:</span>
+            <span class="n">fracs</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">finishmainheadrow</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fracs</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">stored_fluid</span> <span class="o">=</span> <span class="n">StoredFluid</span><span class="p">(</span><span class="n">EOS</span><span class="o">=</span><span class="n">EOS</span><span class="p">,</span> <span class="n">fluid_name</span><span class="o">=</span><span class="n">fluid_name</span><span class="p">,</span>
+                                   <span class="n">mole_fractions</span><span class="o">=</span><span class="n">fracs</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">conv</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="o">==</span> <span class="s2">&quot;TRUE&quot;</span> <span class="ow">or</span> <span class="n">data</span> <span class="o">==</span> <span class="s2">&quot;FALSE&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">data</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="k">def</span> <span class="nf">get_row</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">conv</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">check_callable</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">imp_comp</span><span class="p">):</span>
+            <span class="n">inputnew</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Callable&quot;</span> <span class="ow">and</span> <span class="n">imp_comp</span><span class="p">:</span>
+                <span class="n">warn_str</span> <span class="o">=</span> <span class="s2">&quot;Thermal resistance was a function. Since&quot;</span> <span class="o">+</span> \
+                           <span class="s2">&quot; functions are not included in csv, default &quot;</span> <span class="o">+</span> \
+                           <span class="s2">&quot;value of 0 was used to define the tank.&quot;</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">warn_str</span><span class="p">)</span>
+                <span class="n">inputnew</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Callable&quot;</span> <span class="ow">and</span> <span class="n">imp_comp</span><span class="p">:</span>
+                <span class="n">warn_str</span> <span class="o">=</span> <span class="s2">&quot;Heat transfer coef. was a function. Since &quot;</span> <span class="o">+</span> \
+                           <span class="s2">&quot;functions are not included in csv, default &quot;</span> <span class="o">+</span> \
+                           <span class="s2">&quot;value of 0 was used to define the tank.&quot;</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">warn_str</span><span class="p">)</span>
+                <span class="n">inputnew</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">inputnew</span>
+
+        <span class="k">if</span> <span class="n">startdatarow</span> <span class="o">&gt;</span> <span class="n">finishmainheadrow</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">sorbentmass</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">debyetemp</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">skeletaldensity</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">bulkdensity</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">5</span><span class="p">]</span>
+            <span class="n">ssa</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">6</span><span class="p">]</span>
+            <span class="n">mw</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">finishmainheadrow</span><span class="o">+</span><span class="mi">7</span><span class="p">]</span>
+            <span class="n">modelname</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">startisorow</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">iso_rows</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="n">startisorow</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="n">startdatarow</span><span class="p">]</span>
+            <span class="n">attr_key</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">iso_rows</span><span class="p">]</span>
+            <span class="n">attr_val</span> <span class="o">=</span> <span class="p">[</span><span class="n">conv</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">iso_rows</span><span class="p">]</span>
+            <span class="n">key_val_pairs</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">attr_key</span><span class="p">,</span> <span class="n">attr_val</span><span class="p">)</span>
+            <span class="n">attr_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">key_val_pairs</span><span class="p">)</span>
+            <span class="n">modeliso</span> <span class="o">=</span> <span class="n">iso_class_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">modelname</span><span class="p">)(</span><span class="o">**</span><span class="n">attr_dict</span><span class="p">,</span>
+                                                     <span class="n">stored_fluid</span><span class="o">=</span><span class="n">stored_fluid</span><span class="p">)</span>
+            <span class="n">sorbent_mat</span> <span class="o">=</span> <span class="n">SorbentMaterial</span><span class="p">(</span><span class="n">mass</span><span class="o">=</span><span class="n">sorbentmass</span><span class="p">,</span>
+                                          <span class="n">skeletal_density</span><span class="o">=</span><span class="n">skeletaldensity</span><span class="p">,</span>
+                                          <span class="n">bulk_density</span><span class="o">=</span><span class="n">bulkdensity</span><span class="p">,</span>
+                                          <span class="n">specific_surface_area</span><span class="o">=</span><span class="n">ssa</span><span class="p">,</span>
+                                          <span class="n">model_isotherm</span><span class="o">=</span><span class="n">modeliso</span><span class="p">,</span>
+                                          <span class="n">molar_mass</span><span class="o">=</span><span class="n">mw</span><span class="p">,</span>
+                                          <span class="n">Debye_temperature</span><span class="o">=</span><span class="n">debyetemp</span><span class="p">)</span>
+
+            <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_row</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">11</span><span class="p">)]</span>
+            <span class="n">inputs_chk</span> <span class="o">=</span> <span class="n">check_callable</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">import_components</span><span class="p">)</span>
+
+            <span class="n">tank</span> <span class="o">=</span> <span class="n">SorbentTank</span><span class="p">(</span><span class="n">aluminum_mass</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="n">carbon_fiber_mass</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                               <span class="n">steel_mass</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                               <span class="n">volume</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                               <span class="n">min_supply_pressure</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                               <span class="n">vent_pressure</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+                               <span class="n">thermal_resistance</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span>
+                               <span class="n">surface_area</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span>
+                               <span class="n">heat_transfer_coefficient</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+                               <span class="n">sorbent_material</span><span class="o">=</span><span class="n">sorbent_mat</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_row</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">11</span><span class="p">)]</span>
+            <span class="n">inputs_chk</span> <span class="o">=</span> <span class="n">check_callable</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">import_components</span><span class="p">)</span>
+            <span class="n">tank</span> <span class="o">=</span> <span class="n">StorageTank</span><span class="p">(</span><span class="n">aluminum_mass</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="n">carbon_fiber_mass</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                               <span class="n">steel_mass</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                               <span class="n">volume</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                               <span class="n">min_supply_pressure</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                               <span class="n">vent_pressure</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+                               <span class="n">thermal_resistance</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span>
+                               <span class="n">surface_area</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span>
+                               <span class="n">heat_transfer_coefficient</span><span class="o">=</span><span class="n">inputs_chk</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+                               <span class="n">stored_fluid</span><span class="o">=</span><span class="n">stored_fluid</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="n">startdatarow</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">pytanksim.classes.basesimclass</span> <span class="kn">import</span> <span class="n">SimParams</span>
+        <span class="n">simparams</span> <span class="o">=</span> <span class="n">SimParams</span><span class="p">(</span><span class="n">init_time</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
+                              <span class="n">final_time</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">13</span><span class="p">),</span>
+                              <span class="n">init_ng</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+                              <span class="n">init_nl</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+                              <span class="n">init_pressure</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                              <span class="n">init_temperature</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                              <span class="n">displayed_points</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">14</span><span class="p">),</span>
+                              <span class="n">target_pres</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">15</span><span class="p">),</span>
+                              <span class="n">target_temp</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span>
+                              <span class="n">target_capacity</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">17</span><span class="p">),</span>
+                              <span class="n">stop_at_target_pressure</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">18</span><span class="p">),</span>
+                              <span class="n">stop_at_target_temp</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">19</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">import_components</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">pressure</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">temperature</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_adsorbed</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_gas</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_liquid</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">cooling_required</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">heating_required</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">vented_amount</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">vented_energy</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">inserted_amount</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">11</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">12</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">cooling_additional</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">13</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">heating_additional</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">15</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">tank_params</span><span class="o">=</span><span class="n">tank</span><span class="p">,</span>
+                       <span class="n">sim_type</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+                       <span class="n">stop_reason</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span>
+                       <span class="n">sim_params</span><span class="o">=</span><span class="n">simparams</span><span class="p">),</span> <span class="n">tank</span><span class="p">,</span> <span class="n">simparams</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">pressure</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">temperature</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_adsorbed</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_gas</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_liquid</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">cooling_required</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">heating_required</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">vented_amount</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">vented_energy</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">inserted_amount</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">11</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">12</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">cooling_additional</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">13</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">heating_additional</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">15</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                       <span class="n">tank_params</span><span class="o">=</span><span class="n">tank</span><span class="p">,</span>
+                       <span class="n">sim_type</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+                       <span class="n">stop_reason</span><span class="o">=</span><span class="n">get_row</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span>
+                       <span class="n">sim_params</span><span class="o">=</span><span class="n">simparams</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SimResults.interpolate"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults.interpolate">[docs]</a>    <span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_var</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;t&quot;</span>
+                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;dict[Callable[[float], float]]&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interpolate simulation results between points.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_var : str, optional</span>
+<span class="sd">            Variable to be used as a basis/input for interpolation.The default</span>
+<span class="sd">            is &quot;t&quot;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        &quot;dict[Callable[[float], float]]&quot;</span>
+<span class="sd">            A dictionary containing functions which interpolate each variable</span>
+<span class="sd">            in the SimResults object w.r.t. the variable chosen in x_var.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">x_var</span><span class="p">]</span>
+        <span class="n">interp_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="o">!=</span> <span class="n">x_var</span><span class="p">:</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">column</span><span class="p">]</span>
+                <span class="n">interpolator</span> <span class="o">=</span> <span class="n">make_interp_spline</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">interp_dict</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolator</span>
+        <span class="k">return</span> <span class="n">interp_dict</span></div>
+
+<div class="viewcode-block" id="SimResults.plot"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">y_axes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+             <span class="n">colors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span>
+             <span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the results of the simulation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_axis : str</span>
+<span class="sd">            A string specifying what variable should be on the x-axis.</span>
+<span class="sd">            See notes for valid inputs.</span>
+
+<span class="sd">        y_axes : Union[str, List[str]]</span>
+<span class="sd">            A string or a list of strings specifying what is to be plotted on</span>
+<span class="sd">            the y-axis. See notes for valid inputs</span>
+
+<span class="sd">        colors : Union[str, List[str]], optional</span>
+<span class="sd">            A string or a list of strings specifying colors for the lines in</span>
+<span class="sd">            the plot. The default is [&quot;r&quot;, &quot;b&quot;, &quot;g&quot;].</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If more than 3 y-variables are specified to be plotted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Union[np.ndarray, plt.Axes]</span>
+<span class="sd">            A matplolib axis or a numpy array of several axes.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Below is a list of valid string inputs for ``x_axis`` and ``y_axes``</span>
+<span class="sd">        along with the variables they represent.</span>
+
+<span class="sd">            - ``t``: time (seconds)</span>
+<span class="sd">            - ``p``: pressure (Pa)</span>
+<span class="sd">            - ``T``: temperature (K)</span>
+<span class="sd">            - ``na``: amount of fluid adsorbed (moles)</span>
+<span class="sd">            - ``ng``: amount of fluid in gaseous form (moles)</span>
+<span class="sd">            - ``nl``: amount of fluid in liquid form (moles)</span>
+<span class="sd">            - ``ns``: amount of fluid in supercritical form (moles)</span>
+<span class="sd">            - ``Qcoolreq``: cumulative amount of cooling required (J)</span>
+<span class="sd">            - ``Qheatreq``: cumulative amount of heating required (J)</span>
+<span class="sd">            - ``nout``: cumulative amount of fluid vented (moles)</span>
+<span class="sd">            - ``Hout``: cumulative amount of vented fluid enthalpy (J)</span>
+<span class="sd">            - ``nin``: cumulative amount of fluid inserted (moles)</span>
+<span class="sd">            - ``Hin``: cumulative amount of inserted fluid enthalpy (J)</span>
+<span class="sd">            - ``Qcooladd``: cumulative amount of user specified cooling (J)</span>
+<span class="sd">            - ``Qheatadd``: cumulative amount of user specified heating (J)</span>
+<span class="sd">            - ``Qleak``: cumulative amount of heat leakage into the tank (J)</span>
+<span class="sd">            - ``ma``: mass of fluid adsorbed (kg)</span>
+<span class="sd">            - ``mg``: mass of fluid in gaseous form (kg)</span>
+<span class="sd">            - ``ml``: mass of fluid in liquid form (kg)</span>
+<span class="sd">            - ``ms``: mass of fluid in supercritical form (kg)</span>
+<span class="sd">            - ``mout``: cumulative mass of fluid vented (kg)</span>
+<span class="sd">            - ``min``: cumulative mass of fluid inserted (kg)</span>
+<span class="sd">            - ``na_dot``: the amount of fluid (moles) being adsorbed per</span>
+<span class="sd">              second.</span>
+<span class="sd">            - ``ng_dot``: the first derivative of the amount of fluid in</span>
+<span class="sd">              gaseous form w.r.t. time. Its unit is mol/s.</span>
+<span class="sd">            - ``nl_dot``: the first derivative of the amount of fluid in</span>
+<span class="sd">              liquid form w.r.t. time. Its unit is mol/s</span>
+<span class="sd">            - ``ns_dot``: the first derivative of the amount of fluid in</span>
+<span class="sd">              supercritical form w.r.t. time. Its unit is mol/s.</span>
+<span class="sd">            - ``Qcoolreq_dot``: the cooling power (W) required to maintain a</span>
+<span class="sd">              constant pressure during refuel.</span>
+<span class="sd">            - ``Qheatreq_dot``: the heating power (W) required to maintain a</span>
+<span class="sd">              constant pressure during discharge.</span>
+<span class="sd">            - ``nout_dot``: the rate at which fluid is being vented from the</span>
+<span class="sd">              tank (mol/s).</span>
+<span class="sd">            - ``Hout_dot``: the rate at which enthalpy is taken away by fluid</span>
+<span class="sd">              leaving the tank (W).</span>
+<span class="sd">            - ``nin_dot``: the rate at which fluid is entering the tank</span>
+<span class="sd">              (mol/s).</span>
+<span class="sd">            - ``Hin_dot``: the rate at which enthalpy is added by fluid</span>
+<span class="sd">              fluid entering the tank (W).</span>
+<span class="sd">            - ``Qcooladd_dot``: the user specified cooling power (W).</span>
+<span class="sd">            - ``Qheatadd_dot``: the user specified heating power (W).</span>
+<span class="sd">            - ``Qleak_dot``: the rate of heat leakage into the tank (W).</span>
+<span class="sd">            - ``ma_dot``: the mass of fluid (kg) being adsorbed per second.</span>
+<span class="sd">            - ``mg_dot``: the first derivative of the mass of fluid in</span>
+<span class="sd">              gaseous form w.r.t. time. Its unit is kg/s.</span>
+<span class="sd">            - ``ml_dot``: the first derivative of the mass of fluid in</span>
+<span class="sd">              liquid form w.r.t. time. Its unit is kg/s.</span>
+<span class="sd">            - ``ms_dot``: the first derivative of the mass of fluid in</span>
+<span class="sd">              supercritical form w.r.t. time. Its unit is kg/s.</span>
+<span class="sd">            - ``mout_dot``: the rate at which fluid is being vented from the</span>
+<span class="sd">              tank (kg/s).</span>
+<span class="sd">            - ``min_dot``: the rate at which fluid is being inserted into the</span>
+<span class="sd">              tank (kg/s).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_axes</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">y_axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">y_axes</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">colors</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;You cannot fit more than 3 &quot;</span>
+                             <span class="s2">&quot;y-variables in a single plot&quot;</span><span class="p">)</span>
+        <span class="n">y_axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">SimResults</span><span class="o">.</span><span class="n">short_colnames</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">y_axes</span><span class="p">]</span>
+        <span class="n">x_axis</span> <span class="o">=</span> <span class="n">SimResults</span><span class="o">.</span><span class="n">short_colnames</span><span class="p">[</span><span class="n">x_axis</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">x_axis</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                          <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">p1</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="n">x_axis</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                          <span class="n">label</span><span class="o">=</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                          <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">handles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_offset_text</span><span class="p">()</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">axlist</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">ax2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+                <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                               <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">ax2</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_offset_text</span><span class="p">()</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">p2</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="n">x_axis</span><span class="p">],</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                               <span class="n">label</span><span class="o">=</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                               <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">handles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">]</span>
+                <span class="n">axlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">ax3</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+                    <span class="n">ax3</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">SimResults</span><span class="o">.</span><span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                                   <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">ax3</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_offset_text</span><span class="p">()</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">p3</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="n">x_axis</span><span class="p">],</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">results_df</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                                   <span class="n">label</span><span class="o">=</span><span class="n">SimResults</span><span class="o">.</span>
+                                   <span class="n">fancy_colnames_dict</span><span class="p">[</span><span class="n">y_axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                                   <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">ax3</span><span class="o">.</span><span class="n">spines</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="s2">&quot;axes&quot;</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">))</span>
+                    <span class="n">ax3</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_offset_text</span><span class="p">()</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="mf">1.3</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">))</span>
+                    <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">right</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+                    <span class="n">handles</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">]</span>
+                    <span class="n">axlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax3</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="o">=</span><span class="n">handles</span><span class="p">)</span>
+            <span class="n">axlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">axlist</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">axlist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">ax</span></div>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="SimResults.combine"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SimResults.combine">[docs]</a>    <span class="k">def</span> <span class="nf">combine</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                <span class="n">sim_results_list</span><span class="p">:</span> <span class="s2">&quot;List[SimResults]&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SimResults&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Combine the results of several simulations into a single object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sim_results_list : &quot;List[SimResults]&quot;</span>
+<span class="sd">            A list of SimResults objects from several different simulations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimResults</span>
+<span class="sd">            A single object containing the combined simulation results.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">list_of_df</span> <span class="o">=</span> <span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">results_df</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">sim_results_list</span><span class="p">]</span>
+        <span class="n">final_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">latest_df</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_of_df</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">final_time</span><span class="p">:</span>
+                <span class="n">final_time</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">latest_df</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">sp</span> <span class="o">=</span> <span class="n">sim_results_list</span><span class="p">[</span><span class="n">latest_df</span><span class="p">]</span><span class="o">.</span><span class="n">sim_params</span>
+        <span class="n">concat_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">list_of_df</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">concat_df</span> <span class="o">=</span> <span class="n">concat_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+        <span class="n">concat_df</span> <span class="o">=</span> <span class="n">concat_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+                    <span class="n">pressure</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;pressure&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">temperature</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">time</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">moles_adsorbed</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;moles_adsorbed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">moles_gas</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;moles_gas&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">moles_liquid</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;moles_liquid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">moles_supercritical</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;moles_supercritical&quot;</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">tank_params</span><span class="o">=</span><span class="n">sim_results_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tank_params</span><span class="p">,</span>
+                    <span class="n">sim_type</span><span class="o">=</span><span class="s2">&quot;Combined&quot;</span><span class="p">,</span>
+                    <span class="n">sim_params</span><span class="o">=</span><span class="n">sp</span><span class="p">,</span>
+                    <span class="n">stop_reason</span><span class="o">=</span><span class="n">sim_results_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stop_reason</span><span class="p">,</span>
+                    <span class="n">inserted_amount</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;inserted_amount&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">flow_energy_in</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;flow_energy_in&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">cooling_required</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;cooling_required&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">heating_required</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;heating_required&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">cooling_additional</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;cooling_additional&quot;</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">heating_additional</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;heating_additional&quot;</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">heat_leak_in</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;heat_leak_in&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">vented_amount</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;vented_amount&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+                    <span class="n">vented_energy</span><span class="o">=</span><span class="n">concat_df</span><span class="p">[</span><span class="s2">&quot;vented_energy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

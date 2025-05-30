@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pytanksim.classes.storagetankclasses &mdash; pytanksim 1.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/pytanksimlogo.svg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">pytanksim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pytanksim.classes.storagetankclasses</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pytanksim.classes.storagetankclasses</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Contains classes which store the properties of the storage tanks.</span>
+
+<span class="sd">The StorageTank and SorbentTank classes are part of this module.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># This file is a part of the python package pytanksim.</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Muhammad Irfan Maulana Kusdhany, Kyushu University</span>
+<span class="c1">#</span>
+<span class="c1"># pytanksim is free software; you can redistribute it and/or modify it under</span>
+<span class="c1"># the terms of the GNU Lesser General Public License as published by the</span>
+<span class="c1"># Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;StorageTank&quot;</span><span class="p">,</span> <span class="s2">&quot;SorbentTank&quot;</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">pytanksim.classes.fluidsorbentclasses</span> <span class="kn">import</span> <span class="n">StoredFluid</span><span class="p">,</span> <span class="n">SorbentMaterial</span>
+<span class="kn">import</span> <span class="nn">CoolProp</span> <span class="k">as</span> <span class="nn">CP</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">OptimizeResult</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span>
+
+
+<span class="k">def</span> <span class="nf">Cs_gen</span><span class="p">(</span><span class="n">mads</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mcarbon</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">malum</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+           <span class="n">msteel</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tads</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1500</span><span class="p">,</span>
+           <span class="n">MWads</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">12.01E-3</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+           <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a function to find the heat capacity at a given temperature.</span>
+
+<span class="sd">    Based on Debye&#39;s model. Combines contributions from the various materials</span>
+<span class="sd">    making up the storage tank.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mads : float</span>
+<span class="sd">        Mass of sorbent (kg).</span>
+
+<span class="sd">    mcarbon : float</span>
+<span class="sd">        Carbon fiber mass (kg).</span>
+
+<span class="sd">    malum : float</span>
+<span class="sd">        Aluminum mass (kg).</span>
+
+<span class="sd">    msteel : float</span>
+<span class="sd">        Steel mass (kg).</span>
+
+<span class="sd">    Tads : float, optional</span>
+<span class="sd">        Debye temperature of the sorbent material (K). The default is 1500,</span>
+<span class="sd">        which is the value for carbon.</span>
+
+<span class="sd">    MWads : float, optional</span>
+<span class="sd">        The molecular weight of the sorbent material (mol/kg). The default is</span>
+<span class="sd">        12.01E-3, which is the value for carbon.</span>
+
+<span class="sd">    func : Callable[[float],float], optional</span>
+<span class="sd">        Custom function that returns the specific heat capacity (J/(kg K)) of</span>
+<span class="sd">        the sorbent material given its temperature.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Callable[[float], float]</span>
+<span class="sd">        A function which takes the tank&#39;s temperature as an input and returns</span>
+<span class="sd">        the heat capacity of the tank (J/K)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">R</span>
+
+    <span class="k">def</span> <span class="nf">Cdebye</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="o">/</span><span class="n">T</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">integrand</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+            <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">integrand</span><span class="p">(</span><span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">R</span> <span class="o">*</span> <span class="p">((</span><span class="n">T</span><span class="o">/</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">sp</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+    <span class="n">carbon_molar_mass</span> <span class="o">=</span> <span class="mf">12.01E-3</span>
+    <span class="n">alum_molar_mass</span> <span class="o">=</span> <span class="mf">26.98E-3</span>
+    <span class="n">iron_molar_mass</span> <span class="o">=</span> <span class="mf">55.845E-3</span>
+
+    <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">Cads</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">mads</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">Cads</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">mads</span><span class="o">/</span><span class="n">MWads</span><span class="p">)</span><span class="o">*</span><span class="n">Cdebye</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">Tads</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">Cs</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Cads</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">mcarbon</span> <span class="o">/</span> <span class="n">carbon_molar_mass</span><span class="p">)</span> <span class="o">*</span>\
+            <span class="n">Cdebye</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">1500</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">malum</span><span class="o">/</span><span class="n">alum_molar_mass</span><span class="p">)</span> <span class="o">*</span> <span class="n">Cdebye</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mf">389.4</span><span class="p">)</span> <span class="o">+</span>\
+            <span class="p">(</span><span class="n">msteel</span><span class="o">/</span><span class="n">iron_molar_mass</span><span class="p">)</span> <span class="o">*</span> <span class="n">Cdebye</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Cs</span>
+
+
+<div class="viewcode-block" id="StorageTank"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank">[docs]</a><span class="k">class</span> <span class="nc">StorageTank</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stores the properties of the storage tank.</span>
+
+<span class="sd">    It also has methods to calculate useful quantities such as tank dormancy</span>
+<span class="sd">    given a constant heat leakage rate, the internal energy of the fluid being</span>
+<span class="sd">    stored at various conditions, etc.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    volume : float</span>
+<span class="sd">        Internal volume of the storage tank (m^3).</span>
+
+<span class="sd">    stored_fluid : StoredFluid</span>
+<span class="sd">        Object to calculate the thermophysical properties of the fluid</span>
+<span class="sd">        being stored.</span>
+
+<span class="sd">    aluminum_mass : float, optional</span>
+<span class="sd">        The mass of aluminum making up the tank walls (kg). The default is</span>
+<span class="sd">        0.</span>
+
+<span class="sd">    carbon_fiber_mass : float, optional</span>
+<span class="sd">        The mass of carbon fiber making up the tank walls (kg). The default</span>
+<span class="sd">        is 0.</span>
+
+<span class="sd">    steel_mass : float, optional</span>
+<span class="sd">        The mass of steel making up the tank walls (kg). The default is 0.</span>
+
+<span class="sd">    vent_pressure : float, optional</span>
+<span class="sd">        The pressure (Pa) at which the fluid being stored must be vented.</span>
+<span class="sd">        The default is None. If None, the value will be taken as the</span>
+<span class="sd">        maximum value where the CoolProp backend can calculate the</span>
+<span class="sd">        properties of the fluid being stored.</span>
+
+<span class="sd">    min_supply_pressure : float, optional</span>
+<span class="sd">        The minimum supply pressure (Pa) for discharging simulations.The</span>
+<span class="sd">        default is 1E5.</span>
+
+<span class="sd">    thermal_resistance : Callable, optional</span>
+<span class="sd">        The thermal resistance of the tank walls (K/W). The default is 0.</span>
+<span class="sd">        If 0, the value will not be considered in simulations.</span>
+
+<span class="sd">    surface_area : float, optional</span>
+<span class="sd">        The surface area of the tank that is in contact with the</span>
+<span class="sd">        environment (m^2). The default is 0.</span>
+
+<span class="sd">    heat_transfer_coefficient : Callable, optional</span>
+<span class="sd">        The heat transfer coefficient of the tank surface (W/(m^2 K)).</span>
+<span class="sd">        The default is 0.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">stored_fluid</span><span class="p">:</span> <span class="n">StoredFluid</span><span class="p">,</span>
+                 <span class="n">aluminum_mass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">carbon_fiber_mass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">steel_mass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">vent_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">min_supply_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1E5</span><span class="p">,</span>
+                 <span class="n">thermal_resistance</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span>
+                                                     <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">surface_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">heat_transfer_coefficient</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span>
+                                                            <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+                                                           <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">volume</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">set_capacity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">full_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">empty_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">full_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">empty_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">full_quality</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">empty_quality</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+                 <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a StorageTank object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        stored_fluid : StoredFluid</span>
+<span class="sd">            Object to calculate the thermophysical properties of the fluid</span>
+<span class="sd">            being stored.</span>
+
+<span class="sd">        aluminum_mass : float, optional</span>
+<span class="sd">            The mass of aluminum making up the tank walls (kg). The default is</span>
+<span class="sd">            0.</span>
+
+<span class="sd">        carbon_fiber_mass : float, optional</span>
+<span class="sd">            The mass of carbon fiber making up the tank walls (kg). The default</span>
+<span class="sd">            is 0.</span>
+
+<span class="sd">        steel_mass : float, optional</span>
+<span class="sd">            The mass of steel making up the tank walls (kg). The default is 0.</span>
+
+<span class="sd">        vent_pressure : float, optional</span>
+<span class="sd">            The pressure (Pa) at which the fluid being stored must be vented.</span>
+<span class="sd">            The default is None. If None, the value will be taken as the</span>
+<span class="sd">            maximum value where the CoolProp backend can calculate the</span>
+<span class="sd">            properties of the fluid being stored.</span>
+
+<span class="sd">        min_supply_pressure : float, optional</span>
+<span class="sd">            The minimum supply pressure (Pa) for discharging simulations.The</span>
+<span class="sd">            default is 1E5.</span>
+
+<span class="sd">        thermal_resistance : Callable or float, optional</span>
+<span class="sd">            A function which returns the thermal resistance of the tank</span>
+<span class="sd">            walls (K/W) as a function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), time (s), and temperature of surroundings (K). The</span>
+<span class="sd">            default is 0. If a float is provided, it will be converted to a</span>
+<span class="sd">            function which returns that value everywhere. If both this and</span>
+<span class="sd">            the arguments &#39;surface_area&#39; and &#39;heat_transfer_coefficient&#39; are</span>
+<span class="sd">            passed, two values of thermal resistance will be calculated and</span>
+<span class="sd">            the highest value between the two will be taken at each time step.</span>
+<span class="sd">            Thus, to avoid confusion, one should either: (a) use the other two</span>
+<span class="sd">            arguments together, or (b) use this one, but not both at the same</span>
+<span class="sd">            time.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def tr_function(p, T, time, env_temp):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    # &#39;env_temp&#39; is the temperature of surroundings (K)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the thermal resistance (K/W)</span>
+<span class="sd">                    return tr_value</span>
+
+<span class="sd">        surface_area : float, optional</span>
+<span class="sd">            The surface area of the tank that is in contact with the</span>
+<span class="sd">            environment (m^2). The default is 0.</span>
+
+<span class="sd">        heat_transfer_coefficient : Callable or float, optional</span>
+<span class="sd">            A function which returns the heat transfer coefficient of the tank</span>
+<span class="sd">            walls (W/(m^2 K)) as a function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), time (s), and temperature of surroundings (K). The</span>
+<span class="sd">            default is 0. If a float is  provided, it will be converted to a</span>
+<span class="sd">            function which returns that value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def htc_function(p, T, time, env_temp):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    # &#39;env_temp&#39; is the temperature of surroundings (K)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the heat transfer coefficient (W/(m^2 K))</span>
+<span class="sd">                    return heat_transfer_coef</span>
+
+<span class="sd">        volume : float, optional</span>
+<span class="sd">            Internal volume of the storage tank (m^3). The default is None.</span>
+<span class="sd">            This value is required unless the set capacity and operating</span>
+<span class="sd">            conditions are defined, in which case the volume is calculated from</span>
+<span class="sd">            the capacity and operating conditions.</span>
+
+<span class="sd">        set_capacity : float, optional</span>
+<span class="sd">            Set internal capacity of the storage tank (mol). The default is</span>
+<span class="sd">            None. If specified, this will override the user-specified tank</span>
+<span class="sd">            volume.</span>
+
+<span class="sd">        full_pressure : float, optional</span>
+<span class="sd">            Pressure (Pa) of the tank when it is considered full. The default</span>
+<span class="sd">            is None.</span>
+
+<span class="sd">        empty_pressure : float, optional</span>
+<span class="sd">            Pressure (Pa) of the tank when it is considered empty. The default</span>
+<span class="sd">            is None.</span>
+
+<span class="sd">        full_temperature : float, optional</span>
+<span class="sd">            Temperature (K) of the tank when it is considered full. The</span>
+<span class="sd">            default is None.</span>
+
+<span class="sd">        empty_temperature : float, optional</span>
+<span class="sd">            Temperature (K) of the tank when it is considered empty. The</span>
+<span class="sd">            default is None.</span>
+
+<span class="sd">        full_quality : float, optional</span>
+<span class="sd">            Vapor quality of the tank when it is considered full. The default</span>
+<span class="sd">            is 1 (Gas).</span>
+
+<span class="sd">        empty_quality : float, optional</span>
+<span class="sd">            Vapor quality of the tank when it is considered empty. The default</span>
+<span class="sd">            is 1 (Gas).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If any of the mass values provided are less than 0.</span>
+
+<span class="sd">        ValueError</span>
+<span class="sd">            If the vent pressure set is higher than what can be calculated by</span>
+<span class="sd">            &#39;CoolProp&#39;.</span>
+
+<span class="sd">        ValueError</span>
+<span class="sd">            If neither the volume nor the complete capacity and the pressure</span>
+<span class="sd">            and temperature swing conditions were provided.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        StorageTank</span>
+<span class="sd">            A storage tank object which can be passed as arguments to dynamic</span>
+<span class="sd">            simulations and can calculate certain properties on its own.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">float_function_generator</span><span class="p">(</span><span class="n">floatingvalue</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">float_function</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">floatingvalue</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">float_function</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">aluminum_mass</span> <span class="ow">or</span> <span class="n">carbon_fiber_mass</span> <span class="ow">or</span> <span class="n">steel_mass</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please input valid values for the mass&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">volume</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">set_capacity</span> <span class="ow">or</span> <span class="n">full_pressure</span> <span class="ow">or</span>
+                               <span class="n">full_temperature</span> <span class="ow">or</span> <span class="n">empty_pressure</span> <span class="ow">or</span>
+                               <span class="n">empty_temperature</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please input the complete capacity + pressure &quot;</span>
+                             <span class="s2">&quot;and temperature swing information, or input &quot;</span>
+                             <span class="s2">&quot;the tank volume&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StorageTank.volume"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.volume">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="n">volume</span></div>
+<div class="viewcode-block" id="StorageTank.aluminum_mass"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.aluminum_mass">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">aluminum_mass</span> <span class="o">=</span> <span class="n">aluminum_mass</span></div>
+<div class="viewcode-block" id="StorageTank.carbon_fiber_mass"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.carbon_fiber_mass">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">carbon_fiber_mass</span> <span class="o">=</span> <span class="n">carbon_fiber_mass</span></div>
+<div class="viewcode-block" id="StorageTank.steel_mass"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.steel_mass">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">steel_mass</span> <span class="o">=</span> <span class="n">steel_mass</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heat_capacity</span> <span class="o">=</span> <span class="n">Cs_gen</span><span class="p">(</span><span class="n">mads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">mcarbon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">carbon_fiber_mass</span><span class="p">,</span>
+                                    <span class="n">malum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">aluminum_mass</span><span class="p">,</span>
+                                    <span class="n">msteel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steel_mass</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StorageTank.stored_fluid"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.stored_fluid">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span> <span class="o">=</span> <span class="n">stored_fluid</span></div>
+<div class="viewcode-block" id="StorageTank.min_supply_pressure"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.min_supply_pressure">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">min_supply_pressure</span> <span class="o">=</span> <span class="n">min_supply_pressure</span></div>
+
+        <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_pressure</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">pmax</span><span class="p">()</span><span class="o">/</span><span class="mi">10</span>
+
+        <span class="k">if</span> <span class="n">vent_pressure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_pressure</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span> <span class="o">=</span> <span class="n">vent_pressure</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_pressure</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span> <span class="ow">and</span>\
+                <span class="n">stored_fluid</span><span class="o">.</span><span class="n">EOS</span> <span class="o">==</span> <span class="s2">&quot;HEOS&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;You set the venting pressure to be larger than the valid </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span>
+                <span class="s2">&quot;pressure range input for CoolProp.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StorageTank.surface_area"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.surface_area">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">surface_area</span> <span class="o">=</span> <span class="n">surface_area</span></div>
+<div class="viewcode-block" id="StorageTank.heat_transfer_coefficient"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.StorageTank.heat_transfer_coefficient">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">heat_transfer_coefficient</span> <span class="o">=</span> <span class="n">heat_transfer_coefficient</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">htc_original</span> <span class="o">=</span> <span class="n">heat_transfer_coefficient</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heat_transfer_coefficient</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">heat_transfer_coefficient</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span>
+                <span class="n">heat_transfer_coefficient</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tr_original</span> <span class="o">=</span> <span class="n">thermal_resistance</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">thermal_resistance</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_resistance</span> <span class="o">=</span> <span class="n">float_function_generator</span><span class="p">(</span>
+                <span class="n">thermal_resistance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">thermal_resistance</span> <span class="o">=</span> <span class="n">thermal_resistance</span>
+
+        <span class="k">if</span> <span class="n">set_capacity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">min_func</span><span class="p">(</span><span class="n">vol</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="n">vol</span>
+                <span class="n">cap_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">full_pressure</span><span class="p">,</span> <span class="n">full_temperature</span><span class="p">,</span>
+                                         <span class="n">full_quality</span><span class="p">)</span>
+                <span class="n">cap_empty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">empty_pressure</span><span class="p">,</span> <span class="n">empty_temperature</span><span class="p">,</span>
+                                          <span class="n">empty_quality</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">((</span><span class="n">cap_full</span><span class="o">-</span><span class="n">cap_empty</span><span class="p">)</span><span class="o">-</span><span class="n">set_capacity</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">vol</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize_scalar</span><span class="p">(</span><span class="n">min_func</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1E16</span><span class="p">),</span>
+                                              <span class="n">method</span><span class="o">=</span><span class="s2">&quot;bounded&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">full_pressure</span><span class="p">,</span> <span class="n">full_temperature</span><span class="p">,</span> <span class="n">full_quality</span><span class="p">)</span> <span class="o">&lt;</span>\
+                    <span class="n">set_capacity</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Difference between full and empty&quot;</span>
+                                 <span class="s2">&quot; conditions too small. Tank volume not&quot;</span>
+                                 <span class="s2">&quot; converged (i.e. solution &gt;1E16).&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">x</span>
+
+<div class="viewcode-block" id="StorageTank.capacity"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.capacity">[docs]</a>    <span class="k">def</span> <span class="nf">capacity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mol&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the amount of fluid stored in the tank at given conditions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. Can vary between 0 and 1.</span>
+<span class="sd">            The default is 0.</span>
+
+<span class="sd">        unit : str, optional</span>
+<span class="sd">            Unit of the capacity to be returned. Valid units are &quot;mol&quot; and</span>
+<span class="sd">            &quot;kg&quot;. The default is &quot;mol&quot;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Amount of fluid stored.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">cap_mol</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;mol&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cap_mol</span>
+        <span class="k">elif</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;kg&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cap_mol</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StorageTank.capacity_bulk"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.capacity_bulk">[docs]</a>    <span class="k">def</span> <span class="nf">capacity_bulk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                      <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mol&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the amount of bulk fluid in the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. Can vary between 0 and 1.</span>
+<span class="sd">            The default is 0.</span>
+
+<span class="sd">        unit : str, optional</span>
+<span class="sd">            Unit of the capacity to be returned. Valid units are &quot;mol&quot; and</span>
+<span class="sd">            &quot;kg&quot;. The default is &quot;mol&quot;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Amount of bulk fluid stored.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StorageTank.find_quality_at_saturation_capacity"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.find_quality_at_saturation_capacity">[docs]</a>    <span class="k">def</span> <span class="nf">find_quality_at_saturation_capacity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                            <span class="n">capacity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find vapor quality at the given temperature and capacity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K)</span>
+
+<span class="sd">        capacity : float</span>
+<span class="sd">            Amount of fluid in the tank (moles).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Vapor quality of the fluid being stored. This is assuming that the</span>
+<span class="sd">            fluid is on the saturation line.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">rhol</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">rhog</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                      <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="n">rhog</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">rhol</span><span class="p">]])</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="n">capacity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span><span class="p">]</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="StorageTank.internal_energy"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.internal_energy">[docs]</a>    <span class="k">def</span> <span class="nf">internal_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                        <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the internal energy of the fluid inside of the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. The default is 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Internal energy of the fluid being stored (J).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">ufluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">umolar</span><span class="p">()</span>
+        <span class="n">bulk_fluid_moles</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span>
+        <span class="k">return</span> <span class="n">ufluid</span> <span class="o">*</span> <span class="n">bulk_fluid_moles</span></div>
+
+<div class="viewcode-block" id="StorageTank.conditions_at_capacity_temperature"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.conditions_at_capacity_temperature">[docs]</a>    <span class="k">def</span> <span class="nf">conditions_at_capacity_temperature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cap</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                           <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">p_guess</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                           <span class="n">q_guess</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find conditions corresponding to a given capacity and temperature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cap : float</span>
+<span class="sd">            Amount of fluid inside the tank (moles).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        p_guess : float</span>
+<span class="sd">            Initial guess for pressure value (Pa) to be optimized.</span>
+
+<span class="sd">        q_guess : float</span>
+<span class="sd">            Initial guess for vaport quality value to be optimized.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        OptimizeResult</span>
+<span class="sd">            The optimization result represented as a OptimizeResult object.</span>
+<span class="sd">            The relevant attribute for this method is x, the solution array.</span>
+<span class="sd">            x[0] contains the pressure value and x[1] contains the vapor</span>
+<span class="sd">            quality value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">pmax</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">optim</span><span class="p">(</span><span class="n">pres</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">pres</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q_guess</span><span class="p">)</span> <span class="o">-</span> <span class="n">cap</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize_scalar</span><span class="p">(</span><span class="n">optim</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">1E-16</span><span class="p">,</span> <span class="n">pmax</span><span class="p">),</span>
+                                          <span class="n">method</span><span class="o">=</span><span class="s1">&#39;bounded&#39;</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">q_guess</span><span class="p">]</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">fun</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+            <span class="n">psat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_quality_at_saturation_capacity</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">cap</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">psat</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="StorageTank.conditions_at_capacity_pressure"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.conditions_at_capacity_pressure">[docs]</a>    <span class="k">def</span> <span class="nf">conditions_at_capacity_pressure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cap</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                        <span class="n">T_guess</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                        <span class="n">q_guess</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find conditions corresponding to a given capacity and temperature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cap : float</span>
+<span class="sd">            Amount of fluid inside the tank (moles).</span>
+
+<span class="sd">        P : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T_guess : float</span>
+<span class="sd">            Initial guess for temperature value (K) to be optimized.</span>
+
+<span class="sd">        q_guess : float</span>
+<span class="sd">            Initial guess for vaport quality value to be optimized.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        scipy.optimize.OptimizeResult</span>
+<span class="sd">            The optimization result represented as a OptimizeResult object.</span>
+<span class="sd">            The relevant attribute for this package is x, the solution array.</span>
+<span class="sd">            x[0] contains the temperature value and x[1] contains the vapor</span>
+<span class="sd">            quality value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">Tmin</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">Tmin</span><span class="p">()</span>
+        <span class="n">Tmax</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">Tmax</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">optim</span><span class="p">(</span><span class="n">temper</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">temper</span><span class="p">,</span> <span class="n">q_guess</span><span class="p">)</span> <span class="o">-</span> <span class="n">cap</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize_scalar</span><span class="p">(</span><span class="n">optim</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="n">Tmin</span><span class="p">,</span> <span class="n">Tmax</span><span class="p">),</span>
+                                          <span class="n">method</span><span class="o">=</span><span class="s1">&#39;bounded&#39;</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">q_guess</span><span class="p">]</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">fun</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PQ_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">Tsat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">T</span><span class="p">()</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_quality_at_saturation_capacity</span><span class="p">(</span><span class="n">Tsat</span><span class="p">,</span> <span class="n">cap</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tsat</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="StorageTank.calculate_dormancy"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.calculate_dormancy">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_dormancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                           <span class="n">heating_power</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate dormancy time given a constant heating rate.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Initial tank pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Initial tank temperature (K).</span>
+
+<span class="sd">        heating_power : float</span>
+<span class="sd">            The heating power going into the tank during parking (W).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Initial vapor quality of the tank. The default is 0 (pure liquid).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pd.DataFrame</span>
+<span class="sd">            Pandas dataframe containing calculation conditions and results.</span>
+<span class="sd">            Each key stores a floating point number.</span>
+<span class="sd">            The dictionary keys and their respective values are:</span>
+
+<span class="sd">            - &quot;init pressure&quot;: initial pressure</span>
+<span class="sd">            - &quot;init temperature&quot;: initial temperature</span>
+<span class="sd">            - &quot;init quality&quot;: initial vapor quality</span>
+<span class="sd">            - &quot;dormancy time&quot;: time until tank needs to be vented in seconds</span>
+<span class="sd">            - &quot;final temperature&quot;: temperature of the tank as venting begins</span>
+<span class="sd">            - &quot;final quality&quot;: vapor quality at the time of venting</span>
+<span class="sd">            - &quot;final pressure&quot;: pressure at the time of venting</span>
+<span class="sd">            - &quot;capacity error&quot;: error between final and initial capacity</span>
+<span class="sd">            - &quot;total energy change&quot;: difference in internal energy between the</span>
+<span class="sd">              initial and final conditions</span>
+<span class="sd">            - &quot;solid heat capacity contribution&quot;: the amount of heat absorbed</span>
+<span class="sd">              by the tank walls</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">init_cap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">init_heat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">vent_cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions_at_capacity_pressure</span><span class="p">(</span><span class="n">init_cap</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                                         <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">final_heat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                          <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">final_cap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                  <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">heat_capacity_change</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">):</span>
+            <span class="n">xgrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">heatcapgrid</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">heat_capacity</span><span class="p">(</span><span class="n">temper</span><span class="p">)</span> <span class="k">for</span> <span class="n">temper</span> <span class="ow">in</span> <span class="n">xgrid</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">heatcapgrid</span><span class="p">,</span> <span class="n">xgrid</span><span class="p">)</span>
+
+        <span class="n">final_heat</span> <span class="o">+=</span> <span class="n">heat_capacity_change</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;init pressure&quot;</span><span class="p">:</span> <span class="n">p</span><span class="p">,</span>
+                             <span class="s2">&quot;init temperature&quot;</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
+                             <span class="s2">&quot;init quality&quot;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span>
+                             <span class="s2">&quot;dormancy time&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">final_heat</span> <span class="o">-</span>
+                                               <span class="n">init_heat</span><span class="p">)</span><span class="o">/</span><span class="n">heating_power</span><span class="p">,</span>
+                             <span class="s2">&quot;final temperature&quot;</span><span class="p">:</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                             <span class="s2">&quot;final quality&quot;</span><span class="p">:</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                             <span class="s2">&quot;final pressure&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                             <span class="s2">&quot;capacity error&quot;</span><span class="p">:</span> <span class="n">final_cap</span> <span class="o">-</span> <span class="n">init_cap</span><span class="p">,</span>
+                             <span class="s2">&quot;total energy change&quot;</span><span class="p">:</span> <span class="n">final_heat</span> <span class="o">-</span> <span class="n">init_heat</span><span class="p">,</span>
+                             <span class="s2">&quot;solid heat capacity contribution&quot;</span><span class="p">:</span>
+                                 <span class="n">heat_capacity_change</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">])},</span>
+                            <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="StorageTank.thermal_res"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.StorageTank.thermal_res">[docs]</a>    <span class="k">def</span> <span class="nf">thermal_res</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">:</span> <span class="nb">float</span>
+                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the thermal resistance of the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa) of fluid inside tank.</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K) of fluid inside tank</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Time elapsed in simulation (s).</span>
+<span class="sd">        env_temp : float</span>
+<span class="sd">            Temperature (K) of environment surrounding tank.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Thermal resistance of the tank (K/W).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">htc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_transfer_coefficient</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">htc</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_area</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">htc</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_area</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">thermal_resistance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_resistance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">env_temp</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SorbentTank"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank">[docs]</a><span class="k">class</span> <span class="nc">SorbentTank</span><span class="p">(</span><span class="n">StorageTank</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stores properties of a fluid storage tank filled with sorbents.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    volume : float</span>
+<span class="sd">        Internal volume of the storage tank (m^3).</span>
+
+<span class="sd">    sorbent_material : SorbentMaterial</span>
+<span class="sd">        An object storing the properties of the sorbent material used in</span>
+<span class="sd">        the tank.</span>
+
+<span class="sd">    aluminum_mass : float, optional</span>
+<span class="sd">        The mass of aluminum making up the tank walls (kg). The default is</span>
+<span class="sd">        0.</span>
+
+<span class="sd">    carbon_fiber_mass : float, optional</span>
+<span class="sd">        The mass of carbon fiber making up the tank walls (kg). The default</span>
+<span class="sd">        is 0.</span>
+
+<span class="sd">    steel_mass : float, optional</span>
+<span class="sd">        The mass of steel making up the tank walls (kg). The default is 0.</span>
+
+<span class="sd">    vent_pressure : float, optional</span>
+<span class="sd">        Maximum pressure at which the tank has to be vented (Pa). The</span>
+<span class="sd">        default is None.</span>
+
+<span class="sd">    min_supply_pressure : float, optional</span>
+<span class="sd">        The minimum supply pressure (Pa) for discharging simulations. The</span>
+<span class="sd">        default is 1E5.</span>
+
+<span class="sd">    thermal_resistance : Callable, optional</span>
+<span class="sd">        The thermal resistance of the tank walls (K/W). The default is 0.</span>
+
+<span class="sd">    surface_area : float, optional</span>
+<span class="sd">        Outer surface area of the tank in contact with the environment</span>
+<span class="sd">        (m^2). The default is 0.</span>
+
+<span class="sd">    heat_transfer_coefficient : Callable, optional</span>
+<span class="sd">        The heat transfer coefficient of the tank surface (W/(m^2 K)).</span>
+<span class="sd">        The default is 0.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">sorbent_material</span><span class="p">:</span> <span class="n">SorbentMaterial</span><span class="p">,</span>
+                 <span class="n">aluminum_mass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">carbon_fiber_mass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">steel_mass</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">vent_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">min_supply_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1E5</span><span class="p">,</span>
+                 <span class="n">thermal_resistance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">surface_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">heat_transfer_coefficient</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">volume</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">set_capacity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">full_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">empty_pressure</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">full_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">empty_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">full_quality</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">empty_quality</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">set_sorbent_fill</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+                 <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a SorbentTank object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sorbent_material : SorbentMaterial</span>
+<span class="sd">            An object storing the properties of the sorbent material used in</span>
+<span class="sd">            the tank.</span>
+
+<span class="sd">        aluminum_mass : float, optional</span>
+<span class="sd">            The mass of aluminum making up the tank walls (kg). The default is</span>
+<span class="sd">            0.</span>
+
+<span class="sd">        carbon_fiber_mass : float, optional</span>
+<span class="sd">            The mass of carbon fiber making up the tank walls (kg). The default</span>
+<span class="sd">            is 0.</span>
+
+<span class="sd">        steel_mass : float, optional</span>
+<span class="sd">            The mass of steel making up the tank walls (kg). The default is 0.</span>
+
+<span class="sd">        vent_pressure : float, optional</span>
+<span class="sd">            Maximum pressure at which the tank has to be vented (Pa). The</span>
+<span class="sd">            default is None.</span>
+
+<span class="sd">        min_supply_pressure : float, optional</span>
+<span class="sd">            The minimum supply pressure (Pa) for discharging simulations. The</span>
+<span class="sd">            default is 1E5.</span>
+
+<span class="sd">        thermal_resistance : Callable or float, optional</span>
+<span class="sd">            A function which returns the thermal resistance of the tank</span>
+<span class="sd">            walls (K/W) as a function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), time (s), and temperature of surroundings (K). The</span>
+<span class="sd">            default is 0. If a float is provided, it will be converted to a</span>
+<span class="sd">            function which returns that value everywhere. If both this and</span>
+<span class="sd">            the arguments &#39;surface_area&#39; and &#39;heat_transfer_coefficient&#39; are</span>
+<span class="sd">            passed, two values of thermal resistance will be calculated and</span>
+<span class="sd">            the highest value between the two will be taken at each time step.</span>
+<span class="sd">            Thus, to avoid confusion, one should either: (a) use the other two</span>
+<span class="sd">            arguments together, or (b) use this one, but not both at the same</span>
+<span class="sd">            time.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def tr_function(p, T, time, env_temp):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    # &#39;env_temp&#39; is the temperature of surroundings (K)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the thermal resistance (K/W)</span>
+<span class="sd">                    return tr_value</span>
+
+<span class="sd">        surface_area : float, optional</span>
+<span class="sd">            Outer surface area of the tank in contact with the environment</span>
+<span class="sd">            (m^2). The default is 0.</span>
+
+<span class="sd">        heat_transfer_coefficient : Callable or float, optional</span>
+<span class="sd">            A function which returns the heat transfer coefficient of the tank</span>
+<span class="sd">            walls (W/(m^2 K)) as a function of tank pressure (Pa), tank</span>
+<span class="sd">            temperature (K), time (s), and temperature of surroundings (K). The</span>
+<span class="sd">            default is 0. If a float is  provided, it will be converted to a</span>
+<span class="sd">            function which returns that value everywhere.</span>
+
+<span class="sd">            If a callable is passed, it must have the signature::</span>
+
+<span class="sd">                def htc_function(p, T, time, env_temp):</span>
+<span class="sd">                    # &#39;p&#39; is tank pressure (Pa)</span>
+<span class="sd">                    # &#39;T&#39; is tank temperature (K)</span>
+<span class="sd">                    # &#39;time&#39; is the time elapsed within the simulation (s)</span>
+<span class="sd">                    # &#39;env_temp&#39; is the temperature of surroundings (K)</span>
+<span class="sd">                    ....</span>
+<span class="sd">                    # Returned is the heat transfer coefficient (W/(m^2 K))</span>
+<span class="sd">                    return heat_transfer_coef</span>
+
+<span class="sd">        volume : float, optional</span>
+<span class="sd">            Internal volume of the storage tank (m^3). The default is None.</span>
+<span class="sd">            This value is required unless the set capacity and operating</span>
+<span class="sd">            conditions are defined, in which case the volume is calculated from</span>
+<span class="sd">            the capacity and operating conditions.</span>
+
+<span class="sd">        set_capacity : float, optional</span>
+<span class="sd">            Set internal capacity of the storage tank (mol). The default is</span>
+<span class="sd">            None. If specified, this will override the user-specified tank</span>
+<span class="sd">            volume.</span>
+
+<span class="sd">        full_pressure : float, optional</span>
+<span class="sd">            Pressure (Pa) of the tank when it is considered full. The default</span>
+<span class="sd">            is None.</span>
+
+<span class="sd">        empty_pressure : float, optional</span>
+<span class="sd">            Pressure (Pa) of the tank when it is considered empty. The default</span>
+<span class="sd">            is None.</span>
+
+<span class="sd">        full_temperature : float, optional</span>
+<span class="sd">            Temperature (K) of the tank when it is considered full. The</span>
+<span class="sd">            default is None.</span>
+
+<span class="sd">        empty_temperature : float, optional</span>
+<span class="sd">            Temperature (K) of the tank when it is considered empty. The</span>
+<span class="sd">            default is None.</span>
+
+<span class="sd">        full_quality : float, optional</span>
+<span class="sd">            Vapor quality of the tank when it is considered full. The default</span>
+<span class="sd">            is 1 (Gas).</span>
+
+<span class="sd">        empty_quality : float, optional</span>
+<span class="sd">            Vapor quality of the tank when it is considered empty. The default</span>
+<span class="sd">            is 1 (Gas).</span>
+
+<span class="sd">        set_sorbent_fill : float, optional</span>
+<span class="sd">            Ratio of tank volume filled with sorbent. The default is 1</span>
+<span class="sd">            (completely filled with sorbent).</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SorbentTank</span>
+<span class="sd">            Object which stores various properties of a storage tank containing</span>
+<span class="sd">            sorbents. It also has some useful methods related to the tank, most</span>
+<span class="sd">            notably dormancy calculation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stored_fluid</span> <span class="o">=</span> <span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span><span class="n">stored_fluid</span>
+<div class="viewcode-block" id="SorbentTank.sorbent_material"><a class="viewcode-back" href="../../../autoapi/pytanksim/classes/storagetankclasses/index.html#pytanksim.classes.SorbentTank.sorbent_material">[docs]</a>        <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span> <span class="o">=</span> <span class="n">sorbent_material</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">volume</span><span class="o">=</span><span class="n">volume</span><span class="p">,</span>
+                         <span class="n">aluminum_mass</span><span class="o">=</span><span class="n">aluminum_mass</span><span class="p">,</span>
+                         <span class="n">stored_fluid</span><span class="o">=</span><span class="n">stored_fluid</span><span class="p">,</span>
+                         <span class="n">carbon_fiber_mass</span><span class="o">=</span><span class="n">carbon_fiber_mass</span><span class="p">,</span>
+                         <span class="n">min_supply_pressure</span><span class="o">=</span><span class="n">min_supply_pressure</span><span class="p">,</span>
+                         <span class="n">vent_pressure</span><span class="o">=</span><span class="n">vent_pressure</span><span class="p">,</span>
+                         <span class="n">thermal_resistance</span><span class="o">=</span><span class="n">thermal_resistance</span><span class="p">,</span>
+                         <span class="n">surface_area</span><span class="o">=</span><span class="n">surface_area</span><span class="p">,</span>
+                         <span class="n">steel_mass</span><span class="o">=</span><span class="n">steel_mass</span><span class="p">,</span>
+                         <span class="n">heat_transfer_coefficient</span><span class="o">=</span><span class="n">heat_transfer_coefficient</span><span class="p">,</span>
+                         <span class="n">set_capacity</span><span class="o">=</span><span class="n">set_capacity</span><span class="p">,</span>
+                         <span class="n">full_pressure</span><span class="o">=</span><span class="n">full_pressure</span><span class="p">,</span>
+                         <span class="n">empty_pressure</span><span class="o">=</span><span class="n">empty_pressure</span><span class="p">,</span>
+                         <span class="n">full_temperature</span><span class="o">=</span><span class="n">full_temperature</span><span class="p">,</span>
+                         <span class="n">empty_temperature</span><span class="o">=</span><span class="n">empty_temperature</span><span class="p">,</span>
+                         <span class="n">full_quality</span><span class="o">=</span><span class="n">full_quality</span><span class="p">,</span>
+                         <span class="n">empty_quality</span><span class="o">=</span><span class="n">empty_quality</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heat_capacity</span> <span class="o">=</span> <span class="n">Cs_gen</span><span class="p">(</span><span class="n">mads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span>
+                                    <span class="n">mcarbon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">carbon_fiber_mass</span><span class="p">,</span>
+                                    <span class="n">malum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">aluminum_mass</span><span class="p">,</span>
+                                    <span class="n">msteel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steel_mass</span><span class="p">,</span>
+                                    <span class="n">Tads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span>
+                                    <span class="n">Debye_temperature</span><span class="p">,</span>
+                                    <span class="n">MWads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">molar_mass</span><span class="p">,</span>
+                                    <span class="n">func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span>
+                                    <span class="n">heat_capacity_function</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">set_capacity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">min_func</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">sorbent_vol</span> <span class="o">=</span> <span class="n">set_sorbent_fill</span> <span class="o">*</span> <span class="n">v</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">sorbent_vol</span> <span class="o">*</span>\
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">bulk_density</span>
+                <span class="n">cap_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">full_pressure</span><span class="p">,</span> <span class="n">full_temperature</span><span class="p">,</span>
+                                         <span class="n">full_quality</span><span class="p">)</span>
+                <span class="n">cap_empty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">empty_pressure</span><span class="p">,</span> <span class="n">empty_temperature</span><span class="p">,</span>
+                                          <span class="n">empty_quality</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">((</span><span class="n">cap_full</span><span class="o">-</span><span class="n">cap_empty</span><span class="p">)</span><span class="o">-</span><span class="n">set_capacity</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">vol</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize_scalar</span><span class="p">(</span><span class="n">min_func</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1E10</span><span class="p">),</span>
+                                              <span class="n">method</span><span class="o">=</span><span class="s2">&quot;Bounded&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">x</span>
+            <span class="n">sorbent_vol</span> <span class="o">=</span> <span class="n">set_sorbent_fill</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">sorbent_vol</span> <span class="o">*</span>\
+                <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">bulk_density</span>
+
+<div class="viewcode-block" id="SorbentTank.bulk_fluid_volume"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.bulk_fluid_volume">[docs]</a>    <span class="k">def</span> <span class="nf">bulk_fluid_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                          <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                          <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the volume of bulk fluid inside of the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature(K).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Bulk fluid volume within the tank (m^3).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tankvol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volume</span>
+        <span class="n">mads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span>
+        <span class="n">rhoskel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">skeletal_density</span>
+        <span class="n">vads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span><span class="n">v_ads</span>
+        <span class="n">outputraw</span> <span class="o">=</span> <span class="n">tankvol</span> <span class="o">-</span> <span class="n">mads</span><span class="o">/</span><span class="n">rhoskel</span> <span class="o">-</span> <span class="n">vads</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="n">mads</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">outputraw</span> <span class="k">if</span> <span class="n">outputraw</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+<div class="viewcode-block" id="SorbentTank.capacity"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.capacity">[docs]</a>    <span class="k">def</span> <span class="nf">capacity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the amount of fluid stored in the tank at given conditions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. Can vary between 0 and 1.</span>
+<span class="sd">            The default is 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Amount of fluid stored (moles).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">bulk_fluid_moles</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulk_fluid_volume</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">adsorbed_moles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span><span class="n">n_absolute</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>\
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span>
+        <span class="k">return</span> <span class="n">bulk_fluid_moles</span> <span class="o">+</span> <span class="n">adsorbed_moles</span></div>
+
+<div class="viewcode-block" id="SorbentTank.capacity_bulk"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.capacity_bulk">[docs]</a>    <span class="k">def</span> <span class="nf">capacity_bulk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the amount of bulk fluid in the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. Can vary between 0 and 1.</span>
+<span class="sd">            The default is 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Amount of bulk fluid stored (moles).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="n">bulk_fluid_moles</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulk_fluid_volume</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bulk_fluid_moles</span></div>
+
+<div class="viewcode-block" id="SorbentTank.internal_energy"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.internal_energy">[docs]</a>    <span class="k">def</span> <span class="nf">internal_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the internal energy of the fluid inside of the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. The default is 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Internal energy of the fluid being stored (J).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">ufluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">umolar</span><span class="p">()</span>
+        <span class="n">bulk_fluid_moles</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulk_fluid_volume</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">adsorbed_moles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span><span class="n">n_absolute</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>\
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span>
+        <span class="n">uadsorbed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span>\
+            <span class="n">internal_energy_adsorbed</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ufluid</span> <span class="o">*</span> <span class="n">bulk_fluid_moles</span> <span class="o">+</span> <span class="n">adsorbed_moles</span> <span class="o">*</span> <span class="p">(</span><span class="n">uadsorbed</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SorbentTank.internal_energy_sorbent"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.internal_energy_sorbent">[docs]</a>    <span class="k">def</span> <span class="nf">internal_energy_sorbent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the internal energy of the adsorbed fluid in the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. The default is 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Internal energy of the adsorbed fluid in the tank (J).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">adsorbed_moles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span><span class="n">n_absolute</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>\
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span>
+        <span class="n">uadsorbed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span>\
+            <span class="n">internal_energy_adsorbed</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">adsorbed_moles</span> <span class="o">*</span> <span class="p">(</span><span class="n">uadsorbed</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SorbentTank.internal_energy_bulk"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.internal_energy_bulk">[docs]</a>    <span class="k">def</span> <span class="nf">internal_energy_bulk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the internal energy of the bulk fluid in the tank.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Vapor quality of the fluid being stored. The default is 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Internal energy of the bulk fluid in the tank (J).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">determine_phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s2">&quot;Saturated&quot;</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">PT_INPUTS</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">ufluid</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">umolar</span><span class="p">()</span>
+        <span class="n">bulk_fluid_moles</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulk_fluid_volume</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ufluid</span> <span class="o">*</span> <span class="n">bulk_fluid_moles</span></div>
+
+<div class="viewcode-block" id="SorbentTank.find_quality_at_saturation_capacity"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.find_quality_at_saturation_capacity">[docs]</a>    <span class="k">def</span> <span class="nf">find_quality_at_saturation_capacity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                            <span class="n">capacity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find vapor quality at the given temperature and capacity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature (K)</span>
+
+<span class="sd">        capacity : float</span>
+<span class="sd">            Amount of fluid in the tank (moles).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Vapor quality of the fluid being stored. This is assuming that the</span>
+<span class="sd">            fluid is on the saturation line.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">rhol</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span>
+        <span class="n">fluid</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">rhog</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+        <span class="n">bulk_capacity</span> <span class="o">=</span> <span class="n">capacity</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span> <span class="o">*</span>\
+            <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span><span class="n">n_absolute</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                      <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="n">rhog</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">rhol</span><span class="p">]])</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="n">bulk_capacity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulk_fluid_volume</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)]</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">q</span></div>
+
+<div class="viewcode-block" id="SorbentTank.find_temperature_at_saturation_quality"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.find_temperature_at_saturation_quality">[docs]</a>    <span class="k">def</span> <span class="nf">find_temperature_at_saturation_quality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                               <span class="n">cap</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find temperature at a given capacity and vapor quality value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        q : float</span>
+<span class="sd">            Vapor quality. Can vary between 0 and 1.</span>
+<span class="sd">        cap : float</span>
+<span class="sd">            Amount of fluid stored in the tank (moles).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        scipy.optimize.OptimizeResult</span>
+<span class="sd">            The optimization result represented as a OptimizeResult object.</span>
+<span class="sd">            The relevant attribute for this function is x, the optimized</span>
+<span class="sd">            temperature value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">optim</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span> <span class="o">-</span> <span class="n">cap</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">fluid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span>
+        <span class="n">Tmin</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">Tmin</span><span class="p">()</span>
+        <span class="n">Tmax</span> <span class="o">=</span> <span class="n">fluid</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize_scalar</span><span class="p">(</span><span class="n">optim</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;bounded&quot;</span><span class="p">,</span>
+                                          <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="n">Tmin</span><span class="p">,</span> <span class="n">Tmax</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="SorbentTank.calculate_dormancy"><a class="viewcode-back" href="../../../autoapi/pytanksim/index.html#pytanksim.classes.SorbentTank.calculate_dormancy">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_dormancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                           <span class="n">heating_power</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                           <span class="n">q</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate dormancy time given a constant heating rate.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Initial tank pressure (Pa).</span>
+
+<span class="sd">        T : float</span>
+<span class="sd">            Initial tank temperature (K).</span>
+
+<span class="sd">        heating_power : float</span>
+<span class="sd">            The heating power going into the tank during parking (W).</span>
+
+<span class="sd">        q : float, optional</span>
+<span class="sd">            Initial vapor quality of the tank. The default is 0 (pure liquid).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pd.DataFrame</span>
+<span class="sd">            Pandas dataframe containing calculation conditions and results.</span>
+<span class="sd">            Each key stores a floating point number.</span>
+<span class="sd">            The dictionary keys and their respective values are:</span>
+
+<span class="sd">            - &quot;init pressure&quot;: initial pressure</span>
+<span class="sd">            - &quot;init temperature&quot;: initial temperature</span>
+<span class="sd">            - &quot;init quality&quot;: initial vapor quality</span>
+<span class="sd">            - &quot;dormancy time&quot;: time until tank needs to be vented in seconds</span>
+<span class="sd">            - &quot;final temperature&quot;: temperature of the tank as venting begins</span>
+<span class="sd">            - &quot;final quality&quot;: vapor quality at the time of venting</span>
+<span class="sd">            - &quot;final pressure&quot;: pressure at the time of venting</span>
+<span class="sd">            - &quot;capacity error&quot;: error between final and initial capacity</span>
+<span class="sd">            - &quot;total energy change&quot;: difference in internal energy between the</span>
+<span class="sd">              initial and final conditions</span>
+<span class="sd">            - &quot;sorbent energy contribution&quot;: the amount of heat taken by</span>
+<span class="sd">              the adsorbed phase via desorption</span>
+<span class="sd">            - &quot;bulk energy contribution&quot;: the amount of heat absorbed by the</span>
+<span class="sd">              bulk phase</span>
+<span class="sd">            - &quot;immersion heat contribution&quot;: how much heat has been absorbed</span>
+<span class="sd">              by un-immersing the sorbent material in the fluid</span>
+<span class="sd">            - &quot;solid heat capacity contribution&quot;: the amount of heat absorbed</span>
+<span class="sd">              by the tank walls</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">init_pres</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="n">init_cap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">init_ene</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">init_ene_ads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy_sorbent</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">init_ene_bulk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy_bulk</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">vent_cond</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditions_at_capacity_pressure</span><span class="p">(</span><span class="n">init_cap</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                                         <span class="n">T</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">final_ene</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                         <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">final_cap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                  <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">final_ene_ads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy_sorbent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                                     <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                     <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">final_ene_bulk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_energy_bulk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+                                                   <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">heat_capacity_change</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">):</span>
+            <span class="n">xgrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">heatcapgrid</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">heat_capacity</span><span class="p">(</span><span class="n">temper</span><span class="p">)</span> <span class="k">for</span> <span class="n">temper</span> <span class="ow">in</span> <span class="n">xgrid</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">heatcapgrid</span><span class="p">,</span> <span class="n">xgrid</span><span class="p">)</span>
+
+        <span class="n">final_ene</span> <span class="o">+=</span> <span class="n">heat_capacity_change</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">res1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_temperature_at_saturation_quality</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">init_cap</span><span class="p">)</span>
+        <span class="n">res2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_temperature_at_saturation_quality</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">init_cap</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span> <span class="ow">or</span>\
+                <span class="n">p</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">p_critical</span><span class="p">():</span>
+            <span class="n">integ_res</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">res1</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">T</span> <span class="ow">and</span> <span class="n">res1</span><span class="o">.</span><span class="n">fun</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">T</span> <span class="ow">and</span> <span class="n">res2</span><span class="o">.</span><span class="n">fun</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>\
+                <span class="ow">or</span> <span class="p">(</span><span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">q</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">q</span><span class="p">:</span>
+                <span class="n">lower_bound</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">upper_bound</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">consider_res1</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">res1</span><span class="o">.</span><span class="n">fun</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">and</span> \
+                    <span class="n">T</span> <span class="o">&lt;</span> <span class="n">res1</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="kc">False</span>
+                <span class="n">consider_res2</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">res2</span><span class="o">.</span><span class="n">fun</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">and</span> \
+                    <span class="n">T</span> <span class="o">&lt;</span> <span class="n">res2</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">consider_res1</span> <span class="ow">and</span> <span class="n">consider_res2</span><span class="p">:</span>
+                    <span class="n">Tcheck</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">res1</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">res2</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                    <span class="n">resfinal</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">res1</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">res2</span><span class="o">.</span><span class="n">x</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">consider_res2</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">consider_res1</span><span class="p">):</span>
+                    <span class="n">Tcheck</span> <span class="o">=</span> <span class="n">res2</span><span class="o">.</span><span class="n">x</span>
+                    <span class="n">resfinal</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">consider_res1</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">consider_res2</span><span class="p">):</span>
+                    <span class="n">Tcheck</span> <span class="o">=</span> <span class="n">res1</span><span class="o">.</span><span class="n">x</span>
+                    <span class="n">resfinal</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">resfinal</span>
+                <span class="k">if</span> <span class="n">Tcheck</span> <span class="o">&gt;</span> <span class="mf">0.998</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">T_critical</span><span class="p">():</span>
+                    <span class="n">Tcheck</span> <span class="o">=</span> <span class="mf">0.998</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">T_critical</span><span class="p">()</span>
+                    <span class="n">resfinal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_quality_at_saturation_capacity</span><span class="p">(</span>
+                        <span class="n">Tcheck</span><span class="p">,</span>
+                        <span class="n">init_cap</span><span class="p">)</span>
+                <span class="n">lower_bound</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">resfinal</span><span class="p">)</span>
+                <span class="n">upper_bound</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">resfinal</span><span class="p">)</span>
+            <span class="n">total_surface_area</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">mass</span> <span class="o">*</span>\
+                <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">specific_surface_area</span> <span class="o">*</span> <span class="mi">1000</span>
+            <span class="n">qgrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">,</span> <span class="n">upper_bound</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">Agrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">qgrid</span><span class="p">)</span>
+            <span class="n">ygrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">qgrid</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">qual</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qgrid</span><span class="p">):</span>
+                <span class="n">temper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_temperature_at_saturation_quality</span><span class="p">(</span><span class="n">qual</span><span class="p">,</span>
+                                                                     <span class="n">init_cap</span><span class="p">)</span>\
+                    <span class="o">.</span><span class="n">x</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">CP</span><span class="o">.</span><span class="n">QT_INPUTS</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">temper</span><span class="p">)</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">p</span><span class="p">()</span>
+                <span class="n">rhol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stored_fluid</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">rhomolar</span><span class="p">()</span>
+                <span class="n">nl</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">qual</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacity_bulk</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">temper</span><span class="p">,</span> <span class="n">qual</span><span class="p">)</span>
+                <span class="n">vbulk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bulk_fluid_volume</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">temper</span><span class="p">)</span>
+                <span class="n">Agrid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_surface_area</span> <span class="o">*</span> <span class="p">(</span><span class="n">nl</span><span class="o">/</span><span class="p">(</span><span class="n">rhol</span> <span class="o">*</span> <span class="n">vbulk</span><span class="p">))</span>
+                <span class="n">ygrid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorbent_material</span><span class="o">.</span><span class="n">model_isotherm</span><span class="o">.</span>\
+                    <span class="n">areal_immersion_energy</span><span class="p">(</span><span class="n">temper</span><span class="p">)</span>
+            <span class="n">integ_res</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">integrate</span><span class="o">.</span><span class="n">simps</span><span class="p">(</span><span class="n">ygrid</span><span class="p">,</span> <span class="n">Agrid</span><span class="p">)</span>
+            <span class="n">integ_res</span> <span class="o">=</span> <span class="o">-</span><span class="n">integ_res</span> <span class="k">if</span> <span class="n">q</span> <span class="o">&lt;</span> <span class="n">resfinal</span> <span class="k">else</span> <span class="n">integ_res</span>
+            <span class="n">final_ene</span> <span class="o">=</span> <span class="n">final_ene</span> <span class="o">+</span> <span class="n">integ_res</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">integ_res</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;init pressure&quot;</span><span class="p">:</span> <span class="n">init_pres</span><span class="p">,</span>
+             <span class="s2">&quot;init temperature&quot;</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
+             <span class="s2">&quot;init quality&quot;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span>
+             <span class="s2">&quot;dormancy time&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">final_ene</span> <span class="o">-</span> <span class="n">init_ene</span><span class="p">)</span><span class="o">/</span><span class="n">heating_power</span><span class="p">,</span>
+             <span class="s2">&quot;final temperature&quot;</span><span class="p">:</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+             <span class="s2">&quot;final quality&quot;</span><span class="p">:</span> <span class="n">vent_cond</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+             <span class="s2">&quot;final pressure&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">vent_pressure</span><span class="p">,</span>
+             <span class="s2">&quot;capacity error&quot;</span><span class="p">:</span> <span class="n">final_cap</span> <span class="o">-</span> <span class="n">init_cap</span><span class="p">,</span>
+             <span class="s2">&quot;total energy change&quot;</span><span class="p">:</span> <span class="n">final_ene</span> <span class="o">-</span> <span class="n">init_ene</span><span class="p">,</span>
+             <span class="s2">&quot;sorbent energy contribution&quot;</span><span class="p">:</span> <span class="n">final_ene_ads</span> <span class="o">-</span> <span class="n">init_ene_ads</span><span class="p">,</span>
+             <span class="s2">&quot;bulk energy contribution&quot;</span><span class="p">:</span> <span class="n">final_ene_bulk</span> <span class="o">-</span> <span class="n">init_ene_bulk</span><span class="p">,</span>
+             <span class="s2">&quot;immersion heat contribution&quot;</span><span class="p">:</span> <span class="n">integ_res</span><span class="p">,</span>
+             <span class="s2">&quot;solid heat capacity contribution&quot;</span><span class="p">:</span> <span class="n">heat_capacity_change</span><span class="p">(</span>
+                                                                <span class="n">T</span><span class="p">,</span>
+                                                                <span class="n">vent_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">])},</span>
+            <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Muhammad Irfan Maulana Kusdhany.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -33,6 +33,7 @@ release = '1.1.1'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
     'autoapi.extension'
 ]
