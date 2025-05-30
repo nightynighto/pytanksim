@@ -2290,7 +2290,7 @@ Package Contents
                             pressure prior to the start of a simulation. The default value is 0.
                             Useful when restarting a stopped heated discharge simulation.
    :type heating_required: float, optional
-   :param vented_energy: Cumulative amount of enthaloy (J) contained in the fluid vented prior
+   :param vented_energy: Cumulative amount of enthalpy (J) contained in the fluid vented prior
                          to the start of the simulation. The default is 0. Useful when
                          stopping and restarting discharge simulations.
    :type vented_energy: float, optional

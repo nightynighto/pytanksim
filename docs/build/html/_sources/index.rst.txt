@@ -6,9 +6,17 @@
 Welcome to pytanksim's documentation!
 =====================================
 
+.. image:: ToCDrawing.jpg
+   :width: 800px
+   :height: 320px
+   :alt: A graphical abstract describing how pytanksim uses adsorption isotherm data to simulate processes in sorbent-filled tanks.
+   :align: center
+
 pytanksim is a package which calculates the mass and energy balances in fluid storage tanks and simulates the dynamics during processes such as refueling, discharging, dormancy, and boil-off.
 
 It is also equipped to fit gas adsorption data on nanoporous materials to adsorption models, which then allows the inclusion of sorbent materials in the dynamic simulation.
+
+This documentation page provides API information for each publicly accessible function, class, and method in pytanksim. Detailed case studies which serve as tutorials are available in the form of an article published in the International Journal of Hydrogen Energy, which will be linked here once it is available.
 
 Getting Started
 ===============

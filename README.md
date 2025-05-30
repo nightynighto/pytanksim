@@ -67,11 +67,6 @@ First time users are recommended to go through the example case studies.
 
 The data used in the case studies are taken from the following papers:
 
-- Petitpas, G., Bénard, P., Klebanoff, L. E., Xiao, J., & Aceves, S. (2014).
-A comparative analysis of the cryo-compression and cryo-adsorption hydrogen
-storage methods. International Journal of Hydrogen Energy, 39(20),
-10564–10584. https://doi.org/10.1016/j.ijhydene.2014.04.200 . 
-
 - Ahluwalia, R. K., & Peng, J. K. (2008). Dynamics of cryogenic hydrogen
 storage in insulated pressure vessels for automotive applications.
 International Journal of Hydrogen Energy, 33(17), 4622–4633.
@@ -82,6 +77,16 @@ Lyth, S.M., 2022. Hydrogen and carbon dioxide uptake on scalable and
 inexpensive microporous carbon foams. 
 Microporous and Mesoporous Materials 343, 112141. https://doi.org/10.1016/j.micromeso.2022.112141
 
+- Petitpas, G., Bénard, P., Klebanoff, L. E., Xiao, J., & Aceves, S. (2014).
+A comparative analysis of the cryo-compression and cryo-adsorption hydrogen
+storage methods. International Journal of Hydrogen Energy, 39(20),
+10564–10584. https://doi.org/10.1016/j.ijhydene.2014.04.200 . 
+
+- Purewal, J., Liu, D., Sudik, A., Veenstra, M., Yang, J., Maurer, S., Müller,
+U., & Siegel, D. J. (2012). Improved Hydrogen Storage and Thermal Conductivity
+in High-Density MOF-5 Composites. The Journal of Physical Chemistry C, 116(38),
+20199–20212. https://doi.org/10.1021/jp305524f.
+
 - Richard, M.-A., Bénard, P., & Chahine, R. (2009). Gas adsorption process
 in activated carbon over a wide temperature range above the critical point.
 Part 1: Modified Dubinin-Astakhov model. Adsorption, 15, 43–51.
@@ -90,11 +95,6 @@ Part 1: Modified Dubinin-Astakhov model. Adsorption, 15, 43–51.
 & Hirose, K. (2009). Preliminary evaluation of the performance of an
 adsorption-based hydrogen storage system. AIChE Journal, 55(11),
 2985–2996. https://doi.org/10.1002/aic.11904
-
-- Purewal, J., Liu, D., Sudik, A., Veenstra, M., Yang, J., Maurer, S., Müller,
-U., & Siegel, D. J. (2012). Improved Hydrogen Storage and Thermal Conductivity
-in High-Density MOF-5 Composites. The Journal of Physical Chemistry C, 116(38),
-20199–20212. https://doi.org/10.1021/jp305524f.
 
 - Sahoo, P. K., John, M., Newalkar, B. L., Choudhary, N. V., &
 Ayappa, K. G. (2011). Filling Characteristics for an Activated Carbon

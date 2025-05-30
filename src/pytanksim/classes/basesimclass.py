@@ -122,7 +122,7 @@ class SimParams:
         Useful when restarting a stopped heated discharge simulation.
 
     vented_energy : float, optional
-        Cumulative amount of enthaloy (J) contained in the fluid vented prior
+        Cumulative amount of enthalpy (J) contained in the fluid vented prior
         to the start of the simulation. The default is 0. Useful when
         stopping and restarting discharge simulations.
 
