@@ -46,6 +46,7 @@ autoapi_options = ['members', 'private-members', 'show-inheritance',
 autoapi_keep_files = True
 autoapi_python_class_content = 'both'
 napoleon_google_docstring = False
+autodoc_mock_imports = ["CoolProp", "assimulo"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
